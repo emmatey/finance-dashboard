@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Sell Shares.
+{% endblock %}
+
+{% block main %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h3 class="mb-3">Sell Stocks.</h3>
+            <hr>
+            <div class="card p-4 text-bg-light mb-3">
+                <div class="mb-4">
+                    <span class="fs-4 text-start">Account Balance: </span>
+                    <span class="badge rounded-pill fs-6" name="balance">{{ balance_formatted }}</span>
+                    <script>
+                        const balanceSpan = document.getElementsByName("balance")[0];
+                        const balanceValue = {{ balance_raw }};
+                        if (balanceValue < 1000) {
+                            balanceSpan.classList.add("text-bg-danger");
+                        } else if (balanceValue >= 1000 && balanceValue < 5000) {
+                            balanceSpan.classList.add("text-bg-warning");
+                        } else if (balanceValue >= 5000) {
+                            balanceSpan.classList.add("text-bg-success");
+                        };
+                    </script>
+                </div>
+                <form action="/sell" method="POST">
+                    <div class="input-group">
+                        <span class="input-group-text">Symbol</span>
+                        <select name="symbol" class="form-select" required>
+                            <option value=""></option>
+                            {% for stock in stock_query %}
+                            <option value="{{ stock['symbol'] }}">{{ stock["symbol"] }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <span class="input-group-text">Qty.</span>
+                        <input name="shares" type="number" class="form-control" min="0" required>
+
+                        <button class="btn btn-primary" type="submit">Sell</button>
+                    </div>
+                    <div id="symbolHelp" class="form-text">Select the stock symbol you want to sell.</div>
+                </form>
+            </div>
+            <!-- Add a second card which summarized the transaciton, in selector use symbol, here use name
+             and also show the estimated value of the sale. and show how many shares are owned. update on select.-->
+             <div class="card p-4 text-bg-light mb-3">
+                <span class="lead"></span>
+             </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

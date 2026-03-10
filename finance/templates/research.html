@@ -1,0 +1,207 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Research
+{% endblock %}
+
+{% block main %}
+
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="d-grid mb-2">
+                    <span class="fw-bold fs-4 lh-1">AAPL</span>
+                    <span class="text-muted">Apple inc.</span>
+                </div>
+                <span class="fw-bold fs-2">$96.99</span>
+            </div>
+            <div class="col-auto align-self-end">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary">Buy</button>
+                    <button class="btn btn-primary">Sell</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <hr class="mt-2">
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-9">
+                <div class="card p-4 text-bg-light mb-3">
+                    <canvas id="priceHistory">
+
+                    </canvas>
+                    <hr>
+                    <div class="d-flex justify-content-center" id="priceHistoryBtnParent">
+                        <div class="btn-group gap-2">
+                            <button type="button" class="btn btn-primary btn-sm btn-success" id="year" value="31536000">1yr</button> <!-- 'value' props are time peroid in seconds -->
+                            <button type="button" class="btn btn-primary btn-sm" id="month" value="2592000">1mo</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="week" value="604800">1wk</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 text-bg-light mb-3">
+                    company profile
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-9">
+                <div class="card p-4 text-bg-light mb-3">
+                    metrics
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 text-bg-light mb-3">
+                    user holdings
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card p-4 text-bg-light mb-3">
+                    Newsfeed
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4 text-bg-light mb-3">
+                    insider trade history
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src=" https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js "></script>
+    <script>
+        // Funcy town
+        function getSubsetIdx(dates, timeDelta) {
+            /*
+            'dates' are in chronological order
+            'dates' is ordered from oldest -> newest
+            'dates' are SECONDS from epoch
+            'timeDelta' is in SECONDS
+
+            returns -> index to slice dataset on. Requested data will go from idx -> end
+            */
+            const timestampRaw = Date.now();
+
+            // convert from ms to sec
+            const timestamp = Math.floor(timestampRaw / 1000);
+            const target = timestamp - timeDelta;
+
+            for (const [idx, i] of dates.entries()) {
+                if (i >= target) {
+                    return idx;
+                };
+            };
+            return dates.length
+        };
+
+
+        function addData(chart, newData, clickedBtn) {
+        // https://www.chartjs.org/docs/latest/developers/updates.html#adding-or-removing-data
+            chart.data.datasets[0].data = newData;
+            chart.options.plugins.title.text = `Open Price - ${clickedBtn.textContent}`;
+
+            chart.update();
+        };
+
+        // Unpack data
+        const priceData = {{ prices | tojson() }};
+
+        const dates = priceData[0];
+        const open = priceData[1];
+        const volume = priceData[2];
+
+        // Select buttons.
+        const buttonContainer = document.getElementById("priceHistoryBtnParent");
+        const buttons = buttonContainer.querySelectorAll("button");
+        let clickedBtn = buttons[0];
+
+        // Instantiate chart object.
+        const accountValueChart = new Chart(
+            document.getElementById('priceHistory'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Opening Price',
+                        data: open
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Open Price',
+                            fullsize: true
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            displayColors: false,
+                            callbacks: {
+                                label: (context) => {
+                                    let label = context.dataset.label || '';
+                                    let data = context.dataset.data || '';
+                                    let priceDatum = 0.0;
+
+                                    if (data) {
+                                        priceDatum = context.dataset.data[context.dataIndex] || '';
+
+                                        if (priceDatum) {
+                                            priceDatum = Number(priceDatum);
+                                            priceDatum = priceDatum.toLocaleString("en-EN", {
+                                                style: 'currency',
+                                                currency: "USD"
+                                            });
+                                        };
+                                    };
+
+                                    return `${label}: ${priceDatum}`;
+                                },
+                                afterBody: (context) => {
+                                    let volumeDatum = volume[context[0].dataIndex] || '';
+
+                                    if (volumeDatum) {
+                                        volumeDatum = Number(volumeDatum);
+                                        volumeDatum = `Trade Volume: ${volumeDatum.toLocaleString()}`;
+                                    };
+
+                                    return volumeDatum;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+
+        // Add event listners.
+        buttonContainer.addEventListener("click", (event) => {
+            // Clear 'selected' class from all buttons.
+            for (let btn of buttons) {
+                if (btn.classList.contains("btn-success")) {
+                    btn.classList.remove("btn-success")
+                };
+            };
+            clickedBtn = event.target.closest("button");
+            clickedBtn.classList.add("btn-success");
+
+            // CACHE THE SLICES OF DATA EACH TIME THEY'RE CLICKED AND GETSUBSETIDX IS CALLED
+            // AVOIDS RECALCULATING.
+
+            addData(accountValueChart, selectedData, clickedBtn);
+        });
+    </script>
+
+{% endblock %}

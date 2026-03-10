@@ -1,0 +1,47 @@
+LONG TERM FEATURES
+    - Cache user holdings reoprt in session token
+    - Cache time since last updated prices in session token to send to frontend
+        and syncronize polling to run animations.
+
+    - Populate buy/sell 2ndary cards with data about user holdngs and current price
+    - CSS animation on buy/sell orders on table row
+    - Animations to fade in/out red/green on price moves.
+    - Refresh price button on research and index that shows when last price was fetched.
+    - Deposit/withdraw cash routes
+
+- '/research'
+    'Detailed per-stock info'
+    user searches > clean search term > check freshness > update stale data > query updated data from db >
+    format data for display on UI > unpack in Jinja
+
+- '/index'
+    'Screeners + Account Balance/Value'
+    front page metrics:
+        analyst_strong_buy_stocks, undervalued_growth_stocks, most_shorted_stocks,
+        day_gainers, day_losers,
+        most_actives, most_visited
+        sp500, gold
+
+- '/portfolio'
+    'Holdings spreadsheet + Pie chart view'
+        reportmanager user holdings report
+
+- '/history'
+    Record of all transactions
+    
+- '/buy'
+    Use confirmation screen
+
+- '/sell'
+    Use confirmation screen
+
+- '/deposit'
+    Use confirmation screen
+
+- '/withdraw'
+    Use confirmation screen
+
+- Daemons
+    Every 60 seconds the prices will be updated.(global events)
+    Every 24 hours all users will have balance snapshot taken. (global events)
+    Every 24 hours trim all data over 5 yrs old
