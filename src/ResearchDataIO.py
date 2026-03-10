@@ -1,0 +1,585 @@
+import yahooquery
+import logging
+
+from DbManager import DbManager
+from ResearchDataSyncManager import ResearchDataSyncManager
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+
+logger = logging.getLogger(__name__)
+
+
+class ResearchDataIO(DbManager):
+    """
+    CRUD type operations on data from Yahoo API.
+
+    SyncManager > YahooAPIClient > 'Setters'
+    'Getters' > ReportManager
+
+    Used by SyncManager to refresh stale external data.
+    Used by ReportManager to fetch information to display on UI.
+
+    Standard Format: List of Dicts for Multiple Records
+    For Single Record: Dict or None
+    """
+
+    def upsert_symbol(self, symbol: str, price_module_raw: dict):
+        """
+        Upsert symbol record in database.
+
+        Args:
+            symbol: Stock symbol (e.g. 'AAPL')
+            price_module: Result of Ticker.price call.
+        """
+        symbol = symbol.upper()
+        price_module = price_module_raw[symbol].get('price')
+        company_name = price_module.get('longName', symbol.upper())
+        last_price = price_module.get('regularMarketPrice', 0)
+
+        sql = """
+        INSERT INTO symbols (ticker, company_name, last_price, last_updated)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(ticker) DO UPDATE SET
+            company_name = excluded.company_name,
+            last_price = excluded.last_price,
+            last_updated = CURRENT_TIMESTAMP
+        """
+        self.simple_query(sql, (symbol, company_name, last_price))
+
+        logger.info(f"{symbol} written to DB!")
+
+        ### SETTERS ###
+
+    @ResearchDataSyncManager.register_as_research('stock_splits', i=True)
+    def set_stock_splits(self, stock_split_data: List[Tuple]) -> None:
+        """
+        (ticker, datetime, ratio)
+        [(datetime.date(1972, 6, 16), 2.0, 'MMM'), (datetime.date(1987, 6, 16), 2.0, 'MMM'),]
+        DbManager.bulk_query() handles logging and exceptions and transaction control
+        """
+        # yq_ticker_stock_splits() method returns [] on errors.
+        if not stock_split_data or not isinstance(stock_split_data[0], tuple):
+            logger.warning(f"No data recieved param:{stock_split_data}")
+            return None
+
+        sql = """
+        INSERT INTO stock_splits (symbol_id, split_date, split_ratio)
+        SELECT id, ?, ?
+        FROM symbols
+        WHERE ticker = ?
+        ON CONFLICT(symbol_id, split_date)
+        DO UPDATE SET
+            split_ratio = excluded.split_ratio,
+            last_updated = CURRENT_TIMESTAMP
+        """
+
+        self.bulk_query(sql, stock_split_data)
+
+    @ResearchDataSyncManager.register_as_research('historical_prices', i=True)
+    def set_historical_prices(self, price_data):
+        """
+        price_data eg [(datetime.date(2026, 2, 24), 166.46000671, 2468500, 'MMM')]
+        DbManager.bulk_query() handles logging and exceptions and transaction control
+        """
+        # yq_ticker_historical_prices() method returns None on errors.
+        if not price_data or not isinstance(price_data[0], tuple):
+            logger.warning(f"No data recieved param:{price_data}")
+            return None
+
+        sql = """
+        INSERT INTO historical_prices (symbol_id, price_timestamp, adjclose, trade_volume)
+        SELECT id, ?, ?, ?
+        FROM symbols
+        WHERE ticker = ?
+        ON CONFLICT(symbol_id, price_timestamp)
+        DO UPDATE SET
+            last_updated = CURRENT_TIMESTAMP,
+            adjclose = CASE
+                WHEN historical_prices.adjclose != excluded.adjclose THEN excluded.adjclose
+                ELSE historical_prices.adjclose
+            END,
+            trade_volume = CASE
+                WHEN historical_prices.adjclose != excluded.adjclose THEN excluded.trade_volume
+                ELSE historical_prices.trade_volume
+            END
+        """
+
+        self.bulk_query(sql, price_data)
+
+    @ResearchDataSyncManager.register_as_research('financial_metrics', i=True)
+    def set_financial_metrics(
+        self,
+        metrics: Dict[str, Dict[str, Optional[Union[float, str, int]]]]
+    ) -> None:
+        """
+        Insert or update financial metrics for one or more companies in the database.
+
+        Dynamically builds an UPSERT query based on the metrics dictionary structure.
+        If a symbol_id already exists, updates all fields and refreshes last_updated timestamp.
+
+        Args:
+            metrics: Dictionary mapping ticker symbols to their financial metrics.
+                    Format: {
+                        'AAPL': {
+                            'market_open': 150.25,
+                            'prev_close': 149.50,
+                            'market_cap': 2500000000000,
+                            'beta': 1.2,
+                            'eps': 6.15,
+                            'trailing_pe': 24.4,
+                            'forward_pe': 22.1,
+                            'profit_margin': 0.25,
+                            'dividend_yield': 0.005,
+                            'fifty_two_week_high': 180.0,
+                            'fifty_two_week_low': 120.0,
+                            'rating': 'buy',
+                            'target_price': 175.0,
+                            'analyst_count': 45,
+                            'current_ratio': 1.5,
+                            'debt_to_equity': 0.8
+                        },
+                        'MSFT': { ... }
+                    }
+
+                    All metric values are Optional (can be None for missing data).
+                    Supports single or multiple tickers.
+        """
+        if not metrics:
+            """
+            Data reaches this function via YahooQueryService.yq_ticker_get_modules > YahooQueryService.get_financial_metrics
+            get_modules returns {} on api errors
+            get_financial_metrics returns {} if get_modules return value is falsy.
+            Logged up-stream if api has un-expected return value resulting in sending {}'s down the chain.
+            """
+            logger.warning("financial_metrics updated aborted. No data found.")
+            return None
+
+        table_cols = sorted({key for data in metrics.values() for key in data})
+        table_cols_str = ", ".join(table_cols)
+        placeholders = ", ".join(["?" for i in table_cols])
+        excluded_cols_str = ", ".join(f"{col}=excluded.{col}" for col in table_cols)
+
+        data_tuples = []
+        for symbol, data in metrics.items():
+            buffer = [data.get(col) for col in table_cols]
+            buffer.append(symbol)  # ticker for WHERE clause
+            data_tuples.append(tuple(buffer))
+
+        sql = f"""
+            INSERT INTO financial_metrics (symbol_id, {table_cols_str})
+            SELECT id, {placeholders}
+            FROM symbols
+            WHERE ticker = ?
+            ON CONFLICT(symbol_id)
+            DO UPDATE SET
+            last_updated=CURRENT_TIMESTAMP, {excluded_cols_str}
+            """
+
+        self.bulk_query(sql, data_tuples)
+
+    @ResearchDataSyncManager.register_as_research('news', i=True)
+    def set_news(self, news_data: List[Dict[str, Any]]) -> None:
+        """
+        Insert or update news articles and their relationships to stock symbols.
+
+        Handles the many-to-many relationship between news articles and symbols
+        by inserting into both the 'news' table and the 'news_symbols' junction table.
+        Stories are associated only with symbols that exist in the database.
+
+        Args:
+            news_data: List of news article dictionaries from yq_search_get_news()
+                      Format: [
+                          {
+                              'uuid': 'abc-123-def',
+                              'title': 'Steve Jobs Returns From the Dead!',
+                              'publisher': 'Reuters',
+                              'link': 'https://example.com/article',
+                              'providerPublishTime': 1234567890,
+                              'thumbnail': 'https://example.com/image.jpg',
+                              'relatedTickers': ['AAPL', 'MSFT', 'GOOGL']
+                          },
+                          ...
+                      ]
+
+        Returns:
+            None (side effects: updates news and news_symbols tables)
+
+        Raises:
+            Exception: Any database errors from bulk_query() or simple_query()
+
+        Database Tables Modified:
+            - news: Stores article metadata
+            - news_symbols: Junction table linking news articles to stock symbols
+
+        """
+        if not news_data:
+            return
+
+        # Insert news stories.
+        table_cols = sorted({key for dict in news_data for key in dict})
+        table_cols_str = ", ".join((col for col in table_cols if col != "relatedTickers"))
+        placeholders = ", ".join(["?" for i in table_cols if i != "relatedTickers"])
+        excluded_cols_str = ", ".join(
+            f"{col}=excluded.{col}" for col in table_cols if col != "relatedTickers" and col != "uuid")
+
+        news_tuples = []
+        for story in news_data:
+            buffer = []
+            # Tuples data must keep the same order as table_cols
+            ordered_story = [i for i in table_cols if i != "relatedTickers"]
+            for i in ordered_story:
+                buffer.append(story.get(i))
+            news_tuples.append(tuple(buffer))
+
+        insert_news_sql = f"""
+        INSERT INTO news ({table_cols_str})
+        VALUES ({placeholders})
+        ON CONFLICT(uuid)
+        DO UPDATE SET
+        timeInserted=CURRENT_TIMESTAMP, {excluded_cols_str}
+        """
+        self.bulk_query(insert_news_sql, news_tuples)
+
+        # Associate news stories to ticker symbols
+        related_uuids = {}
+        for story in news_data:
+            related_uuids[story.get('uuid')] = story.get('relatedTickers')
+        uuid_set = {i for i in related_uuids}
+        uuid_placeholders = ", ".join(["?" for _ in uuid_set])
+        ticker_set = {ticker for v in related_uuids.values() for ticker in v}
+        ticker_placeholders = ", ".join(["?" for _ in ticker_set])
+
+        # Find news id for associated uuid
+        uuid_sql = f"""
+        SELECT uuid, id AS news_id
+        FROM news
+        WHERE uuid IN ({uuid_placeholders})
+        """
+        uuid_rows = self.simple_query(uuid_sql, tuple(uuid_set))
+        uuid_cipher = {i.get('uuid'): i.get('news_id') for i in uuid_rows}
+
+        # Find symbol id for associated ticker
+        ticker_sql = f"""
+        SELECT ticker, id as symbol_id
+        FROM symbols
+        WHERE ticker in ({ticker_placeholders})
+        """
+        ticker_rows = self.simple_query(ticker_sql, tuple(ticker_set))
+        ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows}
+
+        # go from {uuid: [ticker]} to {news_id: [ticker_id]}
+        translated_related_uuids = {}
+        for uuid, tickers in related_uuids.items():
+            buffer = []
+            for ticker in tickers:
+                translated = ticker_cipher.get(ticker)
+                if translated:
+                    buffer.append(translated)
+            news_id = uuid_cipher.get(uuid)
+            if news_id:
+                translated_related_uuids[news_id] = buffer
+
+        # Insert into 'news_symbols'
+        news_symbols_tuples = []
+        for news_id, ticker_ids in translated_related_uuids.items():
+            for ticker_id in ticker_ids:
+                news_symbols_tuples.append((news_id, ticker_id))
+        news_symbols_sql = f"""
+        INSERT INTO news_symbols (news_id, symbol_id)
+        VALUES (?, ?)
+        ON CONFLICT(news_id, symbol_id)
+        DO NOTHING
+        """
+        self.bulk_query(news_symbols_sql, news_symbols_tuples)
+
+    @ResearchDataSyncManager.register_as_research('company_profile', i=True)
+    def set_company_profile(
+        self,
+        company_overview: Dict[str, Dict[str, Union[str, int]]]
+    ) -> None:
+        """
+        Insert or update company profile information for one or more companies.
+
+        Dynamically builds an UPSERT query based on the company_overview dictionary structure.
+        If a symbol_id already exists, updates all fields and refreshes last_updated timestamp.
+
+        Args:
+            company_overview: Dictionary mapping ticker symbols to their company profile data.
+                             Format: {
+                                 'AAPL': {
+                                     'company_desc': 'Apple Inc. designs, manufactures...',
+                                     'employee_count': 164000,
+                                     'industry': 'Consumer Electronics',
+                                     'website': 'https://www.apple.com'
+                                 },
+                                 'MSFT': {
+                                     'company_desc': 'Microsoft Corporation develops...',
+                                     'employee_count': 221000,
+                                     'industry': 'Software—Infrastructure',
+                                     'website': 'https://www.microsoft.com'
+                                 }
+                             }
+
+                             Supports single or multiple tickers.
+
+        Returns:
+            None (side effect: database is updated)
+
+        Raises:
+            Exception: Any database errors from bulk_query() (logged and re-raised)
+        """
+        if not company_overview:
+            logger.warning(
+                "set_company_profile aborted: empty company_overview dict")
+            return None
+
+        table_cols = sorted({key for dict in company_overview.values() for key in dict})
+        table_cols_str = ", ".join((col for col in table_cols))
+        placeholders = ", ".join(["?" for i in table_cols])
+        excluded_cols_str = ", ".join(
+            f"{col}=excluded.{col}" for col in table_cols)
+
+        summary_tuples = []
+        for symbol, data in company_overview.items():
+            buffer = []
+            # Tuples data must keep the same order as table_cols
+            for col in table_cols:
+                buffer.append(data.get(col))
+            buffer.append(symbol)  # For WHERE clause
+            summary_tuples.append(tuple(buffer))
+
+        sql = f"""
+        INSERT INTO company_profile (symbol_id, {table_cols_str})
+        SELECT s.id, {placeholders}
+        FROM symbols AS s
+        WHERE ticker = ?
+        ON CONFLICT(symbol_id)
+        DO UPDATE SET
+        last_updated=CURRENT_TIMESTAMP, {excluded_cols_str}
+        """
+        self.bulk_query(sql, summary_tuples)
+
+    @ResearchDataSyncManager.register_as_research('insider_trades', i=True)
+    def set_insider_trades(self, trade_data: dict):
+        """
+        param:
+        {symbol: [
+            {
+                startDate: Transaction date (string: 'YYYY-MM-DD')
+                shares: Number of shares traded
+                value: Transaction value
+                filerName: Name of insider
+                filerRelation: Insider's relationship to company
+                transactionText: Description of transaction type
+            },
+        """
+        if not trade_data:
+            logger.warning(
+                "set_insider_trades aborted: empty trade_data dict")
+            return None
+
+        table_cols = sorted({key for tx_list in trade_data.values()
+                            for tx in tx_list for key in tx})
+        table_cols_str = ", ".join((col for col in table_cols))
+        placeholders = ", ".join(["?" for i in table_cols])
+
+        insider_tuples = []
+        for symbol, tx_list in trade_data.items():
+            for tx in tx_list:
+                buffer = []
+                # Tuples data must keep the same order as table_cols
+                for col in table_cols:
+                    buffer.append(tx.get(col))
+                buffer.append(symbol)  # For WHERE clause
+                insider_tuples.append(tuple(buffer))
+
+        sql = f"""
+        INSERT INTO insider_trades (symbol_id, {table_cols_str})
+        SELECT s.id, {placeholders}
+        FROM symbols AS s
+        WHERE ticker = ?
+        ON CONFLICT(symbol_id, transaction_date, filer_name, shares)
+        DO NOTHING
+        """
+        self.bulk_query(sql, insider_tuples)
+
+        ### GETTERS ###
+    @ResearchDataSyncManager.register_as_research('historical_prices', o=True)
+    def get_historical_prices(self, symbols: List[str]):
+        """
+        list of dicts
+        returns
+        [{'ticker': 'MMM', 'price': 69.42, 'timestamp': 1771891200, 'volume': 2468500}]
+        """
+        if not symbols:
+            return []
+        symbols = tuple([symbol.upper() for symbol in symbols])
+        placeholders = ", ".join(['?' for _ in symbols])
+
+        sql = f"""
+        SELECT s.ticker, adjclose as price, unixepoch(hp.price_timestamp) as timestamp, hp.trade_volume as volume
+        FROM historical_prices AS hp
+        JOIN symbols AS s ON s.id = hp.symbol_id
+        WHERE s.ticker IN ({placeholders})
+        """
+
+        return self.simple_query(sql, symbols)
+
+    @ResearchDataSyncManager.register_as_research('financial_metrics', o=True)
+    def get_financial_metrics(self, symbols: List[str]):
+        """
+        list of dicts
+        returns
+
+        """
+        if isinstance(symbols, str):
+            symbols = [symbols]
+        if not symbols:
+            return []
+
+        symbols = tuple([symbol.upper() for symbol in symbols])
+        placeholders = ", ".join(['?' for _ in symbols])
+
+        sql = f"""
+        SELECT s.ticker, fm.*
+        FROM financial_metrics AS fm
+        JOIN symbols AS s ON s.id = fm.symbol_id
+        WHERE s.ticker IN ({placeholders})
+        """
+
+        rows = self.simple_query(sql, symbols)
+        rows_clean = []
+        for row in rows:
+            # remove primary key from select *
+            rows_clean.append({k: v for k, v in row.items() if k != "id" and k != "symbol_id"})
+
+        return rows_clean
+
+    @ResearchDataSyncManager.register_as_research('news', o=True)
+    def get_news(self, symbol: str = None, limit: int = 10):
+        """
+        Retrieve news articles, optionally filtered by symbol.
+
+        Returns list of dicts with article info.
+        """
+
+        if symbol:
+            sql = """
+            SELECT n.uuid, n.title, n.publisher, n.link,
+                   n.providerPublishTime, n.thumbnail
+            FROM news n
+            JOIN news_symbols ns ON n.id = ns.news_id
+            JOIN symbols s ON ns.symbol_id = s.id
+            WHERE s.ticker = ?
+            ORDER BY n.providerPublishTime DESC
+            LIMIT ?
+            """
+            return self.simple_query(sql, (symbol.upper(), limit))
+        else:
+            sql = """
+            SELECT uuid, title, publisher, link,
+                   providerPublishTime, thumbnail
+            FROM news
+            ORDER BY providerPublishTime DESC
+            LIMIT ?
+            """
+            return self.simple_query(sql, (limit,))
+
+    @ResearchDataSyncManager.register_as_research('company_profile', o=True)
+    def get_company_profile(self, symbols: Union[str, List[str]]) -> List[Dict[str, Any]]:
+        """
+        Retrieve company profile information for one or more symbols.
+
+        Args:
+            symbols: Single ticker symbol or list of symbols
+
+        Returns:
+            List of dictionaries containing company profile data:
+            [
+                {
+                    'ticker': 'AAPL',
+                    'company_desc': 'Apple Inc. designs...',
+                    'employee_count': 164000,
+                    'industry': 'Consumer Electronics',
+                    'website': 'https://www.apple.com',
+                    'last_updated': '2026-03-05 10:30:00'
+                },
+                ...
+            ]
+            Returns empty list if no profiles found
+
+        Example:
+            >>> db.get_company_profile('AAPL')
+            >>> db.get_company_profile(['AAPL', 'MSFT', 'GOOGL'])
+        """
+        if isinstance(symbols, str):
+            symbols = [symbols]
+        if not symbols:
+            return []
+
+        symbols = tuple([symbol.upper() for symbol in symbols])
+        placeholders = ", ".join(['?' for _ in symbols])
+
+        sql = f"""
+        SELECT s.ticker, cp.company_desc, cp.employee_count,
+               cp.industry, cp.website, cp.last_updated
+        FROM company_profile AS cp
+        JOIN symbols AS s ON s.id = cp.symbol_id
+        WHERE s.ticker IN ({placeholders})
+        """
+
+        return self.simple_query(sql, symbols)
+
+    @ResearchDataSyncManager.register_as_research('insider_trades', o=True)
+    def get_insider_trades(self, symbols: Union[str, List[str]], limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        Retrieve insider trading transactions for one or more symbols.
+
+        Args:
+            symbols: Single ticker symbol or list of symbols
+            limit: Maximum number of trades to return per symbol (default: 50)
+
+        Returns:
+            List of dictionaries containing insider trade data:
+            [
+                {
+                    'ticker': 'AAPL',
+                    'transaction_date': '2024-01-15',
+                    'shares': 10000,
+                    'transaction_value': 1500000,
+                    'filer_name': 'John Doe',
+                    'filer_relation': 'Chief Executive Officer',
+                    'transaction_text': 'Sale at price...',
+                    'last_updated': '2026-03-05 10:30:00'
+                },
+                ...
+            ]
+            Returns empty list if no trades found
+
+        Note:
+            Results are ordered by transaction_date (newest first)
+
+        Example:
+            >>> db.get_insider_trades('AAPL', limit=10)
+            >>> db.get_insider_trades(['AAPL', 'MSFT'])
+        """
+        if isinstance(symbols, str):
+            symbols = [symbols]
+        if not symbols:
+            return []
+
+        symbols = tuple([symbol.upper() for symbol in symbols])
+        placeholders = ", ".join(['?' for _ in symbols])
+
+        sql = f"""
+        SELECT s.ticker, it.transaction_date, it.shares,
+               it.transaction_value, it.filer_name, it.filer_relation,
+               it.transaction_text, it.last_updated
+        FROM insider_trades AS it
+        JOIN symbols AS s ON s.id = it.symbol_id
+        WHERE s.ticker IN ({placeholders})
+        ORDER BY it.transaction_date DESC
+        LIMIT ?
+        """
+
+        return self.simple_query(sql, symbols + (limit,))
