@@ -1,6 +1,7 @@
 from flask import Flask
 from AccountManager import AccountManager
 from DbManager import DbManager
+from dotenv import load_dotenv
 from ResearchDataIO import ResearchDataIO
 from ReportManager import ReportManager
 from ResearchDataSyncManager import ResearchDataSyncManager
@@ -14,11 +15,14 @@ import datetime
 import numpy as np
 import yahooquery
 import logging
+import os
 import sys
 
 
 # export FLASK_APP=test.py
 app = Flask(__name__)
+load_dotenv()
+api_key = os.getenv("NEWS_API_KEY")
 
 @app.route("/")
 def home():
@@ -49,14 +53,15 @@ def home():
     yqs = ResearchYahooQueryService()
     dae = Satan()
 
-    s = yahooquery.Screener()
-    screeners = s.available_screeners
-    for i in screeners:
-        print(i)
+    symbol = 'aapl'
 
-    # day_gainers, day_losers,
-    # most_actives, most_visited
-    # each continent one ETF. Gold + Oil
+    price_module = yqs.yq_ticker_get_modules(symbol, 'price')
+    io.upsert_symbol(symbol , price_module)
+     
+    fresh_report = sm.check_research_freshness_per_company(symbol)
+    sm.research_data_update_orchestrator(fresh_report=fresh_report, yqs_instance=yqs, db_io_instance=io)
+
+
 
     filler_page = """
         <body style="background-color: black; color: green;">

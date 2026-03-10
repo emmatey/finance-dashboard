@@ -32,7 +32,7 @@ class ResearchDataSyncManager(DbManager):
     registry = {table_name: {'i': None, 'o': None, 'api': None, 'modules': None} for table_name in TableLifetimes.__members__}
 
     @classmethod
-    def register_as_research(cls, table_name, i=False, o=False, api=False, modules: list[str]=False):
+    def register_as_research(cls, table_name, i=False, o=False, api=False, modules=False):
         # Specify in, out, or api with x=True to categorize functions.
         # Each table will generally have 3 related methods.
         def decorator(func):
@@ -170,7 +170,7 @@ class ResearchDataSyncManager(DbManager):
             return None
 
         if not yqs_instance or not db_io_instance:
-            raise ValueError("api_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
+            raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
 
         # Collect list of modules required
         modules_set = set()
