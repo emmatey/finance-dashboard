@@ -405,7 +405,7 @@ class ResearchDataIO(DbManager):
 
         ### GETTERS ###
     @ResearchDataSyncManager.register_as_research('historical_prices', o=True)
-    def get_historical_prices(self, symbols: List[str]):
+    def get_historical_prices(self, symbols):
         """
         list of dicts
         returns
@@ -426,7 +426,7 @@ class ResearchDataIO(DbManager):
         return self.simple_query(sql, symbols)
 
     @ResearchDataSyncManager.register_as_research('financial_metrics', o=True)
-    def get_financial_metrics(self, symbols: List[str]):
+    def get_financial_metrics(self, symbols):
         """
         list of dicts
         returns
@@ -456,7 +456,7 @@ class ResearchDataIO(DbManager):
         return rows_clean
 
     @ResearchDataSyncManager.register_as_research('news', o=True)
-    def get_news(self, symbol: str = None, limit: int = 10):
+    def get_news(self, symbol = None, limit = 10):
         """
         Retrieve news articles, optionally filtered by symbol.
 
@@ -486,7 +486,7 @@ class ResearchDataIO(DbManager):
             return self.simple_query(sql, (limit,))
 
     @ResearchDataSyncManager.register_as_research('company_profile', o=True)
-    def get_company_profile(self, symbols: Union[str, List[str]]) -> List[Dict[str, Any]]:
+    def get_company_profile(self, symbols):
         """
         Retrieve company profile information for one or more symbols.
 
@@ -531,7 +531,7 @@ class ResearchDataIO(DbManager):
         return self.simple_query(sql, symbols)
 
     @ResearchDataSyncManager.register_as_research('insider_trades', o=True)
-    def get_insider_trades(self, symbols: Union[str, List[str]], limit: int = 50) -> List[Dict[str, Any]]:
+    def get_insider_trades(self, symbols, limit: int = 50):
         """
         Retrieve insider trading transactions for one or more symbols.
 
