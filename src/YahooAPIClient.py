@@ -17,7 +17,7 @@ class YahooAPIClient(DbManager):
     def __init__(self):
         logger.info("Initializing YahooAPIClient...")
 
-    def api_status(self) -> Tuple[bool, bool]:
+    def api_status(self):
         """
         If api is set to 'DOWN' handle exponential backoff.
         Returns: (is_up, should_retry)

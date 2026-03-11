@@ -55,7 +55,7 @@ class ResearchDataSyncManager(DbManager):
             return func
         return decorator
 
-    def check_research_freshness_per_company(self, symbol: str) -> Dict[str, bool]:
+    def check_research_freshness_per_company(self, symbol):
         """
         Check the age of stored data using a single optimized CTE query.
 
