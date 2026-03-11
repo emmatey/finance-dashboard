@@ -93,7 +93,49 @@ class ResearchYahooQueryService:
 
         return raw_modules
 
+    @yq_exception_handler()
+    def yq_ticker_price_map(
+        self,
+        symbols: Union[List[str], str]
+    ) -> Dict[str, Union[float, str, None]]:
+        """
+        Get current market prices for one or more stock symbols.
 
+        Args:
+            symbols: Single ticker symbol or list of symbols (e.g., 'AAPL' or ['AAPL', 'MSFT'])
+
+        Returns:
+            Dictionary mapping symbols to their current prices:
+                {symbol: price} where price is:
+                    - float: successful price retrieval
+                    - str: error message from API
+                    - None: price not available in response
+
+        Example:
+            >>> service.yq_ticker_price_map(['AAPL', 'MSFT'])
+            {'AAPL': 150.25, 'MSFT': 380.50}
+        """
+        if isinstance(symbols, str):
+            symbols = [symbols.upper()]
+        else:
+            symbols = [i.upper() for i in symbols]
+
+        ticker = self.ticker_factory(symbols)
+        result = ticker.price
+
+        price_map: Dict[str, Union[float, str, None]] = {}
+        for symbol, data in result.items():
+            if isinstance(data, dict):
+                # YQ returned data dict
+                price = data.get("regularMarketPrice")
+                price_map[symbol] = price
+            else:
+                # YQ returned error string or unexpected format
+                logger.debug(f"Price fetch failed for {symbol}: {data}")
+                price_map[symbol] = data
+
+        return price_map
+    
     @ResearchDataSyncManager.register_as_research('historical_prices', api=True)
     @yq_exception_handler()
     def yq_ticker_historical_prices(
@@ -150,49 +192,6 @@ class ResearchYahooQueryService:
         else:
             logger.warning(f"Price retrieval error for {symbol}.")
             return None
-
-    @yq_exception_handler()
-    def yq_ticker_price_map(
-        self,
-        symbols: Union[List[str], str]
-    ) -> Dict[str, Union[float, str, None]]:
-        """
-        Get current market prices for one or more stock symbols.
-
-        Args:
-            symbols: Single ticker symbol or list of symbols (e.g., 'AAPL' or ['AAPL', 'MSFT'])
-
-        Returns:
-            Dictionary mapping symbols to their current prices:
-                {symbol: price} where price is:
-                    - float: successful price retrieval
-                    - str: error message from API
-                    - None: price not available in response
-
-        Example:
-            >>> service.yq_ticker_price_map(['AAPL', 'MSFT'])
-            {'AAPL': 150.25, 'MSFT': 380.50}
-        """
-        if isinstance(symbols, str):
-            symbols = [symbols.upper()]
-        else:
-            symbols = [i.upper() for i in symbols]
-
-        ticker = self.ticker_factory(symbols)
-        result = ticker.price
-
-        price_map: Dict[str, Union[float, str, None]] = {}
-        for symbol, data in result.items():
-            if isinstance(data, dict):
-                # YQ returned data dict
-                price = data.get("regularMarketPrice")
-                price_map[symbol] = price
-            else:
-                # YQ returned error string or unexpected format
-                logger.debug(f"Price fetch failed for {symbol}: {data}")
-                price_map[symbol] = data
-
-        return price_map
 
     @ResearchDataSyncManager.register_as_research('stock_splits', api=True)
     @yq_exception_handler()

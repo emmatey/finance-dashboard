@@ -53,13 +53,7 @@ def home():
     yqs = ResearchYahooQueryService()
     dae = Satan()
 
-    symbol = 'aapl'
-
-    price_module = yqs.yq_ticker_get_modules(symbol, 'price')
-    io.upsert_symbol(symbol , price_module)
-     
-    fresh_report = sm.check_research_freshness_per_company(symbol)
-    sm.research_data_update_orchestrator(fresh_report=fresh_report, yqs_instance=yqs, db_io_instance=io)
+    
 
 
 
