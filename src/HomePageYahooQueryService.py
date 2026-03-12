@@ -30,8 +30,18 @@ class HomePageYahooQueryService:
 
     def get_global_market_overview(self):
         """
-
+        Call this method if market is open and last update of financial metrics wasn't today.
         """
-        # This method will be used to pull the data for the ETFs which will represent each region
+        # This method will be used to pull the prices and % change from last close for the ETFs which will represent each region.
         # We need prev close and price
         # Prev close can be handled by calling 
+        # yqs get financial metrics > data io set financial 
+        # Price will be handled by update daemon but need to initially upsert.
+        # upsert symbol and get financial metrics both need price moduel
+
+        # 0. Query for last update of all ETFs last close price, use oldest.
+        # 1. call get modules method. 
+        # 2. call upsert symbol
+        # 3. call yqs financial metrics
+        # 4. call data in for metrics
+        # 5. get price and compare to prev close. calculate % difference 
