@@ -9,6 +9,7 @@ from TransactionManager import TransactionManager
 from YahooAPIClient import YahooAPIClient
 from YahooQueryService import YahooQueryService
 from Satan import Satan
+from MarketOverviewCoordinator import MarketOverviewCoordinator
 
 import pandas as pd
 import datetime
@@ -52,10 +53,11 @@ def home():
     api = YahooAPIClient()
     yqs = YahooQueryService()
     dae = Satan()
+    moc = MarketOverviewCoordinator()
 
 
-    
-
+    res = moc.update_regional_overview()
+    print(res)
 
 
     filler_page = """
