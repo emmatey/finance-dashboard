@@ -9,7 +9,7 @@ from YahooAPIClient import yq_exception_handler
 logger = logging.getLogger(__name__)
 
 
-class ResearchYahooQueryService:
+class YahooQueryService:
     """
     Service layer for Yahoo Finance API interactions to support the /research route.
 

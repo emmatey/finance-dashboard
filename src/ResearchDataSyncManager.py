@@ -29,10 +29,10 @@ class ResearchDataSyncManager(DbManager):
     Handles updating of individual SQL tables of finance data based on the age
     of the records.
     """
-    registry = {table_name: {'i': None, 'o': None, 'api': None, 'modules': None} for table_name in TableLifetimes.__members__}
+    registry = {table_name: {'i': False, 'o': False, 'api': False, 'modules': []} for table_name in TableLifetimes.__members__}
 
     @classmethod
-    def register_as_research(cls, table_name, i=False, o=False, api=False, modules=False):
+    def register_as_research(cls, table_name, i=False, o=False, api=False, modules=[]):
         # Specify in, out, or api with x=True to categorize functions.
         # Each table will generally have 3 related methods.
         def decorator(func):
@@ -55,7 +55,7 @@ class ResearchDataSyncManager(DbManager):
             return func
         return decorator
 
-    def check_research_freshness_per_company(self, symbol):
+    def create_fresh_report(self, symbol):
         """
         Check the age of stored data using a single optimized CTE query.
 
@@ -131,7 +131,7 @@ class ResearchDataSyncManager(DbManager):
             logger.error(f"Symbol {symbol} not found in database")
             raise ValueError(f"Symbol {symbol} not found")
 
-        res = query[0]
+        res = query[0] # type: ignore
         fresh_report = {"symbol": symbol}
 
         for name, create_time in res.items():
@@ -176,9 +176,9 @@ class ResearchDataSyncManager(DbManager):
         modules_set = set()
         for table, status in fresh_report.items():
             if status is False:
-                modules_required = self.registry[table].get('modules')
-                if modules_required:
-                    for m in modules_required:
+                required_modules = self.registry[table].get('modules')
+                if required_modules:
+                    for m in required_modules:
                         modules_set.add(m)
 
         # Call api once for all required modules.

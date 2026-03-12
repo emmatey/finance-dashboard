@@ -1,6 +1,6 @@
 from DbManager import DbManager
 from ResearchDataIO import ResearchDataIO
-from ResearchYahooQueryService import ResearchYahooQueryService
+from YahooQueryService import YahooQueryService
 from datetime import datetime, timedelta
 import helpers
 import logging
@@ -17,7 +17,7 @@ class TransactionManager(DbManager):
         yq_service: YahooQueryService instance for API interactions
     """
 
-    def __init__(self, yq_service=ResearchYahooQueryService()):
+    def __init__(self, yq_service=YahooQueryService()):
         """
         Initialize TransactionManager with Yahoo Query Service.
 

@@ -7,7 +7,7 @@ from ReportManager import ReportManager
 from ResearchDataSyncManager import ResearchDataSyncManager
 from TransactionManager import TransactionManager
 from YahooAPIClient import YahooAPIClient
-from ResearchYahooQueryService import ResearchYahooQueryService
+from YahooQueryService import YahooQueryService
 from Satan import Satan
 
 import pandas as pd
@@ -50,7 +50,7 @@ def home():
     sm = ResearchDataSyncManager()
     tm = TransactionManager()
     api = YahooAPIClient()
-    yqs = ResearchYahooQueryService()
+    yqs = YahooQueryService()
     dae = Satan()
 
     
