@@ -1,8 +1,7 @@
-import yahooquery
 import logging
 
 from DbManager import DbManager
-from ResearchDataSyncManager import ResearchDataSyncManager
+from DataSyncManager import DataSyncManager
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 
@@ -50,7 +49,7 @@ class ResearchDataIO(DbManager):
 
         ### SETTERS ###
 
-    @ResearchDataSyncManager.register_as_research('stock_splits', i=True)
+    @DataSyncManager.register_as_research('stock_splits', i=True)
     def set_stock_splits(self, stock_split_data: List[Tuple]) -> None:
         """
         (ticker, datetime, ratio)
@@ -75,7 +74,7 @@ class ResearchDataIO(DbManager):
 
         self.bulk_query(sql, stock_split_data)
 
-    @ResearchDataSyncManager.register_as_research('historical_prices', i=True)
+    @DataSyncManager.register_as_research('historical_prices', i=True)
     def set_historical_prices(self, price_data):
         """
         price_data eg [(datetime.date(2026, 2, 24), 166.46000671, 2468500, 'MMM')]
@@ -106,7 +105,7 @@ class ResearchDataIO(DbManager):
 
         self.bulk_query(sql, price_data)
 
-    @ResearchDataSyncManager.register_as_research('financial_metrics', i=True)
+    @DataSyncManager.register_as_research('financial_metrics', i=True)
     def set_financial_metrics(
         self,
         metrics: Dict[str, Dict[str, Optional[Union[float, str, int]]]]
@@ -118,7 +117,7 @@ class ResearchDataIO(DbManager):
         If a symbol_id already exists, updates all fields and refreshes last_updated timestamp.
 
         Args:
-            metrics: Dictionary mapping ticker symbols to their financial metrics.
+            metrics: Dictionary mapping ticker symbols to their financial metrics. From the YahooQueryService class
                     Format: {
                         'AAPL': {
                             'market_open': 150.25,
@@ -177,7 +176,7 @@ class ResearchDataIO(DbManager):
 
         self.bulk_query(sql, data_tuples)
 
-    @ResearchDataSyncManager.register_as_research('news', i=True)
+    @DataSyncManager.register_as_research('news', i=True)
     def set_news(self, news_data: List[Dict[str, Any]]) -> None:
         """
         Insert or update news articles and their relationships to stock symbols.
@@ -256,7 +255,7 @@ class ResearchDataIO(DbManager):
         WHERE uuid IN ({uuid_placeholders})
         """
         uuid_rows = self.simple_query(uuid_sql, tuple(uuid_set))
-        uuid_cipher = {i.get('uuid'): i.get('news_id') for i in uuid_rows}
+        uuid_cipher = {i.get('uuid'): i.get('news_id') for i in uuid_rows} # type: ignore
 
         # Find symbol id for associated ticker
         ticker_sql = f"""
@@ -265,7 +264,7 @@ class ResearchDataIO(DbManager):
         WHERE ticker in ({ticker_placeholders})
         """
         ticker_rows = self.simple_query(ticker_sql, tuple(ticker_set))
-        ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows}
+        ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows} # type: ignore
 
         # go from {uuid: [ticker]} to {news_id: [ticker_id]}
         translated_related_uuids = {}
@@ -292,7 +291,7 @@ class ResearchDataIO(DbManager):
         """
         self.bulk_query(news_symbols_sql, news_symbols_tuples)
 
-    @ResearchDataSyncManager.register_as_research('company_profile', i=True)
+    @DataSyncManager.register_as_research('company_profile', i=True)
     def set_company_profile(
         self,
         company_overview: Dict[str, Dict[str, Union[str, int]]]
@@ -359,7 +358,7 @@ class ResearchDataIO(DbManager):
         """
         self.bulk_query(sql, summary_tuples)
 
-    @ResearchDataSyncManager.register_as_research('insider_trades', i=True)
+    @DataSyncManager.register_as_research('insider_trades', i=True)
     def set_insider_trades(self, trade_data: dict):
         """
         param:
@@ -404,7 +403,8 @@ class ResearchDataIO(DbManager):
         self.bulk_query(sql, insider_tuples)
 
         ### GETTERS ###
-    @ResearchDataSyncManager.register_as_research('historical_prices', o=True)
+    
+    @DataSyncManager.register_as_research('historical_prices', o=True)
     def get_historical_prices(self, symbols):
         """
         list of dicts
@@ -425,7 +425,7 @@ class ResearchDataIO(DbManager):
 
         return self.simple_query(sql, symbols)
 
-    @ResearchDataSyncManager.register_as_research('financial_metrics', o=True)
+    @DataSyncManager.register_as_research('financial_metrics', o=True)
     def get_financial_metrics(self, symbols):
         """
         list of dicts
@@ -449,13 +449,13 @@ class ResearchDataIO(DbManager):
 
         rows = self.simple_query(sql, symbols)
         rows_clean = []
-        for row in rows:
+        for row in rows: # type: ignore
             # remove primary key from select *
             rows_clean.append({k: v for k, v in row.items() if k != "id" and k != "symbol_id"})
 
         return rows_clean
 
-    @ResearchDataSyncManager.register_as_research('news', o=True)
+    @DataSyncManager.register_as_research('news', o=True)
     def get_news(self, symbol = None, limit = 10):
         """
         Retrieve news articles, optionally filtered by symbol.
@@ -485,7 +485,7 @@ class ResearchDataIO(DbManager):
             """
             return self.simple_query(sql, (limit,))
 
-    @ResearchDataSyncManager.register_as_research('company_profile', o=True)
+    @DataSyncManager.register_as_research('company_profile', o=True)
     def get_company_profile(self, symbols):
         """
         Retrieve company profile information for one or more symbols.
@@ -530,7 +530,7 @@ class ResearchDataIO(DbManager):
 
         return self.simple_query(sql, symbols)
 
-    @ResearchDataSyncManager.register_as_research('insider_trades', o=True)
+    @DataSyncManager.register_as_research('insider_trades', o=True)
     def get_insider_trades(self, symbols, limit: int = 50):
         """
         Retrieve insider trading transactions for one or more symbols.
@@ -576,7 +576,7 @@ class ResearchDataIO(DbManager):
                it.transaction_value, it.filer_name, it.filer_relation,
                it.transaction_text, it.last_updated
         FROM insider_trades AS it
-        JOIN symbols AS s ON s.id = it.symbol_id
+        JOIN symbols AS s ON s.id = it.symbol_idk
         WHERE s.ticker IN ({placeholders})
         ORDER BY it.transaction_date DESC
         LIMIT ?

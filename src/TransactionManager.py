@@ -57,7 +57,7 @@ class TransactionManager(DbManager):
         )
         if query:
             logger.debug(f"Symbol {symbol} found in DB")
-            return query[0]  # Return the row dict
+            return query[0]  # type: ignore # Return the row dict
         else:
             logger.debug(f"Symbol {symbol} not in DB")
             return None
@@ -182,7 +182,7 @@ class TransactionManager(DbManager):
                 logger.warning(f"{symbol} invalid. Not found locally nor online.")
                 return False
 
-    def record_buy_order_in_transactions_table(self, ) -> bool:
+    def record_buy_order_in_transactions_table(self, ):
         """
         Query db to record a buy after prior verification.
 
@@ -190,7 +190,7 @@ class TransactionManager(DbManager):
         """
         pass
 
-    def write_pending_transaction_to_session(self, session, tx_type: str) -> bool:
+    def write_pending_transaction_to_session(self, session, tx_type: str):
         """
 
         """

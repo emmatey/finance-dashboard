@@ -2,7 +2,7 @@ import datetime
 import logging
 import pandas as pd
 import yahooquery as yq
-from ResearchDataSyncManager import ResearchDataSyncManager
+from DataSyncManager import DataSyncManager
 from typing import List, Tuple, Dict, Union, Any, Callable, Optional
 from YahooAPIClient import yq_exception_handler
 
@@ -21,7 +21,7 @@ class YahooQueryService:
         search_factory: Callable that creates yahooquery Search instances
     """
 
-    def __init__(self, ticker_factory: Callable = yq.Ticker, search_factory: Callable = yq.search) -> None:
+    def __init__(self, ticker_factory = yq.Ticker, search_factory = yq.search) -> None:
         """
         Initialize the Yahoo Query Service.
 
@@ -136,7 +136,7 @@ class YahooQueryService:
 
         return price_map
     
-    @ResearchDataSyncManager.register_as_research('historical_prices', api=True)
+    @DataSyncManager.register_as_research('historical_prices', api=True)
     @yq_exception_handler()
     def yq_ticker_historical_prices(
         self,
@@ -193,7 +193,7 @@ class YahooQueryService:
             logger.warning(f"Price retrieval error for {symbol}.")
             return None
 
-    @ResearchDataSyncManager.register_as_research('stock_splits', api=True)
+    @DataSyncManager.register_as_research('stock_splits', api=True)
     @yq_exception_handler()
     def yq_ticker_stock_splits(
         self,
@@ -242,7 +242,7 @@ class YahooQueryService:
 
         return list(zip(dates, split_ratios, symbols_list))
 
-    @ResearchDataSyncManager.register_as_research('news', api=True)
+    @DataSyncManager.register_as_research('news', api=True)
     @yq_exception_handler()
     def yq_search_get_news(
         self,
@@ -326,7 +326,7 @@ class YahooQueryService:
 
         return news
 
-    @ResearchDataSyncManager.register_as_research('financial_metrics', api=True, modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData'])
+    @DataSyncManager.register_as_research('financial_metrics', api=True, modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData'])
     def get_financial_metrics(
         self,
         modules_dict: Dict[str, Dict[str, Any]]
@@ -406,7 +406,7 @@ class YahooQueryService:
 
         return out
 
-    @ResearchDataSyncManager.register_as_research('company_profile', api=True, modules=['summaryProfile'])
+    @DataSyncManager.register_as_research('company_profile', api=True, modules=['summaryProfile'])
     def get_company_overview(
         self,
         modules_dict: Dict[str, Dict[str, Any]]
@@ -459,12 +459,12 @@ class YahooQueryService:
 
         return out
 
-    @ResearchDataSyncManager.register_as_research('insider_trades', api=True, modules=['insiderTransactions'])
+    @DataSyncManager.register_as_research('insider_trades', api=True, modules=['insiderTransactions'])
     def get_insider_trades(
         self,
-        module_dict: Dict[str, Dict[str, list[Dict]]],
+        module_dict,
         timeframe_in_years: int = 5
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ):
         """
         Extract and filter insider trading transaction data.
 
@@ -525,10 +525,7 @@ class YahooQueryService:
         out = {}
 
         for symbol, data in module_dict.items():
-            insiderTransactions = data.get("insiderTransactions")
-            # Extract transactions list from response
-            # Raw response includes: maxAge, shares, value, filerUrl, transactionText,
-            # filerName, filerRelation, moneyText, startDate, ownership
+            insiderTransactions = data.get("insiderTransactions", {})
             transactions_list = insiderTransactions.get('transactions')
             if not transactions_list:
                 out[symbol] = []
@@ -564,3 +561,4 @@ class YahooQueryService:
             out[symbol] = filtered_transactions
 
         return out
+

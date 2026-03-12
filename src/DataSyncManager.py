@@ -24,7 +24,7 @@ class TableLifetimes(Enum):
     insider_trades = 86400  # 24 hours
 
 
-class ResearchDataSyncManager(DbManager):
+class DataSyncManager(DbManager):
     """
     Handles updating of individual SQL tables of finance data based on the age
     of the records.
@@ -55,7 +55,7 @@ class ResearchDataSyncManager(DbManager):
             return func
         return decorator
 
-    def create_fresh_report(self, symbol):
+    def create_research_fresh_report(self, symbol):
         """
         Check the age of stored data using a single optimized CTE query.
 

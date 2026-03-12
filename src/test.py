@@ -4,7 +4,7 @@ from DbManager import DbManager
 from dotenv import load_dotenv
 from ResearchDataIO import ResearchDataIO
 from ReportManager import ReportManager
-from ResearchDataSyncManager import ResearchDataSyncManager
+from DataSyncManager import DataSyncManager
 from TransactionManager import TransactionManager
 from YahooAPIClient import YahooAPIClient
 from YahooQueryService import YahooQueryService
@@ -47,7 +47,7 @@ def home():
     db = DbManager()
     io = ResearchDataIO()
     rm = ReportManager()
-    sm = ResearchDataSyncManager()
+    sm = DataSyncManager()
     tm = TransactionManager()
     api = YahooAPIClient()
     yqs = YahooQueryService()
