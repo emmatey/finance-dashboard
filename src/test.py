@@ -53,6 +53,7 @@ def home():
     yqs = YahooQueryService()
     dae = Satan()
 
+
     
 
 

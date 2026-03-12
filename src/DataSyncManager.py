@@ -29,7 +29,7 @@ class DataSyncManager(DbManager):
     Handles updating of individual SQL tables of finance data based on the age
     of the records.
     """
-    registry = {table_name: {'i': False, 'o': False, 'api': False, 'modules': []} for table_name in TableLifetimes.__members__}
+    research_registry = {table_name: {'i': False, 'o': False, 'api': False, 'modules': []} for table_name in TableLifetimes.__members__}
 
     @classmethod
     def register_as_research(cls, table_name, i=False, o=False, api=False, modules=[]):
@@ -40,15 +40,15 @@ class DataSyncManager(DbManager):
                 raise ValueError(f"Invalid table '{table_name}'. Must be in TableLifetimes enum.")
             if i:
                 logger.debug(f"Registered {func} as db in function for {table_name}.")
-                cls.registry[table_name]['i'] = func
+                cls.research_registry[table_name]['i'] = func
             elif o:
                 logger.debug(f"Registered {func} as db out function for {table_name}.")
-                cls.registry[table_name]['o'] = func
+                cls.research_registry[table_name]['o'] = func
             elif api:
                 logger.debug(f"Registered {func} as api getter function for {table_name}.")
-                cls.registry[table_name]['api'] = func
+                cls.research_registry[table_name]['api'] = func
                 if modules:
-                    cls.registry[table_name]['modules'] = modules
+                    cls.research_registry[table_name]['modules'] = modules
             else:
                 raise ValueError("Must specify function relation to table, i.e i = in, o = out, api = api adapter.")
 
@@ -176,7 +176,7 @@ class DataSyncManager(DbManager):
         modules_set = set()
         for table, status in fresh_report.items():
             if status is False:
-                required_modules = self.registry[table].get('modules')
+                required_modules = self.research_registry[table].get('modules')
                 if required_modules:
                     for m in required_modules:
                         modules_set.add(m)
@@ -196,9 +196,9 @@ class DataSyncManager(DbManager):
             if status is False:
                 try:
                     # Fetch functions from registry
-                    api_func = self.registry[table]['api']
-                    in_func = self.registry[table]['i']
-                    modules_required = self.registry[table]['modules']
+                    api_func = self.research_registry[table]['api']
+                    in_func = self.research_registry[table]['i']
+                    modules_required = self.research_registry[table]['modules']
 
                     if not api_func or not in_func:
                         logger.error(f"Incomplete registration for {table}: api={api_func}, in={in_func}")

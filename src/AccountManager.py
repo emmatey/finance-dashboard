@@ -5,6 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 class AccountManager(DbManager):
     """
     This class handles login, registration, and account deletion.
+    - User rank among active players.
     """
 
     def login(self, username, password, session):
