@@ -569,12 +569,27 @@ class YahooQueryService:
         return out
 
     @yq_exception_handler()
-    def yq_screener_get_screeners(self, screeners: List[str]) -> pd.DataFrame:
+    def yq_screener_get_screeners(self, screeners: List[str] | str) -> pd.DataFrame:
         """
         In the style of get_modules, query yahoo API for screener objects.
 
         Args: screeners: a list of the names of the screeners requested.
         """
+        # Clean input.
+        safe_input = []
+        if isinstance(screeners, str):
+            safe_input.append(screeners.strip())
+        elif isinstance(screeners, list):
+            for i in screeners:
+                safe_input.append(str(i).strip())
+        else:
+            raise ValueError(
+                "yq_screener_get_screeners 'screeners' paramater must be a str, or list of strs which represent screener names.\n\
+                https://yahooquery.dpguthrie.com/guide/screener/#get_screeners")
+    
+
+
+
 
     def get_most_active_tickers(self):
         """
