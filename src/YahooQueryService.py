@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import yahooquery as yq
 from DataSyncManager import DataSyncManager
-from typing import List, Tuple, Dict, Union, Any, Callable, Optional
+from typing import List, Tuple, Dict, Union, Any, Optional
 from YahooAPIClient import yq_exception_handler
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,12 @@ class YahooQueryService:
         search_factory: Callable that creates yahooquery Search instances
     """
 
-    def __init__(self, ticker_factory = yq.Ticker, search_factory = yq.search) -> None:
+    def __init__(
+            self,
+            ticker_factory = yq.Ticker,
+            search_factory = yq.search,
+            screener_factory = yq.Screener
+            ) -> None:
         """
         Initialize the Yahoo Query Service.
 
@@ -31,6 +36,7 @@ class YahooQueryService:
         """
         self.ticker_factory = ticker_factory
         self.search_factory = search_factory
+        self.screener_factory = screener_factory
 
     @yq_exception_handler()
     def yq_ticker_get_modules(
@@ -562,3 +568,36 @@ class YahooQueryService:
 
         return out
 
+    @yq_exception_handler()
+    def yq_screener_get_screeners(self, screeners: List[str]) -> pd.DataFrame:
+        """
+        In the style of get_modules, query yahoo API for screener objects.
+
+        Args: screeners: a list of the names of the screeners requested.
+        """
+
+    def get_most_active_tickers(self):
+        """
+        Uses "most_active" screener to get the most traded tickers currently.
+        """
+        pass
+    
+    def get_most_visited_tickers(self):
+        """
+        Uses "most_visited" screener to get most viewed tickers currently.
+        """
+        pass
+        
+    def get_day_gainers(self):
+        """
+        Uses "day_gainers" screener to get tickers with biggest positive price swing
+        as a % of stock price today.
+        """ 
+        pass
+        
+    def get_day_losers(self):
+        """
+        Uses "day_losers" screener to get tickers with biggest negative price swing
+        as a % of stock price today.
+        """
+        pass

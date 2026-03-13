@@ -55,9 +55,12 @@ def home():
     dae = Satan()
     moc = MarketOverviewCoordinator()
 
+    # most_actives
+    # day_gainers
+    # day_losers
+    # most visited
 
-    res = moc.update_regional_overview()
-    print(res)
+    yqs.get_trending_tickers()
 
 
     filler_page = """
