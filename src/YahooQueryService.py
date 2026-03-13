@@ -569,11 +569,16 @@ class YahooQueryService:
         return out
 
     @yq_exception_handler()
-    def yq_screener_get_screeners(self, screeners: List[str] | str) -> pd.DataFrame:
+    def yq_screener_get_screeners(self,
+                                  screeners: List[str] | str,
+                                  count: int = 10
+                                  ) -> Dict:
         """
         In the style of get_modules, query yahoo API for screener objects.
 
         Args: screeners: a list of the names of the screeners requested.
+
+        Screener Format: https://yahooquery.dpguthrie.com/guide/screener/#get_screeners
         """
         # Clean input.
         safe_input = []
@@ -587,22 +592,33 @@ class YahooQueryService:
                 "yq_screener_get_screeners 'screeners' paramater must be a str, or list of strs which represent screener names.\n\
                 https://yahooquery.dpguthrie.com/guide/screener/#get_screeners")
     
+        # Call get_screeners
+        s = self.screener_factory()
+        screeners = s.get_screeners(safe_input, count)
 
+        return screeners
 
-
-
-    def get_most_active_tickers(self):
+    def get_most_active_tickers(self, screeners: Dict) -> Dict:
         """
         Uses "most_active" screener to get the most traded tickers currently.
+
+        Args: screeners, the data returned from get_screeners()
+
+        Returns: 
         """
-        pass
+        # Extract required data from screeners arg.
+            # Filter out the top 10
+            # Filter for only equities
+            # Filter for regularMarketPrice over one dollar
+            # 
+        # Format for db/io setter.
     
     def get_most_visited_tickers(self):
         """
         Uses "most_visited" screener to get most viewed tickers currently.
         """
         pass
-        
+    
     def get_day_gainers(self):
         """
         Uses "day_gainers" screener to get tickers with biggest positive price swing
@@ -615,4 +631,12 @@ class YahooQueryService:
         Uses "day_losers" screener to get tickers with biggest negative price swing
         as a % of stock price today.
         """
+        pass
+
+    def get_relative_volumes(self):
+        """
+        Find the stocks with the largest spikes in relative trade volume.
+        """
+        # averageDailyVolume3Month
+        # vs regularMarketVolume
         pass
