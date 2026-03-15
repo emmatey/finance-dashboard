@@ -105,10 +105,13 @@ CREATE TABLE 'financial_metrics' (
     fifty_two_week_high NUMERIC,
     fifty_two_week_low NUMERIC,
     rating TEXT,
-    target_price NUMERIC,
     analyst_count INTEGER,
+    target_price NUMERIC,
     current_ratio NUMERIC,
     debt_to_equity NUMERIC,
+    todays_volume NUMERIC,
+    ten_day_avg_volume NUMERIC,
+    three_month_avg_volume NUMERIC,    
 
     FOREIGN KEY (symbol_id) REFERENCES symbols (id)
 );

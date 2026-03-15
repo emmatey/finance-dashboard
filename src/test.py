@@ -74,7 +74,6 @@ def home():
     #    print(i['region'])
     #    print(i['symbol'])
     #    print(i['fullExchangeName'])
-
     #    print(i['longName'])
     #    
     #    # Current Price Data

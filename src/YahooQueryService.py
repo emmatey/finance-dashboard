@@ -407,7 +407,12 @@ class YahooQueryService:
                 "target_price": financialData.get('targetMeanPrice'),
                 "analyst_count": financialData.get('numberOfAnalystOpinions'),
                 "current_ratio": financialData.get('currentRatio'),
-                "debt_to_equity": financialData.get('debtToEquity')
+                "debt_to_equity": financialData.get('debtToEquity'),
+
+                # Volume Over Time
+                "todays_volume": summaryDetail.get('regularMarketVolume'),
+                "ten_day_avg_volume": summaryDetail.get('averageVolume10days'),
+                "three_month_avg_volume": summaryDetail.get('averageVolume')
             }
             out[symbol] = metrics
 
