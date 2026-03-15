@@ -153,6 +153,17 @@ CREATE TABLE 'company_profile' (
 );
     CREATE UNIQUE INDEX idx_profile_symbol ON company_profile (symbol_id);
 
+CREATE TABLE screener_results (
+    id INTEGER PRIMARY KEY,
+    screener_name TEXT NOT NULL,  -- 'day_gainers', 'most_active', etc.
+    symbol_id INTEGER NOT NULL,
+    rank INTEGER,  -- position in screener (1 = top)
+    cached_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (symbol_id) REFERENCES symbols(id)
+);
+CREATE INDEX idx_screener_cached 
+ON screener_results(screener_name, cached_at);
+
 CREATE TABLE 'insider_trades' (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     symbol_id INTEGER NOT NULL,

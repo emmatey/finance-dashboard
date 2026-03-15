@@ -48,7 +48,7 @@ def home():
     db = DbManager()
     io = ResearchDataIO()
     rm = ReportManager()
-    sm = ResearchDataCoordinator()
+    rdc = ResearchDataCoordinator()
     tm = TransactionManager()
     api = YahooAPIClient()
     yqs = YahooQueryService()
@@ -66,7 +66,10 @@ def home():
     day_losers = res.get('day_losers').get('quotes')
     most_actives = res.get('most_actives').get('quotes')
     most_visited = res.get('most_visited').get('quotes')
-    print(day_gainers[0].keys())
+    
+
+    filtered = yqs._filter_screener_data(res)
+    print(filtered)
 
     #for i in thing:
     #    # ID

@@ -47,7 +47,7 @@ class ResearchDataIO(DbManager):
 
         logger.info(f"{symbol} written to DB!")
 
-        ### SETTERS ###
+    ### SETTERS ###
 
     @ResearchDataCoordinator.register_as_research('stock_splits', i=True)
     def set_stock_splits(self, stock_split_data: List[Tuple]) -> None:
@@ -402,7 +402,7 @@ class ResearchDataIO(DbManager):
         """
         self.bulk_query(sql, insider_tuples)
 
-        ### GETTERS ###
+    ### GETTERS ###
     
     @ResearchDataCoordinator.register_as_research('historical_prices', o=True)
     def get_historical_prices(self, symbols):
@@ -583,3 +583,64 @@ class ResearchDataIO(DbManager):
         """
 
         return self.simple_query(sql, symbols + (limit,))
+
+    def get_regional_overview(self, symbols) -> Dict[str, Dict[str, float]]:
+        """
+        Retrieve current regional market data from database.
+        
+        Args: Symbols, the dict mapping region to etf which represents said region's market.
+            eg. symbols = {
+            'USA' = 'VOO',
+            'EU' = 'IEUR',
+            ...
+            }
+
+        Returns:
+            Dict mapping region names to market data:
+            {
+                'USA': {
+                    'ticker': 'VOO',
+                    'current_price': 614.16,
+                    'prev_close': 622.03,
+                    'pct_change': -1.27
+                },
+                ...
+            }
+        """
+        symbols = list(symbols.values())
+        placeholders = ", ".join(['?' for _ in symbols])
+        
+        sql = f"""
+            SELECT 
+                s.ticker,
+                s.last_price as current_price,
+                fm.prev_close,
+                ((s.last_price - fm.prev_close) / fm.prev_close * 100) as pct_change
+            FROM symbols s
+            JOIN financial_metrics fm ON s.id = fm.symbol_id
+            WHERE s.ticker IN ({placeholders})
+        """
+        
+        rows = self.simple_query(sql, tuple(symbols))
+        assert isinstance(rows, list)
+        
+        # Map ticker symbols back to region names
+        ticker_to_region = {v: k for k, v in symbols.items()}
+        
+        result = {}
+        for row in rows:
+            ticker = row.get('ticker', '')
+            if not ticker:
+                continue
+                
+            region = ticker_to_region.get(ticker, ticker)
+            
+            result[region] = {
+                'ticker': ticker,
+                'current_price': row.get('current_price'),
+                'prev_close': row.get('prev_close'),
+                'pct_change': round(row.get('pct_change', 0), 2),
+            }
+        
+        logger.debug(f"Retrieved market data for {len(result)} regions")
+        return result

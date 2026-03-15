@@ -708,7 +708,7 @@ class YahooQueryService:
                 logger.info(f"  - {reason}: {count}")
         
         return dict(filtered_screeners)
-
+    
     def get_most_active_tickers(self, screeners: Dict) -> Dict:
         """
         Uses "most_active" screener to get the most traded tickers currently.
