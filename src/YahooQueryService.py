@@ -599,43 +599,110 @@ class YahooQueryService:
 
         return screeners
 
-    def _filter_screener_data(self, screeners):
+    def _filter_screener_data(
+        self, 
+        screeners: Dict[str, Dict[str, List[Dict[str, Any]]]]
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """
-        Remove securities which dont meet the following criteria.
-            1. Share price over $1.00
-            2. At least $50,000,000 market cap.
-            3. Excluding Pink sheets / OTC only ['PNK', 'OTC']
-            4. Average 10 day trade volume over 200,000
-
-        Structure: {'screener_name': {'quotes':[{company}, {company}]}}
-        https://yahooquery.dpguthrie.com/guide/screener/#get_screeners
+        Filter screener results to remove low-quality securities.
+        
+        Filtering criteria:
+            1. Share price > $1.00
+            2. Market cap ≥ $50,000,000
+            3. Exclude Pink Sheets/OTC exchanges ['PNK', 'OTC']
+            4. Average 10-day volume > 200,000
+        
+        Args:
+            screeners: Raw screener data from yahooquery
+                      Format: {
+                          'screener_name': {
+                              'quotes': [
+                                  {company_data},
+                                  {company_data}
+                              ]
+                          }
+                      }
+        
+        Returns:
+            Filtered screener data: {screener_name: [filtered_quotes]}
+        
+        Reference:
+            https://yahooquery.dpguthrie.com/guide/screener/#get_screeners
         """
-        # {screener_name: companies and info} i.e. remove things that don't pass filters, remove extra info.
-        filtered_screeners = defaultdict(list)
-
-        for screener, data in screeners.items():
-            logger.debug(f"Filtering {screener}...")
-            quotes: List[Dict] = data.get('quotes')
-            if quotes:
-                for quote in quotes:
-                    share_price = quote.get('regularMarketPrice', 0)
-                    market_cap = quote.get('marketCap', 0)
-                    exchange:str = quote.get('exchange')
-                    volume = quote.get('averageDailyVolume10Day', 0)
-
-                    if share_price < 1:
-                        continue
-                    if market_cap < 50000000:
-                        continue
-                    if exchange.upper() in ['PNK', 'OTC']:
-                        continue
-                    if volume < 200000:
-                        continue
-                    else:
-                        filtered_screeners[screener].append(quote)
-            else:
-                logger.warning(f'Quote data not available for {screener}')
+        filtered_screeners: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        
+        # Track filtering stats
+        total_processed = 0
+        total_filtered = 0
+        filter_reasons = defaultdict(int)  # Track why stocks were filtered
+        
+        for screener_name, data in screeners.items():
+            logger.debug(f"Processing screener: {screener_name}")
+            
+            quotes: List[Dict] = data.get('quotes', [])
+            
+            if not quotes:
+                logger.warning(f"No quote data available for '{screener_name}'")
                 continue
+            
+            initial_count = len(quotes)
+            logger.debug(f"  Initial quotes: {initial_count}")
+            
+            for quote in quotes:
+                total_processed += 1
+                
+                # Extract filter criteria
+                share_price = quote.get('regularMarketPrice', 0)
+                market_cap = quote.get('marketCap', 0)
+                exchange = quote.get('exchange', '').upper()
+                avg_volume_10d = quote.get('averageDailyVolume10Day', 0)
+                symbol = quote.get('symbol', 'UNKNOWN')
+                
+                # Apply filters with logging
+                if share_price < 1.00:
+                    filter_reasons['price_too_low'] += 1
+                    logger.debug(f"  Filtered {symbol}: Price ${share_price:.2f} < $1.00")
+                    continue
+                
+                if market_cap < 50_000_000:
+                    filter_reasons['market_cap_too_low'] += 1
+                    logger.debug(f"  Filtered {symbol}: Market cap ${market_cap:,.0f} < $50M")
+                    continue
+                
+                if exchange in ['PNK', 'OTC']:
+                    filter_reasons['excluded_exchange'] += 1
+                    logger.debug(f"  Filtered {symbol}: Exchange '{exchange}' is Pink Sheets/OTC")
+                    continue
+                
+                if avg_volume_10d < 200_000:
+                    filter_reasons['volume_too_low'] += 1
+                    logger.debug(f"  Filtered {symbol}: Avg volume {avg_volume_10d:,.0f} < 200,000")
+                    continue
+                
+                # Passed all filters
+                filtered_screeners[screener_name].append(quote)
+                total_filtered += 1
+            
+            final_count = len(filtered_screeners[screener_name])
+            filtered_out = initial_count - final_count
+            
+            logger.info(
+                f"Screener '{screener_name}': {final_count}/{initial_count} passed filters "
+                f"({filtered_out} filtered out)"
+            )
+        
+        # Summary logging
+        logger.info(
+            f"Filtering complete: {total_filtered}/{total_processed} quotes passed filters "
+            f"({total_processed - total_filtered} filtered out)"
+        )
+        
+        if filter_reasons:
+            logger.info("Filter breakdown:")
+            for reason, count in sorted(filter_reasons.items(), key=lambda x: x[1], reverse=True):
+                logger.info(f"  - {reason}: {count}")
+        
+        return dict(filtered_screeners)
 
     def get_most_active_tickers(self, screeners: Dict) -> Dict:
         """
