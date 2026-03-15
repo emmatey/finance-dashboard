@@ -709,46 +709,57 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
     
-    def get_most_active_tickers(self, screeners: Dict) -> Dict:
+    def get_relative_volumes(self, screeners: Dict, qty=25) -> Dict[str, List[Dict]]:
         """
-        Uses "most_active" screener to get the most traded tickers currently.
-
-        Args: screeners, the data returned from get_screeners()
-
-        Returns: 
-        """
-        pass
-        # Extract required data from screeners arg.
-            # Filter out the top 10
-            # Filter for only equities
-            # Filter for regularMarketPrice over one dollar
-            # 
-        # Format for db/io setter.
+        Find stocks with largest volume spikes from existing screener results.
     
-    def get_most_visited_tickers(self):
+        Returns dict with 'volume_spikes' key containing quotes ordered by relative volume.
         """
-        Uses "most_visited" screener to get most viewed tickers currently.
-        """
-        pass
+        all_quotes = []
     
-    def get_day_gainers(self):
+        # Collect all unique quotes (avoid duplicates)
+        seen_tickers = set()
+        for quotes in screeners.values():
+            for quote in quotes:
+                ticker = quote.get('symbol')
+                if ticker not in seen_tickers:
+                    all_quotes.append(quote)
+                    seen_tickers.add(ticker)
+    
+        # Calculate relative volume and keep the full quote
+        volume_spikes = []
+        for quote in all_quotes:
+            current_vol = quote.get('regularMarketVolume', 0)
+            avg_vol_3m = quote.get('averageDailyVolume3Month', 1)
+    
+            if avg_vol_3m > 0:
+                relative_volume = current_vol / avg_vol_3m
+                # Only include actual spikes (> 1.0)
+                if relative_volume > 1.0:
+                    volume_spikes.append({
+                        'quote': quote,  # Keep full quote object
+                        'relative_volume': relative_volume
+                    })
+    
+        # Sort by spike magnitude
+        volume_spikes.sort(key=lambda x: x['relative_volume'], reverse=True)
+    
+        # Return just the quote objects (extract_screener_data_for_db needs these)
+        return {'volume_spikes': [spike['quote'] for spike in volume_spikes[:qty]]}
+    
+    def extract_screener_data_for_db(self, screeners: Dict) -> Dict[str, List[Dict[str, Any]]]:
         """
-        Uses "day_gainers" screener to get tickers with biggest positive price swing
-        as a % of stock price today.
-        """ 
-        pass
-        
-    def get_day_losers(self):
+        Extract screener data required for database insertion.
         """
-        Uses "day_losers" screener to get tickers with biggest negative price swing
-        as a % of stock price today.
-        """
-        pass
 
-    def get_relative_volumes(self):
-        """
-        Find the stocks with the largest spikes in relative trade volume.
-        """
-        # averageDailyVolume3Month
-        # vs regularMarketVolume
-        pass
+        extracted = {}
+
+        for screener, quotes in screeners.items():
+            tickers = []
+            for quote in quotes:
+                # Screeners are already ordered.
+                tickers.append(quote.get('symbol'))
+            
+            extracted[screener] = tickers
+
+        return extracted
