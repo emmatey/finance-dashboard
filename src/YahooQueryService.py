@@ -2,7 +2,7 @@ import datetime
 import logging
 import pandas as pd
 import yahooquery as yq
-from DataSyncManager import DataSyncManager
+from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import List, Tuple, Dict, Union, Any, Optional
 from YahooAPIClient import yq_exception_handler
 
@@ -142,7 +142,7 @@ class YahooQueryService:
 
         return price_map
     
-    @DataSyncManager.register_as_research('historical_prices', api=True)
+    @ResearchDataCoordinator.register_as_research('historical_prices', api=True)
     @yq_exception_handler()
     def yq_ticker_historical_prices(
         self,
@@ -199,7 +199,7 @@ class YahooQueryService:
             logger.warning(f"Price retrieval error for {symbol}.")
             return None
 
-    @DataSyncManager.register_as_research('stock_splits', api=True)
+    @ResearchDataCoordinator.register_as_research('stock_splits', api=True)
     @yq_exception_handler()
     def yq_ticker_stock_splits(
         self,
@@ -248,7 +248,7 @@ class YahooQueryService:
 
         return list(zip(dates, split_ratios, symbols_list))
 
-    @DataSyncManager.register_as_research('news', api=True)
+    @ResearchDataCoordinator.register_as_research('news', api=True)
     @yq_exception_handler()
     def yq_search_get_news(
         self,
@@ -332,7 +332,7 @@ class YahooQueryService:
 
         return news
 
-    @DataSyncManager.register_as_research('financial_metrics', api=True, modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData'])
+    @ResearchDataCoordinator.register_as_research('financial_metrics', api=True, modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData'])
     def get_financial_metrics(
         self,
         modules_dict: Dict[str, Dict[str, Any]]
@@ -412,7 +412,7 @@ class YahooQueryService:
 
         return out
 
-    @DataSyncManager.register_as_research('company_profile', api=True, modules=['summaryProfile'])
+    @ResearchDataCoordinator.register_as_research('company_profile', api=True, modules=['summaryProfile'])
     def get_company_overview(
         self,
         modules_dict: Dict[str, Dict[str, Any]]
@@ -465,7 +465,7 @@ class YahooQueryService:
 
         return out
 
-    @DataSyncManager.register_as_research('insider_trades', api=True, modules=['insiderTransactions'])
+    @ResearchDataCoordinator.register_as_research('insider_trades', api=True, modules=['insiderTransactions'])
     def get_insider_trades(
         self,
         module_dict,
@@ -598,6 +598,13 @@ class YahooQueryService:
 
         return screeners
 
+    def _post_screen_screener_data(self, screeners):
+        """
+        Remove securities which dont meet the following criteria.
+            1. 
+        """
+        pass
+
     def get_most_active_tickers(self, screeners: Dict) -> Dict:
         """
         Uses "most_active" screener to get the most traded tickers currently.
@@ -606,6 +613,7 @@ class YahooQueryService:
 
         Returns: 
         """
+        pass
         # Extract required data from screeners arg.
             # Filter out the top 10
             # Filter for only equities

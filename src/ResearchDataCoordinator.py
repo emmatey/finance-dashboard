@@ -24,7 +24,7 @@ class TableLifetimes(Enum):
     insider_trades = 86400  # 24 hours
 
 
-class DataSyncManager(DbManager):
+class ResearchDataCoordinator(DbManager):
     """
     Handles updating of individual SQL tables of finance data based on the age
     of the records.

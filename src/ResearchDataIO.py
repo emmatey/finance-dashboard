@@ -1,7 +1,7 @@
 import logging
 
 from DbManager import DbManager
-from DataSyncManager import DataSyncManager
+from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 
@@ -49,7 +49,7 @@ class ResearchDataIO(DbManager):
 
         ### SETTERS ###
 
-    @DataSyncManager.register_as_research('stock_splits', i=True)
+    @ResearchDataCoordinator.register_as_research('stock_splits', i=True)
     def set_stock_splits(self, stock_split_data: List[Tuple]) -> None:
         """
         (ticker, datetime, ratio)
@@ -74,7 +74,7 @@ class ResearchDataIO(DbManager):
 
         self.bulk_query(sql, stock_split_data)
 
-    @DataSyncManager.register_as_research('historical_prices', i=True)
+    @ResearchDataCoordinator.register_as_research('historical_prices', i=True)
     def set_historical_prices(self, price_data):
         """
         price_data eg [(datetime.date(2026, 2, 24), 166.46000671, 2468500, 'MMM')]
@@ -105,7 +105,7 @@ class ResearchDataIO(DbManager):
 
         self.bulk_query(sql, price_data)
 
-    @DataSyncManager.register_as_research('financial_metrics', i=True)
+    @ResearchDataCoordinator.register_as_research('financial_metrics', i=True)
     def set_financial_metrics(
         self,
         metrics: Dict[str, Dict[str, Optional[Union[float, str, int]]]]
@@ -176,7 +176,7 @@ class ResearchDataIO(DbManager):
 
         self.bulk_query(sql, data_tuples)
 
-    @DataSyncManager.register_as_research('news', i=True)
+    @ResearchDataCoordinator.register_as_research('news', i=True)
     def set_news(self, news_data: List[Dict[str, Any]]) -> None:
         """
         Insert or update news articles and their relationships to stock symbols.
@@ -291,7 +291,7 @@ class ResearchDataIO(DbManager):
         """
         self.bulk_query(news_symbols_sql, news_symbols_tuples)
 
-    @DataSyncManager.register_as_research('company_profile', i=True)
+    @ResearchDataCoordinator.register_as_research('company_profile', i=True)
     def set_company_profile(
         self,
         company_overview: Dict[str, Dict[str, Union[str, int]]]
@@ -358,7 +358,7 @@ class ResearchDataIO(DbManager):
         """
         self.bulk_query(sql, summary_tuples)
 
-    @DataSyncManager.register_as_research('insider_trades', i=True)
+    @ResearchDataCoordinator.register_as_research('insider_trades', i=True)
     def set_insider_trades(self, trade_data: dict):
         """
         param:
@@ -404,7 +404,7 @@ class ResearchDataIO(DbManager):
 
         ### GETTERS ###
     
-    @DataSyncManager.register_as_research('historical_prices', o=True)
+    @ResearchDataCoordinator.register_as_research('historical_prices', o=True)
     def get_historical_prices(self, symbols):
         """
         list of dicts
@@ -425,7 +425,7 @@ class ResearchDataIO(DbManager):
 
         return self.simple_query(sql, symbols)
 
-    @DataSyncManager.register_as_research('financial_metrics', o=True)
+    @ResearchDataCoordinator.register_as_research('financial_metrics', o=True)
     def get_financial_metrics(self, symbols):
         """
         list of dicts
@@ -455,7 +455,7 @@ class ResearchDataIO(DbManager):
 
         return rows_clean
 
-    @DataSyncManager.register_as_research('news', o=True)
+    @ResearchDataCoordinator.register_as_research('news', o=True)
     def get_news(self, symbol = None, limit = 10):
         """
         Retrieve news articles, optionally filtered by symbol.
@@ -485,7 +485,7 @@ class ResearchDataIO(DbManager):
             """
             return self.simple_query(sql, (limit,))
 
-    @DataSyncManager.register_as_research('company_profile', o=True)
+    @ResearchDataCoordinator.register_as_research('company_profile', o=True)
     def get_company_profile(self, symbols):
         """
         Retrieve company profile information for one or more symbols.
@@ -530,7 +530,7 @@ class ResearchDataIO(DbManager):
 
         return self.simple_query(sql, symbols)
 
-    @DataSyncManager.register_as_research('insider_trades', o=True)
+    @ResearchDataCoordinator.register_as_research('insider_trades', o=True)
     def get_insider_trades(self, symbols, limit: int = 50):
         """
         Retrieve insider trading transactions for one or more symbols.
