@@ -709,14 +709,14 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
     
-    def get_relative_volumes(self, screeners: Dict, qty=25) -> Dict[str, List[Dict]]:
+    def get_relative_volumes(self, screeners: Dict, qty=25) -> List[str]:
         """
         Find stocks with largest volume spikes from existing screener results.
-    
-        Returns dict with 'volume_spikes' key containing quotes ordered by relative volume.
+
+        Returns list of tickers ordered by relative volume spike.
         """
         all_quotes = []
-    
+
         # Collect all unique quotes (avoid duplicates)
         seen_tickers = set()
         for quotes in screeners.values():
@@ -725,27 +725,27 @@ class YahooQueryService:
                 if ticker not in seen_tickers:
                     all_quotes.append(quote)
                     seen_tickers.add(ticker)
-    
-        # Calculate relative volume and keep the full quote
+
+        # Calculate relative volume
         volume_spikes = []
         for quote in all_quotes:
             current_vol = quote.get('regularMarketVolume', 0)
             avg_vol_3m = quote.get('averageDailyVolume3Month', 1)
-    
+
             if avg_vol_3m > 0:
                 relative_volume = current_vol / avg_vol_3m
                 # Only include actual spikes (> 1.0)
                 if relative_volume > 1.0:
                     volume_spikes.append({
-                        'quote': quote,  # Keep full quote object
+                        'ticker': quote.get('symbol'),
                         'relative_volume': relative_volume
                     })
-    
+
         # Sort by spike magnitude
         volume_spikes.sort(key=lambda x: x['relative_volume'], reverse=True)
-    
-        # Return just the quote objects (extract_screener_data_for_db needs these)
-        return {'volume_spikes': [spike['quote'] for spike in volume_spikes[:qty]]}
+
+        # Return just tickers in order
+        return {'volume_spikes': volume_spikes[:qty]}
     
     def extract_screener_data_for_db(self, screeners: Dict) -> Dict[str, List[Dict[str, Any]]]:
         """
