@@ -709,7 +709,7 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
     
-    def get_relative_volumes(self, screeners: Dict, qty=25) -> List[str]:
+    def get_relative_volumes(self, screeners: Dict, qty=10) -> List[str]:
         """
         Find stocks with largest volume spikes from existing screener results.
 
@@ -737,7 +737,7 @@ class YahooQueryService:
                 # Only include actual spikes (> 1.0)
                 if relative_volume > 1.0:
                     volume_spikes.append({
-                        'ticker': quote.get('symbol'),
+                        'symbol': quote.get('symbol'),
                         'relative_volume': relative_volume
                     })
 
@@ -751,7 +751,6 @@ class YahooQueryService:
         """
         Extract screener data required for database insertion.
         """
-
         extracted = {}
 
         for screener, quotes in screeners.items():

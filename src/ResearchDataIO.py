@@ -402,6 +402,12 @@ class ResearchDataIO(DbManager):
         """
         self.bulk_query(sql, insider_tuples)
 
+    def set_screeners(self, screener_metadata: dict):
+        """
+        in: {screener_name: [tickers in order]}
+        """
+        sql
+
     ### GETTERS ###
     
     @ResearchDataCoordinator.register_as_research('historical_prices', o=True)
