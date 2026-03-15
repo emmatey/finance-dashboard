@@ -2,6 +2,7 @@ import datetime
 import logging
 import pandas as pd
 import yahooquery as yq
+from collections import defaultdict
 from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import List, Tuple, Dict, Union, Any, Optional
 from YahooAPIClient import yq_exception_handler
@@ -598,12 +599,43 @@ class YahooQueryService:
 
         return screeners
 
-    def _post_screen_screener_data(self, screeners):
+    def _filter_screener_data(self, screeners):
         """
         Remove securities which dont meet the following criteria.
-            1. 
+            1. Share price over $1.00
+            2. At least $50,000,000 market cap.
+            3. Excluding Pink sheets / OTC only ['PNK', 'OTC']
+            4. Average 10 day trade volume over 200,000
+
+        Structure: {'screener_name': {'quotes':[{company}, {company}]}}
+        https://yahooquery.dpguthrie.com/guide/screener/#get_screeners
         """
-        pass
+        # {screener_name: companies and info} i.e. remove things that don't pass filters, remove extra info.
+        filtered_screeners = defaultdict(list)
+
+        for screener, data in screeners.items():
+            logger.debug(f"Filtering {screener}...")
+            quotes: List[Dict] = data.get('quotes')
+            if quotes:
+                for quote in quotes:
+                    share_price = quote.get('regularMarketPrice', 0)
+                    market_cap = quote.get('marketCap', 0)
+                    exchange:str = quote.get('exchange')
+                    volume = quote.get('averageDailyVolume10Day', 0)
+
+                    if share_price < 1:
+                        continue
+                    if market_cap < 50000000:
+                        continue
+                    if exchange.upper() in ['PNK', 'OTC']:
+                        continue
+                    if volume < 200000:
+                        continue
+                    else:
+                        filtered_screeners[screener].append(quote)
+            else:
+                logger.warning(f'Quote data not available for {screener}')
+                continue
 
     def get_most_active_tickers(self, screeners: Dict) -> Dict:
         """
