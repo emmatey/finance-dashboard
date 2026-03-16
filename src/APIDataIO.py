@@ -626,31 +626,56 @@ class APIDataIO(DbManager):
 
         return self.simple_query(sql, symbols + (limit,))
 
-    def get_regional_overview(self, symbols) -> Dict[str, Dict[str, float]]:
+    def get_regional_overview(self, symbols) -> List[Dict[str, Union[str, float]]]:
         """
         Retrieve current regional market data from database.
         
-        Args: Symbols, the dict mapping region to etf which represents said region's market.
-            eg. symbols = {
-            'USA' = 'VOO',
-            'EU' = 'IEUR',
-            ...
-            }
-
+        Fetches ETF data for regional market indicators and calculates percent change
+        from previous close. Data must be initialized via initialize_regional_etfs()
+        before calling this method.
+        
+        Args:
+            symbols: Dict mapping region names to ETF tickers
+                    Format: {'USA': 'VOO', 'Europe': 'IEUR', 'Asia': 'VPL', ...}
+        
         Returns:
-            Dict mapping region names to market data:
-            {
-                'USA': {
+            List of dicts containing regional market data:
+            [
+                {
+                    'region': 'USA',
                     'ticker': 'VOO',
                     'current_price': 614.16,
                     'prev_close': 622.03,
                     'pct_change': -1.27
                 },
+                {
+                    'region': 'Europe',
+                    'ticker': 'IEUR',
+                    'current_price': 89.45,
+                    'prev_close': 90.12,
+                    'pct_change': -0.74
+                },
                 ...
-            }
+            ]
+            Returns empty list if no data found
+        
+        Note:
+            - Percent change calculated as: ((current - prev_close) / prev_close) * 100
+            - Requires fresh data from initialize_regional_etfs()
+            - Results ordered by region name alphabetically
+        
+        Example:
+            >>> regional_data = db.get_regional_overview(coordinator.SYMBOLS)
+            >>> for region in regional_data:
+            >>>     print(f"{region['region']}: {region['pct_change']:+.2f}%")
+            USA: -1.27%
+            Europe: -0.74%
         """
-        symbols = list(symbols.values())
-        placeholders = ", ".join(['?' for _ in symbols])
+        if not symbols:
+            return []
+        
+        tickers = list(symbols.values())
+        placeholders = ", ".join(['?' for _ in tickers])
         
         sql = f"""
             SELECT 
@@ -663,26 +688,33 @@ class APIDataIO(DbManager):
             WHERE s.ticker IN ({placeholders})
         """
         
-        rows = self.simple_query(sql, tuple(symbols))
-        assert isinstance(rows, list)
+        rows = self.simple_query(sql, tuple(tickers))
+        
+        if not isinstance(rows, list):
+            logger.warning("get_regional_overview: unexpected return type from simple_query")
+            return []
         
         # Map ticker symbols back to region names
         ticker_to_region = {v: k for k, v in symbols.items()}
         
-        result = {}
+        result = []
         for row in rows:
             ticker = row.get('ticker', '')
             if not ticker:
                 continue
-                
+            
             region = ticker_to_region.get(ticker, ticker)
             
-            result[region] = {
+            result.append({
+                'region': region,
                 'ticker': ticker,
                 'current_price': row.get('current_price'),
                 'prev_close': row.get('prev_close'),
                 'pct_change': round(row.get('pct_change', 0), 2),
-            }
+            })
+        
+        # Sort by region name for consistent ordering
+        result.sort(key=lambda x: x['region'])
         
         logger.debug(f"Retrieved market data for {len(result)} regions")
         return result
