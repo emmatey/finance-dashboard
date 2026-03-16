@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 logger = logging.getLogger(__name__)
 
 
-class ResearchDataIO(DbManager):
+class APIDataIO(DbManager):
     """
     CRUD type operations on data from Yahoo API.
 
@@ -32,7 +32,11 @@ class ResearchDataIO(DbManager):
         """
         symbol = symbol.upper()
         price_module = price_module_raw[symbol].get('price')
-        company_name = price_module.get('longName', symbol.upper())
+        company_name = (
+            price_module.get('longName') or 
+            price_module.get('shortName') or 
+            symbol.upper()
+        )
         last_price = price_module.get('regularMarketPrice', 0)
 
         sql = """
@@ -402,11 +406,105 @@ class ResearchDataIO(DbManager):
         """
         self.bulk_query(sql, insider_tuples)
 
-    def set_screeners(self, screener_metadata: dict):
+    def set_screeners(self, screener_metadata: Dict[str, List[str]], yqs_instance) -> None:
         """
-        in: {screener_name: [tickers in order]}
+        Update screener results in the database with fresh data.
+
+        Clears all existing screener data and replaces it with current rankings.
+        Ensures all tickers exist in the symbols table before insertion, fetching
+        missing ticker data from Yahoo Finance as needed.
+
+        Args:
+            screener_metadata: Output from extract_screener_data_for_db()
+                              Format: {
+                                  'day_gainers': ['NVDA', 'TSLA', 'AMD', ...],
+                                  'most_actives': ['AAPL', 'MSFT', 'GOOGL', ...],
+                                  'volume_spikes': ['ULTA', 'KYIV', ...]
+                              }
+                              Each list is ordered by rank (index 0 = rank 1)
+            yqs_instance: YahooQueryService instance for fetching missing ticker data
+
+        Returns:
+            None
+
+        Database Operations:
+            1. Validates all tickers exist in symbols table (fetches if missing)
+            2. Deletes all existing screener_results rows
+            3. Inserts fresh screener data with current rankings
+
+        Note:
+            - This is a full table replacement, not an upsert
+            - Silently skips tickers that cannot be fetched from Yahoo Finance
+            - Auto-incremented IDs continue incrementing (not reset to 1)
+            - Rank values start at 1 for each screener
+            - last_updated timestamp is auto-set by database
+
+        Example:
+                 # Full pipeline
+            >>> raw = yqs.yq_screener_get_screeners(['day_gainers', 'most_actives'], count=25)
+            >>> filtered = yqs._filter_screener_data(raw)
+            >>> volume_swings = yqs.get_relative_volumes(filtered)
+            >>> filtered.update(volume_swings)
+            >>> screener_data = yqs.extract_screener_data_for_db(filtered)
+            >>> db_io.set_screeners(screener_data, yqs)
+            INFO: Inserted 50 fresh screener results across 2 screeners
         """
-        sql
+
+        # Collect all unique tickers across all screeners
+        all_tickers: set[str] = set()
+        for tickers in screener_metadata.values():
+            all_tickers.update(tickers)
+
+        # Query database for existing tickers
+        if not all_tickers:
+            logger.warning("No tickers to process")
+            return
+
+        placeholders = ','.join('?' * len(all_tickers))
+        existing_tickers_query = self.simple_query(
+            f"SELECT ticker FROM symbols WHERE ticker IN ({placeholders})",
+            tuple(all_tickers)
+        )
+
+        # Create set of existing tickers
+        existing_tickers: set[str] = {row['ticker'] for row in existing_tickers_query}
+
+        # Find tickers that need to be fetched
+        missing_tickers = all_tickers - existing_tickers
+
+        # Fetch and insert missing tickers
+        if missing_tickers:
+            logger.info(f"Fetching data for {len(missing_tickers)} new tickers: {missing_tickers}")
+            modules = yqs_instance.yq_ticker_get_modules(list(missing_tickers), ['price'])
+
+            for ticker in missing_tickers:
+                # Fetch price module from Yahoo Finance
+                if modules and ticker in modules:
+                    self.upsert_symbol(ticker, modules)
+                else:
+                    logger.warning(f"Could not fetch data for {ticker}, skipping")
+        else:
+            logger.debug("All tickers already exist in symbols table")
+        
+        # Clear old screener data.
+        self.simple_query("DELETE FROM screener_results")
+
+        # Insert/update screener results
+        sql = sql = """
+            INSERT INTO screener_results (symbol_id, screener_name, rank)
+            SELECT s.id, ?, ?
+            FROM symbols AS s
+            WHERE ticker = ?
+        """
+        
+        screener_tuples: List[Tuple[str, int, str]] = []
+        for screener_name, tickers in screener_metadata.items():
+            for rank, ticker in enumerate(tickers, start=1):
+                screener_tuples.append((screener_name, rank, ticker))
+        
+        self.bulk_query(sql, screener_tuples)
+        logger.info(f"Upserted {len(screener_tuples)} screener results across {len(screener_metadata)} screeners")
+
 
     ### GETTERS ###
     

@@ -1,7 +1,7 @@
 import datetime as dt
 import logging
 from typing import Dict, Optional
-from ResearchDataIO import ResearchDataIO as io
+from APIDataIO import APIDataIO as io
 from YahooQueryService import YahooQueryService as yqs
 from DbManager import DbManager
 
@@ -34,7 +34,7 @@ class MarketOverviewCoordinator(DbManager):
         'Oil': 'USO'
     }
 
-    def update_region_etfs(self, symbols=SYMBOLS, yqs_instance=yqs(), dbio_instance=io()):
+    def upsert_region_etfs(self, symbols=SYMBOLS, yqs_instance=yqs(), dbio_instance=io()):
         """
         Update the underlying data for the ETFs in the SYMBOLS dict.
         

@@ -2,7 +2,7 @@ from flask import Flask
 from AccountManager import AccountManager
 from DbManager import DbManager
 from dotenv import load_dotenv
-from ResearchDataIO import ResearchDataIO
+from APIDataIO import APIDataIO
 from ReportManager import ReportManager
 from ResearchDataCoordinator import ResearchDataCoordinator
 from TransactionManager import TransactionManager
@@ -46,7 +46,7 @@ def home():
     ################################################################################
     am = AccountManager()
     db = DbManager()
-    io = ResearchDataIO()
+    io = APIDataIO()
     rm = ReportManager()
     rdc = ResearchDataCoordinator()
     tm = TransactionManager()
@@ -68,9 +68,11 @@ def home():
     volume_swings = yqs.get_relative_volumes(filtered)
     filtered.update(volume_swings)
     rankings = yqs.extract_screener_data_for_db(filtered)
+
+    io.set_screeners(rankings, yqs)
     
-    print(volume_swings)
-    print(rankings)
+    #print(volume_swings)
+    #print(rankings)
 
     #for i in thing:
     #    # ID
