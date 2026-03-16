@@ -101,9 +101,14 @@ CREATE TABLE 'financial_metrics' (
     trailing_pe NUMERIC,
     forward_pe NUMERIC,
     profit_margin NUMERIC,
+    shares_outstanding NUMERIC,
+    book_value NUMERIC,
+    price_to_book NUMERIC,
     dividend_yield NUMERIC,
     fifty_two_week_high NUMERIC,
     fifty_two_week_low NUMERIC,
+    fifty_day_average NUMERIC,
+    two_hundred_day_average NUMERIC,
     rating TEXT,
     analyst_count INTEGER,
     target_price NUMERIC,
@@ -179,3 +184,5 @@ CREATE TABLE 'insider_trades' (
 );
     CREATE UNIQUE INDEX idx_insider_trades_symbol_date_filer
     ON insider_trades (symbol_id, transaction_date, filer_name, shares);
+
+INSERT INTO global_events (yq_api_status) VALUES ('UP');

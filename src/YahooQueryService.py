@@ -396,12 +396,17 @@ class YahooQueryService:
                 "trailing_pe": defaultKeyStatistics.get('trailingPE'),
                 "forward_pe": defaultKeyStatistics.get('forwardPE'),
                 "profit_margin": defaultKeyStatistics.get('profitMargins'),
+                "shares_outstanding": defaultKeyStatistics.get('sharesOutstanding'),
+                "book_value": defaultKeyStatistics.get('bookValue'),
+                "price_to_book": defaultKeyStatistics.get('priceToBook'),
 
                 # Range & Yield (summaryDetail module)
                 "dividend_yield": summaryDetail.get('dividendYield'),
                 "fifty_two_week_high": summaryDetail.get('fiftyTwoWeekHigh'),
                 "fifty_two_week_low": summaryDetail.get('fiftyTwoWeekLow'),
-
+                "fifty_day_average": summaryDetail.get('fiftyDayAverage'),
+                "two_hundred_day_average": summaryDetail.get('twoHundredDayAverage'),
+                
                 # Analyst Sentiment & Health (financialData module)
                 "rating": financialData.get('recommendationKey'),
                 "target_price": financialData.get('targetMeanPrice'),
@@ -709,6 +714,18 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
     
+    def get_screener_data(self, screeners: dict) -> dict:
+        """
+        Extracts any data from the screeners which is stored in any db tables.
+        This will be used to avoid later API calls.
+        The qty of data extracted will be tracked, tables with enough data found 
+        will have their timestamp updated too so that freshness checks by the researchdatamanager
+        will skip these tables.
+        
+    
+        """
+        pass
+
     def get_relative_volumes(self, screeners: Dict, qty=10) -> List[str]:
         """
         Find stocks with largest volume spikes from existing screener results.
@@ -747,7 +764,7 @@ class YahooQueryService:
         # Return just tickers in order
         return {'volume_spikes': volume_spikes[:qty]}
     
-    def extract_screener_data_for_db(self, screeners: Dict) -> Dict[str, List[Dict[str, Any]]]:
+    def get_screener_metadata(self, screeners: Dict) -> Dict[str, List[Dict[str, Any]]]:
         """
         Extract screener data required for database insertion.
         """

@@ -408,41 +408,11 @@ class APIDataIO(DbManager):
 
     def set_screeners(self, screener_metadata: Dict[str, List[str]], yqs_instance) -> None:
         """
-        Update screener results in the database with fresh data.
-
-        Clears all existing screener data and replaces it with current rankings.
-        Ensures all tickers exist in the symbols table before insertion, fetching
-        missing ticker data from Yahoo Finance as needed.
-
-        Args:
-            screener_metadata: Output from extract_screener_data_for_db()
-                              Format: {
-                                  'day_gainers': ['NVDA', 'TSLA', 'AMD', ...],
-                                  'most_actives': ['AAPL', 'MSFT', 'GOOGL', ...],
-                                  'volume_spikes': ['ULTA', 'KYIV', ...]
-                              }
-                              Each list is ordered by rank (index 0 = rank 1)
-            yqs_instance: YahooQueryService instance for fetching missing ticker data
-
-        Returns:
-            None
-
-        Database Operations:
-            1. Validates all tickers exist in symbols table (fetches if missing)
-            2. Fetches financial metrics for missing tickers (needed for homepage percent change)
-            3. Deletes all existing screener_results rows
-            4. Inserts fresh screener data with current rankings
-
-        Note:
-            - This is a full table replacement, not an upsert
-            - Silently skips tickers that cannot be fetched from Yahoo Finance
-            - Auto-incremented IDs continue incrementing (not reset to 1)
-            - Rank values start at 1 for each screener
-            - last_updated timestamp is auto-set by database
-
+        Insert screener metadata to db.
+        
         Example:
                  # Full pipeline
-            >>> raw = yqs.yq_screener_get_screeners(['day_gainers', 'most_actives'], count=25)
+            >>> raw = yqs.yq_screener_get_screeners(['day_gainers', 'most_actives'], count=n)
             >>> filtered = yqs._filter_screener_data(raw)
             >>> volume_swings = yqs.get_relative_volumes(filtered)
             >>> filtered.update(volume_swings)
@@ -450,56 +420,6 @@ class APIDataIO(DbManager):
             >>> db_io.set_screeners(screener_data, yqs)
             INFO: Inserted 50 fresh screener results across 2 screeners
         """
-
-        # Collect all unique tickers across all screeners
-        all_tickers: set[str] = set()
-        for tickers in screener_metadata.values():
-            all_tickers.update(tickers)
-
-        # Query database for existing tickers
-        if not all_tickers:
-            logger.warning("No tickers to process")
-            return
-
-        placeholders = ','.join('?' * len(all_tickers))
-        existing_tickers_query = self.simple_query(
-            f"SELECT ticker FROM symbols WHERE ticker IN ({placeholders})",
-            tuple(all_tickers)
-        )
-
-        # Create set of existing tickers
-        existing_tickers: set[str] = {row['ticker'] for row in existing_tickers_query}
-
-        # Find tickers that need to be fetched
-        missing_tickers = all_tickers - existing_tickers
-
-        # Fetch and insert missing tickers
-        if missing_tickers:
-            logger.info(f"Fetching data for {len(missing_tickers)} new tickers: {missing_tickers}")
-            # Fetch all needed modules in one batch call
-            modules = yqs_instance.yq_ticker_get_modules(
-                list(missing_tickers), 
-                ['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData']
-            )
-
-            if modules:
-                # Insert symbols for all missing tickers
-                for ticker in missing_tickers:
-                    if ticker in modules:
-                        self.upsert_symbol(ticker, modules)
-                    else:
-                        logger.warning(f"Could not fetch data for {ticker}, skipping")
-
-                # Extract and batch insert financial metrics
-                metrics = yqs_instance.get_financial_metrics(modules)
-                if metrics:
-                    self.set_financial_metrics(metrics)
-                    logger.info(f"Inserted symbols and financial metrics for {len(metrics)} new tickers")
-            else:
-                logger.warning("No module data returned from Yahoo Finance")
-        else:
-            logger.debug("All tickers already exist in symbols table")
-
         # Clear old screener data
         self.simple_query("DELETE FROM screener_results")
 
