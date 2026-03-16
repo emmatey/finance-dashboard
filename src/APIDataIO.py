@@ -429,8 +429,9 @@ class APIDataIO(DbManager):
 
         Database Operations:
             1. Validates all tickers exist in symbols table (fetches if missing)
-            2. Deletes all existing screener_results rows
-            3. Inserts fresh screener data with current rankings
+            2. Fetches financial metrics for missing tickers (needed for homepage percent change)
+            3. Deletes all existing screener_results rows
+            4. Inserts fresh screener data with current rankings
 
         Note:
             - This is a full table replacement, not an upsert
@@ -475,36 +476,48 @@ class APIDataIO(DbManager):
         # Fetch and insert missing tickers
         if missing_tickers:
             logger.info(f"Fetching data for {len(missing_tickers)} new tickers: {missing_tickers}")
-            modules = yqs_instance.yq_ticker_get_modules(list(missing_tickers), ['price'])
+            # Fetch all needed modules in one batch call
+            modules = yqs_instance.yq_ticker_get_modules(
+                list(missing_tickers), 
+                ['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData']
+            )
 
-            for ticker in missing_tickers:
-                # Fetch price module from Yahoo Finance
-                if modules and ticker in modules:
-                    self.upsert_symbol(ticker, modules)
-                else:
-                    logger.warning(f"Could not fetch data for {ticker}, skipping")
+            if modules:
+                # Insert symbols for all missing tickers
+                for ticker in missing_tickers:
+                    if ticker in modules:
+                        self.upsert_symbol(ticker, modules)
+                    else:
+                        logger.warning(f"Could not fetch data for {ticker}, skipping")
+
+                # Extract and batch insert financial metrics
+                metrics = yqs_instance.get_financial_metrics(modules)
+                if metrics:
+                    self.set_financial_metrics(metrics)
+                    logger.info(f"Inserted symbols and financial metrics for {len(metrics)} new tickers")
+            else:
+                logger.warning("No module data returned from Yahoo Finance")
         else:
             logger.debug("All tickers already exist in symbols table")
-        
-        # Clear old screener data.
+
+        # Clear old screener data
         self.simple_query("DELETE FROM screener_results")
 
-        # Insert/update screener results
-        sql = sql = """
+        # Insert fresh screener results
+        sql = """
             INSERT INTO screener_results (symbol_id, screener_name, rank)
             SELECT s.id, ?, ?
             FROM symbols AS s
             WHERE ticker = ?
         """
-        
+
         screener_tuples: List[Tuple[str, int, str]] = []
         for screener_name, tickers in screener_metadata.items():
             for rank, ticker in enumerate(tickers, start=1):
                 screener_tuples.append((screener_name, rank, ticker))
-        
-        self.bulk_query(sql, screener_tuples)
-        logger.info(f"Upserted {len(screener_tuples)} screener results across {len(screener_metadata)} screeners")
 
+        self.bulk_query(sql, screener_tuples)
+        logger.info(f"Inserted {len(screener_tuples)} screener results across {len(screener_metadata)} screeners")
 
     ### GETTERS ###
     
