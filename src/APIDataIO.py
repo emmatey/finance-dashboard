@@ -112,7 +112,8 @@ class APIDataIO(DbManager):
     @ResearchDataCoordinator.register_as_research('financial_metrics', i=True)
     def set_financial_metrics(
         self,
-        metrics: Dict[str, Dict[str, Optional[Union[float, str, int]]]]
+        metrics: Dict[str, Dict[str, Optional[Union[float, str, int]]]],
+        from_screeners = False
     ) -> None:
         """
         Insert or update financial metrics for one or more companies in the database.
@@ -168,6 +169,10 @@ class APIDataIO(DbManager):
             buffer.append(symbol)  # ticker for WHERE clause
             data_tuples.append(tuple(buffer))
 
+        update_time = ""
+        if from_screeners == False:
+            # Dont update timestamp on incomplete data from screeners.
+            update_time = "last_updated=CURRENT_TIMESTAMP,"
         sql = f"""
             INSERT INTO financial_metrics (symbol_id, {table_cols_str})
             SELECT id, {placeholders}
@@ -175,7 +180,7 @@ class APIDataIO(DbManager):
             WHERE ticker = ?
             ON CONFLICT(symbol_id)
             DO UPDATE SET
-            last_updated=CURRENT_TIMESTAMP, {excluded_cols_str}
+            {update_time} {excluded_cols_str}
             """
 
         self.bulk_query(sql, data_tuples)
@@ -406,7 +411,7 @@ class APIDataIO(DbManager):
         """
         self.bulk_query(sql, insider_tuples)
 
-    def set_screeners(self, screener_metadata: Dict[str, List[str]], yqs_instance) -> None:
+    def set_screeners_metadata(self, screener_metadata: Dict[str, List[str]], yqs_instance) -> None:
         """
         Insert screener metadata to db.
         

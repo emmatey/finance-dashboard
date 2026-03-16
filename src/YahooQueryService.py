@@ -406,7 +406,7 @@ class YahooQueryService:
                 "fifty_two_week_low": summaryDetail.get('fiftyTwoWeekLow'),
                 "fifty_day_average": summaryDetail.get('fiftyDayAverage'),
                 "two_hundred_day_average": summaryDetail.get('twoHundredDayAverage'),
-                
+
                 # Analyst Sentiment & Health (financialData module)
                 "rating": financialData.get('recommendationKey'),
                 "target_price": financialData.get('targetMeanPrice'),
@@ -713,19 +713,7 @@ class YahooQueryService:
                 logger.info(f"  - {reason}: {count}")
         
         return dict(filtered_screeners)
-    
-    def get_screener_data(self, screeners: dict) -> dict:
-        """
-        Extracts any data from the screeners which is stored in any db tables.
-        This will be used to avoid later API calls.
-        The qty of data extracted will be tracked, tables with enough data found 
-        will have their timestamp updated too so that freshness checks by the researchdatamanager
-        will skip these tables.
-        
-    
-        """
-        pass
-
+ 
     def get_relative_volumes(self, screeners: Dict, qty=10) -> List[str]:
         """
         Find stocks with largest volume spikes from existing screener results.
@@ -779,3 +767,57 @@ class YahooQueryService:
             extracted[screener] = tickers
 
         return extracted
+    
+    def get_screener_data(self, screeners: dict) -> dict:
+        """
+        Extracts any data from the screeners which can be stored in DB tables.
+        """
+        # financial metrics = {symbol: data}
+        # price = {symbol:{price: data}}        
+
+        financial_metrics_table_data_aggregate = {}
+        symbols_table_data_aggregate = {}
+        
+        for screener_name, data in screeners.items():
+            logger.info(f"Extracting data from {screener_name}.")
+            for quote in data:
+                ticker = quote.get('symbol')
+                financial_metrics_table_data_aggregate[ticker] = {}
+                symbols_table_data_aggregate[ticker] = {}
+                
+                symbols = {
+                    # ========== symbols table ==========
+                    'ticker': quote.get('symbol'),
+                    'longName': quote.get('longName') or quote.get('shortName') or quote.get('symbol'),
+                    'last_price': quote.get('regularMarketPrice')
+                }
+
+                financial_metrics = {
+                    # ========== financial_metrics table ==========
+                    'market_open': quote.get('regularMarketOpen'),
+                    'prev_close': quote.get('regularMarketPreviousClose'),
+                    'market_cap': quote.get('marketCap'),
+                    'eps': quote.get('epsTrailingTwelveMonths'),
+                    'beta': quote.get('beta'),
+                    'trailing_pe': quote.get('trailingPE'),
+                    'forward_pe': quote.get('forwardPE'),
+                    'profit_margin': quote.get('profitMargins'),
+                    'shares_outstanding': quote.get('sharesOutstanding'),
+                    'book_value': quote.get('bookValue'),
+                    'price_to_book': quote.get('priceToBook'),
+                    'dividend_yield': quote.get('trailingAnnualDividendYield'),
+                    'fifty_two_week_high': quote.get('fiftyTwoWeekHigh'),
+                    'fifty_two_week_low': quote.get('fiftyTwoWeekLow'),
+                    'fifty_day_average': quote.get('fiftyDayAverage'),
+                    'two_hundred_day_average': quote.get('twoHundredDayAverage'),
+                    'rating': quote.get('averageAnalystRating'),
+                    'todays_volume': quote.get('regularMarketVolume'),
+                    'ten_day_avg_volume': quote.get('averageDailyVolume10Day'),
+                    'three_month_avg_volume': quote.get('averageDailyVolume3Month')
+                }
+
+                financial_metrics_table_data_aggregate[ticker].update(financial_metrics)
+                symbols_table_data_aggregate[ticker].update(symbols)
+        
+        simulated_price_module = {}
+        
