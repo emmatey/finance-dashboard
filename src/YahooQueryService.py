@@ -820,4 +820,9 @@ class YahooQueryService:
                 symbols_table_data_aggregate[ticker].update(symbols)
         
         simulated_price_module = {}
+        for ticker, data in symbols_table_data_aggregate.items():
+            simulated_price_module[ticker] = {'price':{}}
+            simulated_price_module[ticker]['price'] = data      
+        
+        return (simulated_price_module, financial_metrics_table_data_aggregate)
         

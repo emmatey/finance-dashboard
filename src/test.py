@@ -69,9 +69,12 @@ def home():
     filtered.update(volume_swings)
 
     metadata = yqs.get_screener_metadata(filtered)
-    data = yqs.get_screener_data(filtered)
-    
+    price_module, metrics = yqs.get_screener_data(filtered)
+
+    for ticker in price_module:
+        io.upsert_symbol(ticker, price_module)
     io.set_screeners_metadata(metadata, yqs)
+    io.set_financial_metrics(metrics, from_screeners=True)
 
 
 
