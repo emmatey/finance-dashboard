@@ -718,3 +718,94 @@ class APIDataIO(DbManager):
         
         logger.debug(f"Retrieved market data for {len(result)} regions")
         return result
+    
+    def get_screener_results(self, screener_name: str, limit: int = 10) -> List[Dict[str, Union[int, str, float]]]:
+        """
+        Retrieve top N stocks from a screener with current market data.
+
+        Fetches ranked stocks from a screener along with real-time pricing, volume,
+        and market cap data. Designed for homepage screener widgets.
+
+        Args:
+            screener_name: Name of screener to query
+                          Options: 'day_gainers', 'day_losers', 'most_actives',
+                                  'most_watched_tickers', 'fifty_two_wk_gainers',
+                                  'fifty_two_wk_losers', 'volume_spike_bullish',
+                                  'volume_spike_bearish'
+            limit: Maximum number of results to return (default: 10)
+
+        Returns:
+            List of dicts containing screener results with current data:
+            [
+                {
+                    'rank': 1,
+                    'ticker': 'NVDA',
+                    'company_name': 'NVIDIA Corporation',
+                    'current_price': 875.43,
+                    'prev_close': 862.10,
+                    'pct_change': 1.55,
+                    'market_cap': 2150000000000,
+                    'volume': 45000000,
+                    'avg_volume': 38000000,
+                    'volume_change_pct': 18.42
+                },
+                ...
+            ]
+            Returns empty list if screener not found or no results
+
+        Note:
+            - Results ordered by rank (1 = top performing)
+            - price_chage_pct: ((current_price - prev_close) / prev_close) * 100
+            - volume_change_pct: ((today_volume - avg_volume_3m) / avg_volume_3m) * 100
+            - Requires fresh data from set_screeners() and set_financial_metrics()
+
+        Example:
+            >>> gainers = db.get_screener_results('day_gainers', limit=5)
+            >>> for stock in gainers:
+            >>>     print(f"#{stock['rank']}: {stock['ticker']} {stock['pct_change']:+.2f}%")
+            #1: NVDA +1.55%
+            #2: TSLA +0.89%
+        """
+        sql = """
+            SELECT 
+                sr.rank,
+                s.ticker,
+                s.company_name,
+                s.last_price as current_price,
+                fm.prev_close,
+                (((s.last_price - fm.prev_close) / fm.prev_close) * 100.00) as price_change_pct,
+                fm.market_cap,
+                fm.todays_volume,
+                fm.three_month_avg_volume,
+                (((CAST(fm.todays_volume AS REAL) - fm.three_month_avg_volume) / fm.three_month_avg_volume) * 100.00) as volume_change_pct
+            FROM screener_results AS sr
+            JOIN symbols AS s ON sr.symbol_id = s.id
+            JOIN financial_metrics AS fm ON s.id = fm.symbol_id
+            WHERE sr.screener_name = ?
+            ORDER BY sr.rank
+            LIMIT ?
+        """
+
+        rows = self.simple_query(sql, (screener_name, limit))
+
+        if not isinstance(rows, list):
+            logger.warning(f"get_screener_results: no results found for screener '{screener_name}'")
+            return []
+
+        rankings = []
+        for row in rows:
+            data = {
+                'rank': row['rank'],
+                'ticker': row['ticker'],
+                'company_name': row['company_name'],
+                'current_price': row['current_price'],
+                'prev_close': row['prev_close'],
+                'price_change_pct': round(row['price_change_pct'], 2) if row['price_change_pct'] is not None else 0.0,
+                'market_cap': row['market_cap'],
+                'todays_volume': row['todays_volume'],
+                'three_month_avg_volume': row['three_month_avg_volume'],
+                'volume_change_pct': round(row['volume_change_pct'], 2) if row['volume_change_pct'] is not None else 0.0
+            }
+            rankings.append(data)
+
+        return rankings

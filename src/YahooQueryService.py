@@ -714,14 +714,46 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
  
-    def get_relative_volumes(self, screeners: Dict, qty=10) -> List[str]:
+    def get_relative_volumes(self, screeners: Dict, qty: int = 10) -> Dict[str, List[Dict]]:
         """
-        Find stocks with largest volume spikes from existing screener results.
-
-        Returns list of tickers ordered by relative volume spike.
+        Find stocks with largest volume spikes, split by price direction.
+        
+        Analyzes screener data to identify volume spikes (trading volume significantly
+        above 3-month average) and categorizes them as bullish (price up) or bearish
+        (price down) based on daily price movement.
+        
+        Args:
+            screeners: Filtered screener dict from _filter_screener_data()
+                      Format: {'day_gainers': [quote_dicts], ...}
+            qty: Number of results per screener (default: 10)
+        
+        Returns:
+            Dict with two screener lists:
+            {
+                'volume_spike_bullish': [
+                    {'symbol': 'NVDA', 'relative_volume': 2.5},
+                    ...
+                ],
+                'volume_spike_bearish': [
+                    {'symbol': 'TSLA', 'relative_volume': 3.1},
+                    ...
+                ]
+            }
+        
+        Note:
+            - Relative volume = current_volume / avg_volume_3m
+            - Only includes spikes > 1.5x average volume
+            - Bullish: volume spike + price increase
+            - Bearish: volume spike + price decrease
+            - Results sorted by relative volume (highest spike first)
+        
+        Example:
+            >>> volume_screeners = yqs.get_relative_volumes(filtered, qty=25)
+            >>> filtered.update(volume_screeners)
+            >>> # Now filtered has 'volume_spike_bullish' and 'volume_spike_bearish'
         """
         all_quotes = []
-
+        
         # Collect all unique quotes (avoid duplicates)
         seen_tickers = set()
         for quotes in screeners.values():
@@ -730,27 +762,45 @@ class YahooQueryService:
                 if ticker not in seen_tickers:
                     all_quotes.append(quote)
                     seen_tickers.add(ticker)
-
-        # Calculate relative volume
-        volume_spikes = []
+        
+        # Calculate relative volume and separate by price direction
+        bullish_spikes = []  # Volume spike + price up
+        bearish_spikes = []  # Volume spike + price down
+        
         for quote in all_quotes:
             current_vol = quote.get('regularMarketVolume', 0)
             avg_vol_3m = quote.get('averageDailyVolume3Month', 1)
-
-            if avg_vol_3m > 0:
+            
+            # Price change
+            current_price = quote.get('regularMarketPrice', 0)
+            prev_close = quote.get('regularMarketPreviousClose', 0)
+            
+            if avg_vol_3m > 0 and prev_close > 0:
                 relative_volume = current_vol / avg_vol_3m
-                # Only include actual spikes (> 1.0)
-                if relative_volume > 1.0:
-                    volume_spikes.append({
+                price_change_pct = ((current_price - prev_close) / prev_close) * 100
+                
+                # Only include significant volume spikes (> 1.5x normal)
+                if relative_volume > 1.5:
+                    spike_data = {
                         'symbol': quote.get('symbol'),
                         'relative_volume': relative_volume
-                    })
-
-        # Sort by spike magnitude
-        volume_spikes.sort(key=lambda x: x['relative_volume'], reverse=True)
-
-        # Return just tickers in order
-        return {'volume_spikes': volume_spikes[:qty]}
+                    }
+                    
+                    # Separate by price direction
+                    if price_change_pct > 0:
+                        bullish_spikes.append(spike_data)
+                    else:
+                        bearish_spikes.append(spike_data)
+        
+        # Sort by relative volume (highest spike first)
+        bullish_spikes.sort(key=lambda x: x['relative_volume'], reverse=True)
+        bearish_spikes.sort(key=lambda x: x['relative_volume'], reverse=True)
+        
+        # Return both screeners
+        return {
+            'volume_spike_bullish': bullish_spikes[:qty],
+            'volume_spike_bearish': bearish_spikes[:qty]
+        }
     
     def get_screener_metadata(self, screeners: Dict) -> Dict[str, List[Dict[str, Any]]]:
         """
