@@ -768,32 +768,31 @@ class YahooQueryService:
 
         return extracted
     
-    def get_screener_data(self, screeners: dict) -> dict:
+    def get_screener_data(self, screeners: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
         """
-        Extracts any data from the screeners which can be stored in DB tables.
-        """
-        # financial metrics = {symbol: data}
-        # price = {symbol:{price: data}}        
-
-        financial_metrics_table_data_aggregate = {}
-        symbols_table_data_aggregate = {}
+        Extract data from screener quotes for database insertion.
         
-        for screener_name, data in screeners.items():
-            logger.info(f"Extracting data from {screener_name}.")
-            for quote in data:
+        Merges data from duplicate tickers across screeners, preferring non-None values.
+        """
+        financial_metrics_aggregate = {}
+        price_modules_aggregate = {}
+        
+        for screener_name, quotes in screeners.items():
+            logger.debug(f"Extracting data from {screener_name}")
+            
+            for quote in quotes:
                 ticker = quote.get('symbol')
-                financial_metrics_table_data_aggregate[ticker] = {}
-                symbols_table_data_aggregate[ticker] = {}
                 
-                symbols = {
-                    # ========== symbols table ==========
-                    'ticker': quote.get('symbol'),
-                    'longName': quote.get('longName') or quote.get('shortName') or quote.get('symbol'),
-                    'last_price': quote.get('regularMarketPrice')
+                # Extract price module data
+                price_data = {
+                    'symbol': ticker,
+                    'longName': quote.get('longName'),
+                    'shortName': quote.get('shortName'),
+                    'regularMarketPrice': quote.get('regularMarketPrice')
                 }
-
-                financial_metrics = {
-                    # ========== financial_metrics table ==========
+                
+                # Extract financial metrics
+                metrics_data = {
                     'market_open': quote.get('regularMarketOpen'),
                     'prev_close': quote.get('regularMarketPreviousClose'),
                     'market_cap': quote.get('marketCap'),
@@ -811,18 +810,34 @@ class YahooQueryService:
                     'fifty_day_average': quote.get('fiftyDayAverage'),
                     'two_hundred_day_average': quote.get('twoHundredDayAverage'),
                     'rating': quote.get('averageAnalystRating'),
+                    'analyst_count': None,
+                    'target_price': None,
+                    'current_ratio': None,
+                    'debt_to_equity': None,
                     'todays_volume': quote.get('regularMarketVolume'),
                     'ten_day_avg_volume': quote.get('averageDailyVolume10Day'),
                     'three_month_avg_volume': quote.get('averageDailyVolume3Month')
                 }
-
-                financial_metrics_table_data_aggregate[ticker].update(financial_metrics)
-                symbols_table_data_aggregate[ticker].update(symbols)
+                
+                # Smart merge: only update if ticker already exists
+                if ticker in financial_metrics_aggregate:
+                    # Merge, preferring non-None values
+                    for key, new_value in metrics_data.items():
+                        if new_value is not None:
+                            # New value is good, use it
+                            financial_metrics_aggregate[ticker][key] = new_value
+                        # else: keep existing value (even if it's None)
+                    
+                    # Same for price data
+                    for key, new_value in price_data.items():
+                        if new_value is not None:
+                            if ticker not in price_modules_aggregate:
+                                price_modules_aggregate[ticker] = {'price': {}}
+                            price_modules_aggregate[ticker]['price'][key] = new_value
+                else:
+                    # First time seeing this ticker, just add it
+                    financial_metrics_aggregate[ticker] = metrics_data
+                    price_modules_aggregate[ticker] = {'price': price_data}
         
-        simulated_price_module = {}
-        for ticker, data in symbols_table_data_aggregate.items():
-            simulated_price_module[ticker] = {'price':{}}
-            simulated_price_module[ticker]['price'] = data      
-        
-        return (simulated_price_module, financial_metrics_table_data_aggregate)
-        
+        logger.info(f"Extracted data for {len(financial_metrics_aggregate)} unique tickers from {len(screeners)} screeners")
+        return (price_modules_aggregate, financial_metrics_aggregate)
