@@ -69,10 +69,11 @@ class MarketOverviewCoordinator(DbManager):
         """
         res = self.simple_query(sql, tuple(symbols.values()))
         assert isinstance(res, list)
+
         oldest = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
         tickers_found = 0
         for row in res:
-            time = row.get('last_updated', "1970-01-01 00:00:01")
+            time = row.get('last_updated')
             if isinstance(time, str):
                 tickers_found += 1
                 last_updated = dt.datetime.strptime(time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=dt.timezone.utc)
