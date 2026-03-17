@@ -43,7 +43,7 @@ class APIDataIO(DbManager):
             last_price = excluded.last_price,
             last_updated = CURRENT_TIMESTAMP
         """
-
+        symbols_tuples: list[tuple] = []
         for symbol, modules in modules_dict.items():
             price_module = modules.get('price')
             if price_module:
@@ -53,12 +53,13 @@ class APIDataIO(DbManager):
                     symbol.upper()
                 )
                 last_price = price_module.get('regularMarketPrice', 0)
-                logger.info(f"Updating 'symbols' table data for {symbol}")
+                symbols_tuples.append(tuple([symbol, company_name, last_price]))
 
-                self.simple_query(sql, (symbol, company_name, last_price))
             else:
                 logger.warning(f"'price' module not foud for {symbol}.")
 
+        self.bulk_query(sql, symbols_tuples)
+        
     ### SETTERS ###
 
     @ResearchDataCoordinator.register_as_research('stock_splits', i=True)
