@@ -24,14 +24,12 @@ class ReportManager(DbManager):
         Returns:
             User's cash balance as float, or None if user not found
         """
-        sql_literal = "SELECT cash FROM users WHERE id = ?"
-        placeholders = (user_id, )
-
-        res = self.simple_query(sql_literal, placeholders)
-        if res:
-            return res[0]['cash']
-        else:
+        sql = "SELECT cash FROM users WHERE id = ?"
+        res = self.simple_query(sql, (user_id,))
+        
+        if not isinstance(res, list) or not res:
             return None
+        return res[0]['cash']
 
 
     def get_holdings_value(self, user_id: int) -> float:
@@ -86,9 +84,13 @@ class ReportManager(DbManager):
             params = ()
         else:
             tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
-            params = (user_id, )
+            params = (user_id,)
 
         tx_query = self.simple_query(tx_sql, params)
+        
+        if not isinstance(tx_query, list):
+            logger.warning("_calculate_holdings_value: no transactions found")
+            return {}
 
         # Group by symbol_id
         symbol_id_grouped = defaultdict(list)
@@ -103,9 +105,14 @@ class ReportManager(DbManager):
         if not symbols:
             logger.debug("No holdings found for user(s). Returning empty result.")
             return {}
-        placeholders = ", ".join(('?' for _ in symbols))
-
+        
+        placeholders = ", ".join(['?' for _ in symbols])
         price_rows = self.simple_query(f"SELECT id, last_price FROM symbols WHERE id IN ({placeholders})", tuple(symbols))
+        
+        if not isinstance(price_rows, list):
+            logger.error("_calculate_holdings_value: failed to fetch prices")
+            return {}
+            
         price_map = {row['id']: row['last_price'] for row in price_rows}
 
         # Group by user
@@ -158,9 +165,15 @@ class ReportManager(DbManager):
         if not stock_ids:
             logger.debug(f"No portfolio holdings for user_id={user_id}")
             return []
+        
         placeholders = ', '.join(['?' for _ in stock_ids])
-        sql_literal = f"SELECT id, ticker, company_name, last_price FROM symbols WHERE id IN ({placeholders})"
-        query_raw = self.simple_query(sql_literal, tuple(stock_ids))
+        sql = f"SELECT id, ticker, company_name, last_price FROM symbols WHERE id IN ({placeholders})"
+        query_raw = self.simple_query(sql, tuple(stock_ids))
+        
+        if not isinstance(query_raw, list):
+            logger.error(f"get_portfolio_view: failed to fetch symbols for user_id={user_id}")
+            return []
+            
         query_formatted = {line.get('id'): line for line in query_raw}
 
         # Format the data to have one line item per holding which conforms to '/index' interface
@@ -213,11 +226,18 @@ class ReportManager(DbManager):
             Each row contains: transaction_id, user_id, symbol_id, transaction_type,
                              qty, unit_price, cash_after, date (unix timestamp)
         """
-        result = self.simple_query(
-            """SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, cash_after,
-               unixepoch(transaction_datetime) AS date
-               FROM transactions WHERE user_id = ? ORDER BY transaction_datetime""",
-            (user_id, ))
+        sql = """
+            SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, cash_after,
+                   unixepoch(transaction_datetime) AS date
+            FROM transactions 
+            WHERE user_id = ? 
+            ORDER BY transaction_datetime
+        """
+        result = self.simple_query(sql, (user_id,))
+        
+        if not isinstance(result, list):
+            logger.warning(f"get_transaction_history_per_user: no transactions for user_id={user_id}")
+            return {}
 
         grouped = defaultdict(list)
         for row in result:
@@ -271,12 +291,17 @@ class ReportManager(DbManager):
             adjusted for all stock splits that occurred after each transaction
         """
         # Query for stock splits
-        values = list(transaction_history.keys())
-        if not values:
+        symbol_ids = list(transaction_history.keys())
+        if not symbol_ids:
             return transaction_history
-        placeholders = ", ".join(["?" for _ in values])
-        sql_literal = f"SELECT symbol_id, unixepoch(split_date) AS date, split_ratio AS ratio FROM stock_splits WHERE symbol_id IN ({placeholders})"
-        query = self.simple_query(sql_literal, tuple(values))
+        
+        placeholders = ", ".join(['?' for _ in symbol_ids])
+        sql = f"SELECT symbol_id, unixepoch(split_date) AS date, split_ratio AS ratio FROM stock_splits WHERE symbol_id IN ({placeholders})"
+        query = self.simple_query(sql, tuple(symbol_ids))
+        
+        if not isinstance(query, list):
+            logger.debug("_adjust_for_stock_splits: no splits found")
+            return transaction_history
 
         # Format for easier lookup: {symbol_id: [{splits}]}
         split_history = defaultdict(list)
@@ -286,7 +311,7 @@ class ReportManager(DbManager):
         # For each split newer than the transaction, multiply qty and divide price by split_ratio
         for symbol_id, transactions in transaction_history.items():
             splits = split_history.get(symbol_id)
-            if splits is None:
+            if not splits:
                 continue
 
             for tx in transactions:
@@ -327,38 +352,37 @@ class ReportManager(DbManager):
 
         Example query format:
             SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price,
-                   cash_after, unixepoch(transaction_datetime) AS date
+                   unixepoch(transaction_datetime) AS date
             FROM transactions WHERE user_id = ? ORDER BY transaction_datetime
         """
         cost_basis_data = {}
 
         for symbol, rows in split_adjusted_history.items():
-            # Transaction history is a queue of len(2) lists.
-            # [qty, price]
+            # Transaction history is a queue of len(2) lists: [qty, price]
             q = deque()
+            
             for row in rows:
                 price = row.get('unit_price', 0)
                 qty = abs(row.get('qty', 0))
                 t_type = row.get('transaction_type', '').lower()
 
-                # If a buy is found, add this to the queue
+                # If a buy is found, add to the queue
                 if t_type == 'buy':
-                    transaction = [qty, price]
-                    q.append(transaction)
+                    q.append([qty, price])
 
-                # If a sell is found, compare the qty to the oldest member of the queue
+                # If a sell is found, deduct from oldest buys (FIFO)
                 elif t_type == 'sell':
                     while qty > 0 and q:
                         if q[0][0] <= qty:
-                            # If qty is larger than the oldest buy, remove buy, and subtract buy qty from sell qty.
+                            # Oldest buy is smaller/equal, remove it entirely
                             qty -= q.popleft()[0]
                         else:
-                            # In the case that the oldest buy is larger than the sell, subtract the sell qty from the buy qty.
+                            # Oldest buy is larger, reduce it
                             q[0][0] -= qty
                             # Break loop
                             qty = 0
 
-                # If the transaction type is not 'buy' or 'sell', this row is corrupt. Skip.
+                # Unknown transaction type - data integrity issue
                 else:
                     logger.error(f"Corrupt transaction row detected symbol: {symbol}, row: {row}")
                     continue
@@ -369,7 +393,7 @@ class ReportManager(DbManager):
             total_price = 0.0
             for transaction in q:
                 total_qty += transaction[0]
-                total_price += (transaction[1] * transaction[0])
+                total_price += (transaction[1] * transaction[0]) # price * qty
 
             # Divide price by qty, add to cost_basis dict.
             if total_qty > 0:

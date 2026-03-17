@@ -101,7 +101,7 @@ class DbManager:
 
 
     @time_method
-    def simple_query(self, query: str, placeholders: tuple = ()):
+    def simple_query(self, query: str, placeholders: tuple = ()) -> list[dict] | int:
         """
         Handles db queries, manage cursor lifecycle, extract result from
         row datastructure and return as a list of dicts.

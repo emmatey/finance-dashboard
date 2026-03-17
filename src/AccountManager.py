@@ -13,7 +13,8 @@ class AccountManager(DbManager):
         rows = self.simple_query(
             "SELECT * FROM users WHERE username = ?", (username, )
             )
-
+        assert rows is list
+        
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(
             rows[0]["hash"], password

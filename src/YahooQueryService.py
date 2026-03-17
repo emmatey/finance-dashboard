@@ -580,10 +580,7 @@ class YahooQueryService:
         return out
 
     @yq_exception_handler()
-    def yq_screener_get_screeners(self,
-                                  screeners: List[str] | str,
-                                  count: int = 10
-                                  ) -> Dict:
+    def yq_screener_get_screeners(self, screeners: List[str] | str, count: int = 10) -> Dict:
         """
         In the style of get_modules, query yahoo API for screener objects.
 
@@ -605,9 +602,9 @@ class YahooQueryService:
     
         # Call get_screeners
         s = self.screener_factory()
-        screeners = s.get_screeners(safe_input, count)
+        screener_results = s.get_screeners(safe_input, count)
 
-        return screeners
+        return screener_results
 
     def _filter_screener_data(
         self, 

@@ -17,7 +17,7 @@ class YahooAPIClient(DbManager):
     def __init__(self):
         logger.info("Initializing YahooAPIClient...")
 
-    def api_status(self):
+    def api_status(self) -> tuple[bool, bool]:
         """
         If api is set to 'DOWN' handle exponential backoff.
         Returns: (is_up, should_retry)
@@ -29,6 +29,7 @@ class YahooAPIClient(DbManager):
         FROM global_events
         """
         result = self.simple_query(query, ())
+        assert result is list[dict]
         if not result:
             logger.error("global_events row missing")
             return (False, False)
@@ -54,6 +55,10 @@ class YahooAPIClient(DbManager):
 
         elif time_since_last_try >= current_wait:
             return (False, True)
+        
+        else:
+            # Please stop yelling at me language server
+            return (False, False)
 
     def set_api_down(self):
         """

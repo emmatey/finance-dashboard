@@ -130,7 +130,7 @@ class TransactionManager(DbManager):
 
         if db_result:
             # Symbol exists in DB - check if data is fresh
-            last_updated_str = db_result.get('last_updated')
+            last_updated_str = db_result.get('last_updated', "1970-01-01 00:00:01")
 
             # Parse the last_updated timestamp
             # SQLite returns datetime strings in format: 'YYYY-MM-DD HH:MM:SS'

@@ -411,7 +411,7 @@ class APIDataIO(DbManager):
         """
         self.bulk_query(sql, insider_tuples)
 
-    def set_screeners_metadata(self, screener_metadata: Dict[str, List[str]], yqs_instance) -> None:
+    def set_screeners_metadata(self, screener_metadata: Dict[str, List[str]]) -> None:
         """
         Insert screener metadata to db.
         
