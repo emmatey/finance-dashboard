@@ -11,12 +11,6 @@ logger = logging.getLogger(__name__)
 class MarketOverviewCoordinator(DbManager):
     """
     Handles updating and retrieving data for the home page market overview.
-    
-    Currently includes:
-        - World markets ETFs - Current price and % change vs last close
-        - Oil, Gold & Copper ETFs - Current price and % change vs last close
-        - Most traded stocks today - From screeners
-        - Trending stocks - From screeners
     """
     
     # ETF tickers representing each region for global market overview
@@ -43,6 +37,8 @@ class MarketOverviewCoordinator(DbManager):
         exists in the database for get_regional_overview() to display current market
         performance.
         
+        Method checks if 'financial_metrics' have been updated today, and skips API calls if so.
+    
         Example:
             >>> coordinator = MarketOverviewCoordinator()
             >>> # Initialize/refresh ETF data
@@ -60,9 +56,37 @@ class MarketOverviewCoordinator(DbManager):
             yqs_instance = yqs()
         if dbio_instance is None:
             dbio_instance = io()
-        
+
         logger.info(f"Initializing regional ETF data for {len(symbols)} regions")
         
+        # Check if prev_close (via financial metrics) has been updated today already.
+        placeholders = ",".join(["?" for _ in symbols.values()])
+        sql = f"""
+        SELECT fm.last_updated 
+        FROM financial_metrics AS fm
+        JOIN symbols AS s ON s.id = fm.symbol_id
+        WHERE s.ticker IN ({placeholders})
+        """
+        res = self.simple_query(sql, tuple(symbols.values()))
+        assert isinstance(res, list)
+        oldest = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
+        tickers_found = 0
+        for row in res:
+            time = row.get('last_updated', "1970-01-01 00:00:01")
+            if isinstance(time, str):
+                tickers_found += 1
+                last_updated = dt.datetime.strptime(time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=dt.timezone.utc)
+                
+                if last_updated < oldest:
+                    oldest = last_updated
+
+            else:
+                logger.warning(f"Date-Time string {time} from {row} malformed, skipping. Should be str is {type(time)}.")
+
+        if oldest.date() == dt.date.today() and tickers_found == len(symbols.values()):
+            logger.info(f"All regional representative tickers present and updated today.")
+            return
+
         # Fetch comprehensive module data from Yahoo Finance
         tickers = list(symbols.values())
         modules = yqs_instance.yq_ticker_get_modules(
@@ -75,6 +99,6 @@ class MarketOverviewCoordinator(DbManager):
         
         # Extract and store financial metrics (includes prev_close for pct_change calculation)
         metrics = yqs_instance.get_financial_metrics(modules)
-        dbio_instance.set_financial_metrics(metrics)  # from_screeners=False (default)
+        dbio_instance.set_financial_metrics(metrics)
         
         logger.info(f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}")

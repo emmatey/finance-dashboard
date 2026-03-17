@@ -84,6 +84,7 @@ def home():
     #    print(i)
     #
 
+    moc.initialize_regional_etfs()
 
     filler_page = """
         <body style="background-color: black; color: green;">
