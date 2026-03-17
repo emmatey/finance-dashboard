@@ -84,8 +84,6 @@ def home():
     #    print(i)
     #
 
-    modules = yqs.yq_ticker_get_modules(['mmm', 'aapl'], ['price', 'defaultKeyStatistics'])
-    io.upsert_symbols(modules)
 
     filler_page = """
         <body style="background-color: black; color: green;">

@@ -71,8 +71,7 @@ class MarketOverviewCoordinator(DbManager):
         )
         
         # Upsert symbols (ticker, company_name, last_price)
-        for region, ticker in symbols.items():
-            dbio_instance.upsert_symbols(ticker, modules)
+        dbio_instance.upsert_symbols(modules)
         
         # Extract and store financial metrics (includes prev_close for pct_change calculation)
         metrics = yqs_instance.get_financial_metrics(modules)
