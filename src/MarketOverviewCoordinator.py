@@ -175,4 +175,4 @@ class MarketOverviewCoordinator(DbManager):
         # Update financial metrics (incomplete data, don't update last_updated timestamp)
         dbio_instance.set_financial_metrics(financial_metrics, from_screeners=True)
 
-        logger.info(f"Successfully updated {len(screener_names) + 2} screeners with {len(price_modules)} unique tickers")
+        logger.info(f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers")
