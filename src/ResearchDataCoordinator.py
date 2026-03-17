@@ -155,10 +155,11 @@ class ResearchDataCoordinator(DbManager):
         This only works for one company at a time.
 
         Parse the freshness report, and use the methods in registry to update required data.
-        fresh_report = {table_name: bool}
-
-        True = fresh, no update required.
-        False = not-fresh, update required.
+        
+        Fresh Report:
+            fresh_report = {table_name: bool}
+            True = fresh, no update required.
+            False = not-fresh, update required.
         """
         if not fresh_report:
             logger.warning("fresh_report not provided.")

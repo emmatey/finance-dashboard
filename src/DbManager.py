@@ -120,14 +120,14 @@ class DbManager:
         try:
             # Check if query is SELECT
             if query.split(None, 1)[0].upper() in ["SELECT", "WITH"]:
-                logger.debug(f"Executing Query: {query} | Params: {placeholders}")
+                logger.debug(f"Executing Query: {query}")
                 cur.execute(query, placeholders)
                 rows = cur.fetchall()
                 return rows
 
             # If not SELECT, requires transaction.
             else:
-                logger.debug(f"Executing Query: {query} | Params: {placeholders}")
+                logger.debug(f"Executing Query: {query}")
                 cur.execute(query, placeholders)
                 row_count = cur.rowcount
                 con.commit()
@@ -135,7 +135,7 @@ class DbManager:
 
         except Exception:
             con.rollback()
-            logger.exception("Simple query failed")
+            logger.exception(f"Simple query failed  | Params: {placeholders}")
             raise
 
         finally:
@@ -150,14 +150,14 @@ class DbManager:
         con = self.get_db()
         cur = con.cursor()
         try:
-            logger.debug(f"Executing Query: {query} | Params: {data_list}")
+            logger.debug(f"Executing Query: {query}")
             cur.executemany(query, data_list)
             con.commit()
             logger.info(f"Bulk Query Success: {cur.rowcount} rows affected.")
             return cur.rowcount
         except Exception:
             con.rollback()
-            logger.exception("Bulk query failed")
+            logger.exception(f"Bulk query failed | Params: {data_list}")
             raise
         finally:
             cur.close()

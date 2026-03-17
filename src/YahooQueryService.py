@@ -3,6 +3,7 @@ import logging
 import pandas as pd
 import yahooquery as yq
 from collections import defaultdict
+from DbManager import DbManager
 from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import List, Tuple, Dict, Union, Any, Optional
 from YahooAPIClient import yq_exception_handler
@@ -39,6 +40,7 @@ class YahooQueryService:
         self.search_factory = search_factory
         self.screener_factory = screener_factory
 
+    @DbManager.time_method
     @yq_exception_handler()
     def yq_ticker_get_modules(
         self,
@@ -576,8 +578,9 @@ class YahooQueryService:
 
         return out
 
+    @DbManager.time_method
     @yq_exception_handler()
-    def yq_screener_get_screeners(self, screeners: List[str] | str, count: int = 10) -> Dict:
+    def yq_screener_get_screeners(self, screeners: List[str] | str, count: int = 25) -> Dict:
         """
         In the style of get_modules, query yahoo API for screener objects.
 
@@ -708,7 +711,7 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
  
-    def get_relative_volumes(self, screeners: Dict, qty: int = 10) -> Dict[str, List[Dict]]:
+    def get_relative_volumes(self, screeners: Dict, qty: int = 25) -> Dict[str, List[Dict]]:
         """
         Find stocks with largest volume spikes, split by price direction.
         
@@ -796,7 +799,7 @@ class YahooQueryService:
             'volume_spike_bearish': bearish_spikes[:qty]
         }
     
-    def get_screener_metadata(self, screeners: Dict) -> Dict[str, List[Dict[str, Any]]]:
+    def get_screener_metadata(self, screeners: Dict) -> Dict[str, List[str]]:
         """
         Extract screener data required for database insertion.
         """

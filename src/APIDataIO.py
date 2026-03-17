@@ -444,7 +444,6 @@ class APIDataIO(DbManager):
             FROM symbols AS s
             WHERE ticker = ?
         """
-
         screener_tuples: List[Tuple[str, int, str]] = []
         for screener_name, tickers in screener_metadata.items():
             for rank, ticker in enumerate(tickers, start=1):

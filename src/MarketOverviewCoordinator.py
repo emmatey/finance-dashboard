@@ -12,7 +12,7 @@ class MarketOverviewCoordinator(DbManager):
     """
     Handles updating and retrieving data for the home page market overview.
     """
-    
+
     # ETF tickers representing each region for global market overview
     SYMBOLS = {
         'USA': 'VOO',
@@ -27,6 +27,8 @@ class MarketOverviewCoordinator(DbManager):
         'Copper': 'CPER',
         'Oil': 'USO'
     }
+
+    SCREENER_UPDATE_FREQUENCY = 3600 # One Hour
 
     def initialize_regional_etfs(self, symbols=None, yqs_instance=None, dbio_instance=None):
         """
@@ -103,3 +105,26 @@ class MarketOverviewCoordinator(DbManager):
         dbio_instance.set_financial_metrics(metrics)
         
         logger.info(f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}")
+
+    def screener_data_update_orchestrator(self, yqs_instance=yqs(), dbio_instance=io()):
+        """
+        Checks the age of all screeners.
+        Updates them all if any are older than the "SCREENER_UPDATE_FREQUENCY".
+        """
+        # Select all screeners and look for oldest update time.
+
+        # Fetch screener data, filter, and add custom screener.
+        screener_names = ['day_gainers', 'day_losers', 'most_actives', 'most_watched_tickers', 'fifty_two_wk_gainers', 'fifty_two_wk_losers']
+        screeners = yqs_instance.yq_screener_get_screeners(screeners=screener_names, count=100)
+        filtered_screeners = yqs_instance._filter_screener_data(screeners)
+        relative_volumes_screener = yqs_instance.get_relative_volumes(filtered_screeners)
+        filtered_screeners.update(relative_volumes_screener)
+        
+        # Extract metadata and add to db
+        metadata = yqs_instance.get_screener_metadata(filtered_screeners)
+        dbio_instance.set_screeners_metadata(metadata)
+
+        # Extract data and add to db
+        price_module, financial_metrics_module = yqs_instance.get_screener_data(filtered_screeners)
+        dbio_instance.upsert_symbols(price_module)
+        dbio_instance.set_financial_metrics(financial_metrics_module)
