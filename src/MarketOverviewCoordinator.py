@@ -108,23 +108,71 @@ class MarketOverviewCoordinator(DbManager):
 
     def screener_data_update_orchestrator(self, yqs_instance=yqs(), dbio_instance=io()):
         """
-        Checks the age of all screeners.
-        Updates them all if any are older than the "SCREENER_UPDATE_FREQUENCY".
+        Checks the age of screener data and updates if stale.
+        Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
         """
-        # Select all screeners and look for oldest update time.
+        # Check freshness of screener data
+        sql = """
+            SELECT MIN(unixepoch(last_updated)) as oldest_update
+            FROM screener_results
+        """
+        res = self.simple_query(sql, ())
 
-        # Fetch screener data, filter, and add custom screener.
-        screener_names = ['day_gainers', 'day_losers', 'most_actives', 'most_watched_tickers', 'fifty_two_wk_gainers', 'fifty_two_wk_losers']
+        if not isinstance(res, list) or not res:
+            logger.info("No screener data found - performing initial load")
+            needs_update = True
+        else:
+            oldest_update = res[0].get('oldest_update')
+
+            if oldest_update is None:
+                logger.info("No screener data found - performing initial load")
+                needs_update = True
+            else:
+                # Compare age against threshold
+                now = dt.datetime.now(dt.timezone.utc)
+                last_update = dt.datetime.fromtimestamp(oldest_update, dt.timezone.utc)
+                age = (now - last_update).total_seconds()
+
+                if age > self.SCREENER_UPDATE_FREQUENCY:
+                    logger.info(f"Screener data is {age:.0f}s old (threshold: {self.SCREENER_UPDATE_FREQUENCY}s) - updating")
+                    needs_update = True
+                else:
+                    logger.info(f"Screener data is fresh ({age:.0f}s old) - skipping update")
+                    needs_update = False
+
+        if not needs_update:
+            return
+
+        # Fetch screener data, filter, and add custom screeners
+        screener_names = [
+            'day_gainers', 
+            'day_losers', 
+            'most_actives', 
+            'most_watched_tickers', 
+            'fifty_two_wk_gainers', 
+            'fifty_two_wk_losers'
+        ]
+
         screeners = yqs_instance.yq_screener_get_screeners(screeners=screener_names, count=100)
         filtered_screeners = yqs_instance._filter_screener_data(screeners)
+
+        # Add custom volume spike screeners
         relative_volumes_screener = yqs_instance.get_relative_volumes(filtered_screeners)
         filtered_screeners.update(relative_volumes_screener)
-        
-        # Extract metadata and add to db
+
+        # Extract metadata and rankings
         metadata = yqs_instance.get_screener_metadata(filtered_screeners)
+
+        # Extract price and financial data
+        price_modules, financial_metrics = yqs_instance.get_screener_data(filtered_screeners)
+
+        # Upsert symbols first (screener rankings reference symbol_id)
+        dbio_instance.upsert_symbols(price_modules)
+
+        # Insert screener rankings (clears table first, so all get same timestamp)
         dbio_instance.set_screeners_metadata(metadata)
 
-        # Extract data and add to db
-        price_module, financial_metrics_module = yqs_instance.get_screener_data(filtered_screeners)
-        dbio_instance.upsert_symbols(price_module)
-        dbio_instance.set_financial_metrics(financial_metrics_module)
+        # Update financial metrics (incomplete data, don't update last_updated timestamp)
+        dbio_instance.set_financial_metrics(financial_metrics, from_screeners=True)
+
+        logger.info(f"Successfully updated {len(screener_names) + 2} screeners with {len(price_modules)} unique tickers")
