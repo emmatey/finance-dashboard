@@ -182,6 +182,7 @@ class ResearchDataCoordinator(DbManager):
                         modules_set.add(m)
 
         # Call api once for all required modules.
+        modules = {}
         if modules_set:
             logger.info(f"Fetching {len(modules_set)} modules for {symbol}")
             modules = yqs_instance.yq_ticker_get_modules(symbol, list(modules_set))
