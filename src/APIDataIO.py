@@ -22,22 +22,26 @@ class APIDataIO(DbManager):
     For Single Record: Dict or None
     """
 
-    def upsert_symbol(self, symbol: str, price_module_raw: dict):
+    def upsert_symbol(self, modules: dict):
         """
-        Upsert symbol record in database.
+        Upsert symbols within supplied price module in database's 'symbols' table.
 
         Args:
-            symbol: Stock symbol (e.g. 'AAPL')
-            price_module: Result of Ticker.price call.
+            module dict from YahooQuery containing the 'price' module.
+            https://yahooquery.dpguthrie.com/guide/ticker/modules/#price
+            eg {'symbol':{
+                   'price': {label: data},
+                    ...
+                }
         """
-        symbol = symbol.upper()
-        price_module = price_module_raw[symbol].get('price')
-        company_name = (
-            price_module.get('longName') or 
-            price_module.get('shortName') or 
-            symbol.upper()
-        )
-        last_price = price_module.get('regularMarketPrice', 0)
+        for symbol, module in modules.items():
+            price_module = module.get('price')
+            company_name = (
+                price_module.get('longName') or 
+                price_module.get('shortName') or 
+                symbol.upper()
+            )
+            last_price = price_module.get('regularMarketPrice', 0)
 
         sql = """
         INSERT INTO symbols (ticker, company_name, last_price, last_updated)

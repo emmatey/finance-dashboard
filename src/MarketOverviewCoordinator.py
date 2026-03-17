@@ -43,33 +43,6 @@ class MarketOverviewCoordinator(DbManager):
         exists in the database for get_regional_overview() to display current market
         performance.
         
-        Workflow:
-            1. Fetch comprehensive modules from Yahoo Finance API (price, statistics, etc.)
-            2. Upsert symbol records (ticker, company_name, last_price)
-            3. Extract and store financial metrics (prev_close, market_cap, etc.)
-            4. Data is then available for get_regional_overview() to calculate pct_change
-        
-        Args:
-            symbols: Dict mapping region names to ETF tickers
-                    Default: self.SYMBOLS = {'USA': 'VOO', 'Europe': 'IEUR', ...}
-            yqs_instance: YahooQueryService instance for API calls
-                         Default: instantiates new instance
-            dbio_instance: APIDataIO instance for database operations
-                          Default: instantiates new instance
-        
-        Database Tables Updated:
-            - symbols: ticker, company_name, last_price, last_updated
-            - financial_metrics: prev_close, market_cap, beta, etc.
-        
-        Companion Method:
-            get_regional_overview() - Queries stored data to calculate and display
-                                     regional market performance with percent changes
-        
-        Note:
-            - This should be called periodically (e.g., daily market open) to refresh data
-            - get_regional_overview() relies on this data being fresh (checks last_updated)
-            - Fetches complete metrics (not from screeners) so last_updated IS updated
-        
         Example:
             >>> coordinator = MarketOverviewCoordinator()
             >>> # Initialize/refresh ETF data

@@ -61,9 +61,6 @@ class YahooQueryService:
             {symbol: {module_name: {data...}}}
             Returns empty dict on error
 
-            "If only one module is retrieved, the structure will be flattened to:
-            {symbol: {key: value}}, foregoing the 'module_name' level."
-
         Raises:
             ValueError: If symbols is not a string or list
 

@@ -29,7 +29,8 @@ class YahooAPIClient(DbManager):
         FROM global_events
         """
         result = self.simple_query(query, ())
-        assert result is list[dict]
+        print(result)
+        assert isinstance(result, list)
         if not result:
             logger.error("global_events row missing")
             return (False, False)
