@@ -156,7 +156,7 @@ class TransactionManager(DbManager):
             if api_data:
                 # Found online - update with fresh data
                 logger.info(f"{symbol} verified online. Updating DB with fresh data.")
-                APIDataIO().upsert_symbol(symbol, api_data)
+                APIDataIO().upsert_symbols(symbol, api_data)
                 return True
             else:
                 # Was in DB but NOT found online - potential delisting/renaming
@@ -175,7 +175,7 @@ class TransactionManager(DbManager):
             if api_data:
                 # Found online - insert into DB
                 logger.info(f"{symbol} found online. Adding to database.")
-                APIDataIO().upsert_symbol(symbol, api_data)
+                APIDataIO().upsert_symbols(symbol, api_data)
                 return True
             else:
                 # Not in DB and not found online - invalid symbol

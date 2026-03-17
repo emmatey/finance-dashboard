@@ -22,7 +22,7 @@ class APIDataIO(DbManager):
     For Single Record: Dict or None
     """
 
-    def upsert_symbol(self, modules: dict):
+    def upsert_symbols(self, modules_dict: dict):
         """
         Upsert symbols within supplied price module in database's 'symbols' table.
 
@@ -31,18 +31,10 @@ class APIDataIO(DbManager):
             https://yahooquery.dpguthrie.com/guide/ticker/modules/#price
             eg {'symbol':{
                    'price': {label: data},
+                   'defaultKeyStatistics: {label: data},
                     ...
                 }
         """
-        for symbol, module in modules.items():
-            price_module = module.get('price')
-            company_name = (
-                price_module.get('longName') or 
-                price_module.get('shortName') or 
-                symbol.upper()
-            )
-            last_price = price_module.get('regularMarketPrice', 0)
-
         sql = """
         INSERT INTO symbols (ticker, company_name, last_price, last_updated)
         VALUES (?, ?, ?, CURRENT_TIMESTAMP)
@@ -51,9 +43,21 @@ class APIDataIO(DbManager):
             last_price = excluded.last_price,
             last_updated = CURRENT_TIMESTAMP
         """
-        self.simple_query(sql, (symbol, company_name, last_price))
 
-        logger.info(f"{symbol} written to DB!")
+        for symbol, modules in modules_dict.items():
+            price_module = modules.get('price')
+            if price_module:
+                company_name = (
+                    price_module.get('longName') or 
+                    price_module.get('shortName') or 
+                    symbol.upper()
+                )
+                last_price = price_module.get('regularMarketPrice', 0)
+                logger.info(f"Updating 'symbols' table data for {symbol}")
+
+                self.simple_query(sql, (symbol, company_name, last_price))
+            else:
+                logger.warning(f"'price' module not foud for {symbol}.")
 
     ### SETTERS ###
 
