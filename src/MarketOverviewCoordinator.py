@@ -1,6 +1,5 @@
 import datetime as dt
 import logging
-from typing import Dict, Optional
 from APIDataIO import APIDataIO as io
 from YahooQueryService import YahooQueryService as yqs
 from DbManager import DbManager
@@ -27,10 +26,23 @@ class MarketOverviewCoordinator(DbManager):
         'Copper': 'CPER',
         'Oil': 'USO'
     }
-
+    # Screeners fetched from yahoo query.
+    YQ_SCREENER_NAMES = [
+            'day_gainers', 
+            'day_losers', 
+            'most_actives', 
+            'most_watched_tickers', 
+            'fifty_two_wk_gainers', 
+            'fifty_two_wk_losers'
+        ]
+    # Screeners derived from YQ data
+    CUSTOM_SCREENERS = [
+        'volume_spike_bullish',
+        'volume_spike_bearish'
+    ]
     SCREENER_UPDATE_FREQUENCY = 3600 # One Hour
 
-    def initialize_regional_etfs(self, symbols=None, yqs_instance=None, dbio_instance=None):
+    def initialize_regional_etfs(self, symbols=SYMBOLS, yqs_instance=yqs(), dbio_instance=io()):
         """
         Initialize or refresh regional ETF data for homepage market overview display.
         
@@ -51,14 +63,6 @@ class MarketOverviewCoordinator(DbManager):
             >>> # Returns: {'USA': {'ticker': 'VOO', 'current_price': 614.16,
             >>> #                    'prev_close': 622.03, 'pct_change': -1.27}, ...}
         """
-        # Use defaults if not provided
-        if symbols is None:
-            symbols = self.SYMBOLS
-        if yqs_instance is None:
-            yqs_instance = yqs()
-        if dbio_instance is None:
-            dbio_instance = io()
-
         logger.info(f"Initializing regional ETF data for {len(symbols)} regions")
         
         # Check if prev_close (via financial metrics) has been updated today already.
@@ -106,7 +110,7 @@ class MarketOverviewCoordinator(DbManager):
         
         logger.info(f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}")
 
-    def screener_data_update_orchestrator(self, screener_count=100, yqs_instance=yqs(), dbio_instance=io()):
+    def market_overview_data_update_orchestrator(self, screener_names=YQ_SCREENER_NAMES, screener_count=100, yqs_instance=yqs(), dbio_instance=io()):
         """
         Checks the age of screener data and updates if stale.
         Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
@@ -143,16 +147,6 @@ class MarketOverviewCoordinator(DbManager):
         if not needs_update:
             return
 
-        # Fetch screener data, filter, and add custom screeners
-        screener_names = [
-            'day_gainers', 
-            'day_losers', 
-            'most_actives', 
-            'most_watched_tickers', 
-            'fifty_two_wk_gainers', 
-            'fifty_two_wk_losers'
-        ]
-
         screeners = yqs_instance.yq_screener_fetch_screeners(screeners=screener_names, count=screener_count)
         filtered_screeners = yqs_instance._filter_screener_data(screeners)
 
@@ -177,4 +171,59 @@ class MarketOverviewCoordinator(DbManager):
 
         logger.info(f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers")
 
-    def 
+    def prepare_market_overview(self, symbols=None, per_screener_limit=25, dbio_instance=None):
+        """
+        Prepare homepage data: regional market overview and screener results.
+
+        Aggregates data from multiple screeners and regional ETFs into a single
+        dictionary ready for Flask template rendering.
+
+        Args:
+            symbols: Dict mapping region names to ETF tickers
+                    Default: self.SYMBOLS (USA: VOO, Europe: IEUR, etc.)
+            per_screener_limit: Max stocks per screener 
+            dbio_instance: APIDataIO instance for database queries
+                          Default: instantiates new instance
+
+        Returns:
+            Dict containing homepage data:
+            {
+                'regional': [
+                    {'region': 'USA', 'ticker': 'VOO', 'current_price': 615.19, 
+                     'prev_close': 609.09, 'pct_change': 1.0},
+                    ...
+                ],
+                'screeners': {
+                    'day_gainers': [
+                        {'rank': 1, 'ticker': 'NVDA', 'price_change_pct': 2.5, ...},
+                        ...
+                    ],
+                    'day_losers': [...],
+                    ...
+                }
+            }
+        """
+        # Use defaults if not provided
+        if symbols is None:
+            symbols = self.SYMBOLS
+        if dbio_instance is None:
+            dbio_instance = io()
+
+        # Get all screener names
+        screener_names = self.YQ_SCREENER_NAMES + self.CUSTOM_SCREENERS
+
+        # Get regional overview
+        regional_data = dbio_instance.get_regional_overview(symbols=symbols)
+
+        # Get all screener results
+        screener_data = {}
+        for screener_name in screener_names:
+            screener_data[screener_name] = dbio_instance.get_screener_results(
+                screener_name, 
+                limit=per_screener_limit
+            )
+
+        return {
+            'global_regions_tickers': regional_data,
+            'screeners': screener_data
+        }

@@ -746,15 +746,16 @@ class APIDataIO(DbManager):
             List of dicts containing screener results with current data:
             [
                 {
+                    'screener_name': 'day_gainers',
                     'rank': 1,
                     'ticker': 'NVDA',
                     'company_name': 'NVIDIA Corporation',
                     'current_price': 875.43,
                     'prev_close': 862.10,
-                    'pct_change': 1.55,
+                    'price_change_pct': 1.55,
                     'market_cap': 2150000000000,
-                    'volume': 45000000,
-                    'avg_volume': 38000000,
+                    'todays_volume': 45000000,
+                    'three_month_avg_volume': 38000000,
                     'volume_change_pct': 18.42
                 },
                 ...
@@ -762,17 +763,7 @@ class APIDataIO(DbManager):
             Returns empty list if screener not found or no results
 
         Note:
-            - Results ordered by rank (1 = top performing)
-            - price_chage_pct: ((current_price - prev_close) / prev_close) * 100
-            - volume_change_pct: ((today_volume - avg_volume_3m) / avg_volume_3m) * 100
-            - Requires fresh data from set_screeners() and set_financial_metrics()
-
-        Example:
-            >>> gainers = db.get_screener_results('day_gainers', limit=5)
-            >>> for stock in gainers:
-            >>>     print(f"#{stock['rank']}: {stock['ticker']} {stock['pct_change']:+.2f}%")
-            #1: NVDA +1.55%
-            #2: TSLA +0.89%
+            - Requires fresh data from set_screeners_metadata() and set_financial_metrics()
         """
         sql = """
             SELECT 
@@ -803,6 +794,7 @@ class APIDataIO(DbManager):
         rankings = []
         for row in rows:
             data = {
+                'screener_name': screener_name,
                 'rank': row['rank'],
                 'ticker': row['ticker'],
                 'company_name': row['company_name'],
