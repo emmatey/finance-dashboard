@@ -74,7 +74,7 @@ class TransactionManager(DbManager):
         """
         try:
             # Use the protected yq_ticker_get_modules method to get price module
-            modules = self.yq_service.yq_ticker_get_modules(symbol, 'price')
+            modules = self.yq_service.yq_ticker_fetch_modules(symbol, 'price')
 
             if not modules:
                 logger.warning(f"{symbol} not found via YahooQueryService.")

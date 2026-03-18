@@ -92,7 +92,7 @@ class MarketOverviewCoordinator(DbManager):
 
         # Fetch comprehensive module data from Yahoo Finance
         tickers = list(symbols.values())
-        modules = yqs_instance.yq_ticker_get_modules(
+        modules = yqs_instance.yq_ticker_fetch_modules(
             symbols=tickers,
             modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData']
         )
@@ -101,12 +101,12 @@ class MarketOverviewCoordinator(DbManager):
         dbio_instance.upsert_symbols(modules)
         
         # Extract and store financial metrics (includes prev_close for pct_change calculation)
-        metrics = yqs_instance.get_financial_metrics(modules)
+        metrics = yqs_instance.extract_financial_metrics(modules)
         dbio_instance.set_financial_metrics(metrics)
         
         logger.info(f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}")
 
-    def screener_data_update_orchestrator(self, yqs_instance=yqs(), dbio_instance=io()):
+    def screener_data_update_orchestrator(self, screener_count=100, yqs_instance=yqs(), dbio_instance=io()):
         """
         Checks the age of screener data and updates if stale.
         Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
@@ -153,18 +153,18 @@ class MarketOverviewCoordinator(DbManager):
             'fifty_two_wk_losers'
         ]
 
-        screeners = yqs_instance.yq_screener_get_screeners(screeners=screener_names, count=100)
+        screeners = yqs_instance.yq_screener_fetch_screeners(screeners=screener_names, count=screener_count)
         filtered_screeners = yqs_instance._filter_screener_data(screeners)
 
         # Add custom volume spike screeners
-        relative_volumes_screener = yqs_instance.get_relative_volumes(filtered_screeners)
+        relative_volumes_screener = yqs_instance.extract_relative_volumes(filtered_screeners)
         filtered_screeners.update(relative_volumes_screener)
 
         # Extract metadata and rankings
-        metadata = yqs_instance.get_screener_metadata(filtered_screeners)
+        metadata = yqs_instance.extract_screener_metadata(filtered_screeners)
 
         # Extract price and financial data
-        price_modules, financial_metrics = yqs_instance.get_screener_data(filtered_screeners)
+        price_modules, financial_metrics = yqs_instance.extract_screener_data(filtered_screeners)
 
         # Upsert symbols first (screener rankings reference symbol_id)
         dbio_instance.upsert_symbols(price_modules)
@@ -176,3 +176,5 @@ class MarketOverviewCoordinator(DbManager):
         dbio_instance.set_financial_metrics(financial_metrics, from_screeners=True)
 
         logger.info(f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers")
+
+    def 

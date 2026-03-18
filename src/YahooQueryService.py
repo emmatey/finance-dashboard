@@ -42,7 +42,7 @@ class YahooQueryService:
 
     @DbManager.time_method
     @yq_exception_handler()
-    def yq_ticker_get_modules(
+    def yq_ticker_fetch_modules(
         self,
         symbols: Union[List[str], str],
         modules: Union[List[str], str]
@@ -100,7 +100,7 @@ class YahooQueryService:
         return raw_modules
 
     @yq_exception_handler()
-    def yq_ticker_price_map(
+    def yq_ticker_fetch_price_map(
         self,
         symbols: Union[List[str], str]
     ) -> Dict[str, Union[float, str, None]]:
@@ -144,7 +144,7 @@ class YahooQueryService:
     
     @ResearchDataCoordinator.register_as_research('historical_prices', api=True)
     @yq_exception_handler()
-    def yq_ticker_historical_prices(
+    def yq_ticker_fetch_historical_prices(
         self,
         symbol: str,
         period: str = "5y",
@@ -201,7 +201,7 @@ class YahooQueryService:
 
     @ResearchDataCoordinator.register_as_research('stock_splits', api=True)
     @yq_exception_handler()
-    def yq_ticker_stock_splits(
+    def yq_ticker_fetch_stock_splits(
         self,
         symbols: Union[List[str], str],
         period: str = "5y"
@@ -250,7 +250,7 @@ class YahooQueryService:
 
     @ResearchDataCoordinator.register_as_research('news', api=True)
     @yq_exception_handler()
-    def yq_search_get_news(
+    def yq_search_fetch_news(
         self,
         symbol: str,
         qty: int = 10
@@ -333,7 +333,7 @@ class YahooQueryService:
         return news
 
     @ResearchDataCoordinator.register_as_research('financial_metrics', api=True, modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData'])
-    def get_financial_metrics(
+    def extract_financial_metrics(
         self,
         modules_dict: Dict[str, Dict[str, Any]]
     ) -> Dict[str, Dict[str, Optional[Union[float, str]]]]:
@@ -423,7 +423,7 @@ class YahooQueryService:
         return out
 
     @ResearchDataCoordinator.register_as_research('company_profile', api=True, modules=['summaryProfile'])
-    def get_company_overview(
+    def extract_company_overview(
         self,
         modules_dict: Dict[str, Dict[str, Any]]
     ) -> Dict[str, Dict[str, Union[str, int]]]:
@@ -476,7 +476,7 @@ class YahooQueryService:
         return out
 
     @ResearchDataCoordinator.register_as_research('insider_trades', api=True, modules=['insiderTransactions'])
-    def get_insider_trades(
+    def extract_insider_trades(
         self,
         module_dict,
         timeframe_in_years: int = 5
@@ -580,7 +580,7 @@ class YahooQueryService:
 
     @DbManager.time_method
     @yq_exception_handler()
-    def yq_screener_get_screeners(self, screeners: List[str] | str, count: int = 25) -> Dict:
+    def yq_screener_fetch_screeners(self, screeners: List[str] | str, count: int = 25) -> Dict:
         """
         In the style of get_modules, query yahoo API for screener objects.
 
@@ -711,7 +711,7 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
  
-    def get_relative_volumes(self, screeners: Dict, qty: int = 25) -> Dict[str, List[Dict]]:
+    def extract_relative_volumes(self, screeners: Dict, qty: int = 25) -> Dict[str, List[Dict]]:
         """
         Find stocks with largest volume spikes, split by price direction.
         
@@ -799,7 +799,7 @@ class YahooQueryService:
             'volume_spike_bearish': bearish_spikes[:qty]
         }
     
-    def get_screener_metadata(self, screeners: Dict) -> Dict[str, List[str]]:
+    def extract_screener_metadata(self, screeners: Dict) -> Dict[str, List[str]]:
         """
         Extract screener data required for database insertion.
         """
@@ -815,7 +815,7 @@ class YahooQueryService:
 
         return extracted
     
-    def get_screener_data(self, screeners: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
+    def extract_screener_data(self, screeners: Dict) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
         """
         Extract data from screener quotes for database insertion.
         
