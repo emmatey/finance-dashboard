@@ -171,7 +171,7 @@ class MarketOverviewCoordinator(DbManager):
 
         logger.info(f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers")
 
-    def prepare_market_overview(self, symbols=None, per_screener_limit=25, dbio_instance=None):
+    def prepare_market_overview(self, symbols=SYMBOLS, per_screener_limit=25, dbio_instance=io()):
         """
         Prepare homepage data: regional market overview and screener results.
 
@@ -203,12 +203,6 @@ class MarketOverviewCoordinator(DbManager):
                 }
             }
         """
-        # Use defaults if not provided
-        if symbols is None:
-            symbols = self.SYMBOLS
-        if dbio_instance is None:
-            dbio_instance = io()
-
         # Get all screener names
         screener_names = self.YQ_SCREENER_NAMES + self.CUSTOM_SCREENERS
 
