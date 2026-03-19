@@ -53,16 +53,17 @@ class TransactionManager(DbManager):
         """
         query = self.simple_query(
             "SELECT ticker, last_updated FROM symbols WHERE ticker = ?",
-            (symbol,)
+            (symbol, )
         )
+        assert isinstance(query, list)
         if query:
             logger.debug(f"Symbol {symbol} found in DB")
-            return query[0]  # type: ignore # Return the row dict
+            return query[0] 
         else:
             logger.debug(f"Symbol {symbol} not in DB")
             return None
 
-    def exists_online(self, symbol: str) -> dict | None:
+    def exists_online(self, symbol: str) -> dict | bool:
         """
         Check if symbol exists online using YahooQueryService.
 
@@ -73,12 +74,11 @@ class TransactionManager(DbManager):
             The price module data payload if found, otherwise None.
         """
         try:
-            # Use the protected yq_ticker_get_modules method to get price module
             modules = self.yq_service.yq_ticker_fetch_modules(symbol, 'price')
 
             if not modules:
                 logger.warning(f"{symbol} not found via YahooQueryService.")
-                return None
+                return False
 
             # Extract price module for this symbol
             price_module = modules.get(symbol, {}).get('price', {})
@@ -94,14 +94,14 @@ class TransactionManager(DbManager):
 
             if fallback:
                 logger.info(f"Symbol {symbol} found online via backup datasource!")
-                return fallback
+                return True
 
             logger.warning(f"{symbol} also not found on backup datasource.")
-            return None
+            return False
 
         except Exception as e:
             logger.exception(f"Error checking {symbol} online:")
-            return None
+            return False
 
     def verify_symbol(self, symbol: str) -> bool:
         """
@@ -155,8 +155,12 @@ class TransactionManager(DbManager):
 
             if api_data:
                 # Found online - update with fresh data
-                logger.info(f"{symbol} verified online. Updating DB with fresh data.")
-                APIDataIO().upsert_symbols(api_data)
+                logger.info(f"{symbol} verified online.")
+                if isinstance(api_data, dict):
+                    logger.info(f"{symbol} Updating DB with fresh data.")
+                    APIDataIO().upsert_symbols(api_data)
+                else:
+                    logger.info(f"{symbol} verified online in backup data source. Not upserting.")
                 return True
             else:
                 # Was in DB but NOT found online - potential delisting/renaming
@@ -173,10 +177,15 @@ class TransactionManager(DbManager):
             api_data = self.exists_online(symbol)
 
             if api_data:
-                # Found online - insert into DB
-                logger.info(f"{symbol} found online. Adding to database.")
-                APIDataIO().upsert_symbols(api_data)
+                # Found online - update with fresh data
+                logger.info(f"{symbol} verified online.")
+                if isinstance(api_data, dict):
+                    logger.info(f"{symbol} Updating DB with fresh data.")
+                    APIDataIO().upsert_symbols(api_data)
+                else:
+                    logger.info(f"{symbol} verified online in backup data source. Not upserting.")
                 return True
+            
             else:
                 # Not in DB and not found online - invalid symbol
                 logger.warning(f"{symbol} invalid. Not found locally nor online.")
@@ -186,9 +195,8 @@ class TransactionManager(DbManager):
         """
         Query db to record a buy after prior verification.
 
-
         """
-        pass
+       
 
     def write_pending_transaction_to_session(self, session, tx_type: str):
         """

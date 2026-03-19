@@ -110,7 +110,7 @@ class MarketOverviewCoordinator(DbManager):
         
         logger.info(f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}")
 
-    def market_overview_data_update_orchestrator(self, screener_names=YQ_SCREENER_NAMES, screener_count=100, yqs_instance=yqs(), dbio_instance=io()):
+    def screener_data_update_orchestrator(self, screener_names=YQ_SCREENER_NAMES, screener_count=100, yqs_instance=yqs(), dbio_instance=io()):
         """
         Checks the age of screener data and updates if stale.
         Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.

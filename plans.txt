@@ -9,37 +9,73 @@ LONG TERM FEATURES
     - Refresh price button on research and index that shows when last price was fetched.
     - Deposit/withdraw cash routes
 
-- '/research'
-    'Detailed per-stock info'
-    user searches > clean search term > check freshness > update stale data > query updated data from db >
-    format data for display on UI > unpack in Jinja
+- Core Pages (5 routes)
+    '/' (homepage) - "Market overview + screeners + user summary + newsfeed"
+        - Global Markets 
+            moc.initialize_regional_etfs() > io.get_regional_overview()
+        
+        - Screeners
+            moc.screener_data_update_orchestrator() > io.get_screener_results()
 
-- '/index'
-    'Screeners + Account Balance/Value'
-    front page metrics:
-        analyst_strong_buy_stocks, undervalued_growth_stocks, most_shorted_stocks,
-        day_gainers, day_losers,
-        most_actives, most_visited
-        sp500, gold
+        - User summary
+            Balance graph data - TODO
+            User cash balance - rm.get_balance()
+            User portfolio value - rm.get_holdings_value()
+            Rank among users - TODO
+        
+        - News Feed
+            io.get_news()
 
-- '/portfolio'
-    'Holdings spreadsheet + Pie chart view'
-        reportmanager user holdings report
+    '/research/<symbol>' - "Deep dive on one stock"
+        rdc.research_data_update_orchestrator() on nav to refresh data prior to Getters
 
-- '/history'
-    Record of all transactions
-    
-- '/buy'
-    Use confirmation screen
+        - Top Bar (Name + Symbol + Price)
+            Symbols table getter - TODO
+        
+        - Price History graph
+            io.get_historical_prices()
 
-- '/sell'
-    Use confirmation screen
+        - News Feed
+            io.get_news()
 
-- '/deposit'
-    Use confirmation screen
+        - Financial Metrics
+            io.get_financial_metrics()
 
-- '/withdraw'
-    Use confirmation screen
+        - Company Description
+            io.get_company_profile()
+
+        - Insider Trades
+            io.get_insider_trades()
+         
+    '/quote'
+        "Quick price lookup + buy/sell buttons"
+
+    '/leaderboard'
+        "User rankings by portfolio value"
+
+    '/portfolio/<user_id>'
+        "View someone's holdings"
+
+- Transaction Flow (4 routes)
+    '/buy' 
+        "Initiate buy, redirect to confirm"
+
+    '/buy/confirm' (GET)
+        "Show confirmation screen"
+
+    '/buy/execute'
+        "Finalize transaction"
+
+    '/sell', '/sell/confirm', '/sell/execute'- Same pattern
+
+- Account (3 routes)
+    '/login'
+        
+
+    '/register'
+
+
+    '/logout'
 
 - Daemons
     Every 60 seconds the prices will be updated.(global events)

@@ -10,8 +10,7 @@ from flask import Flask, flash, g, redirect, render_template, request, session, 
 from flask_session import Session
 from math import ceil
 from ReportManager import ReportManager
-from UserManager import UserManager
-
+from AccountManager import AccountManager
 
 
 # Configure Logging
@@ -85,170 +84,14 @@ def index():
 @helpers.login_required
 def buy():
     """Buy shares of stock"""
-    if request.method == "GET":
-        rm = ReportManager()
-
-        user_id = helpers.get_user_id(session)
-
-        balance_raw = rm.get_balance(user_id)
-        balance_formatted = helpers.usd(balance_raw)
-
-        # Check if user was redirected from /quote's 'purchase' button and insert the search query if so
-        quote_term = request.args.get("symbol", "")
-
-        return render_template("buy.html", balance_formatted=balance_formatted, balance_raw=balance_raw, symbol=quote_term)
-
-    if request.method == "POST":
-        symbol = request.form.get("symbol", None)
-        shares_input = request.form.get("shares")
-        user_id = helpers.get_user_id(session)
-        unit_price = None
-        name = None
-
-        # Validate form input
-        if not shares_input or not shares_input.isdigit():
-            return helpers.apology("Shares must be a positive integer", 400)
-
-        # qty = int(shares_input) Support fractional shares!
-
-        if qty <= 0:
-            return helpers.apology("Shares must be at least 1", 400)
-
-        # Check if symbol corresponds to an extant stock.
-        # lookup() interface == "{'name': 'Macy's Inc Common Stock', 'price': 12.15, 'symbol': 'M'}"
-        stock_info = helpers.validate_symbol(symbol)
-        if not stock_info:
-            return redirect(url_for("buy"))
-
-        # Redefine vars for db write.
-        symbol = stock_info.get("symbol", None)
-        unit_price = stock_info.get("price", None)
-        name = stock_info.get("name", None)
-
-        # Begin transaction to ensure all queries are fulfilled.
-        db.execute("BEGIN TRANSACTION")
-
-        # Check if user can afford purchase.
-        balance = helpers.get_cash_balance(db, user_id)
-        if balance is None:
-            db.execute("ROLLBACK")
-            return helpers.apology("Database error: Balance not found.")
-        transaction_price = (unit_price * qty)
-        cash_after = balance - transaction_price
-
-        if transaction_price > balance:
-            db.execute("ROLLBACK")
-            return helpers.apology(f"Insufficent Balance: The transaction of {qty} shares of {symbol} costs {transaction_price}, but your balance is {balance}.", 400)
-        else:
-            # Update user's cash balance in users table.
-            db.execute("UPDATE users SET cash = ? WHERE id = ?",
-                       cash_after, user_id)
-
-        # Update the user portfolio table.
-        check_own = db.execute(
-            "SELECT * FROM portfolio WHERE symbol = ? AND user_id = ?", symbol, user_id)
-        if check_own:
-            db.execute("UPDATE portfolio SET shares = (shares + ?), unit_price = ? WHERE symbol = ? AND user_id = ?",
-                       qty, unit_price, symbol, user_id)
-        else:
-            db.execute("INSERT INTO portfolio (user_id, symbol, name, shares, unit_price) VALUES (?, ?, ?, ?, ?)",
-                       user_id, symbol, name, qty, unit_price)
-
-        # Write transaction to transactions table
-        db.execute(
-            "INSERT INTO transactions (user_id, action, symbol, qty, unit_price, cash_after)\
-            VALUES (?, 'buy', ?, ?, ?, ?)", user_id, symbol, qty, unit_price, cash_after)
-
-        helpers.write_to_balance_snapshots(db, user_id, force=True)
-
-        # end transaction and save
-        db.execute("COMMIT")
-
-        # redirect home
-        flash(f"Purchase Sucessful! You bought {qty} share(s) of {symbol} for {helpers.usd(unit_price * qty)}.")
-
-        return redirect(url_for("index"))
+    pass
 
 
 @app.route("/sell", methods=["GET", "POST"])
 @helpers.login_required
 def sell():
     """Sell shares of stock"""
-    if request.method == "POST":
-        # Validate Input
-        try:
-            qty = int(request.form.get("shares", None))
-        except (ValueError, TypeError) as e:
-            print(e)
-            return apology("Invalid input: The 'shares' field must contain a number.")
-        if qty is None:
-            return helpers.apology("Input not found: Please enter a number in the 'shares' field.")
-        if qty <= 0:
-            return helpers.apology("Invalid input: Invalid quantity for sell order, enter a positive number.")
-
-        symbol = request.form.get("symbol")
-        stock_info = helpers.validate_symbol(symbol)
-
-        if not stock_info:
-            return redirect(url_for("sell"))
-
-        # Check if user owns stock.
-        user_id = helpers.get_user_id(session)
-        stock_query = db.execute(
-            "SELECT symbol, name, shares, unit_price FROM portfolio WHERE user_id = ? AND symbol = ?", user_id, symbol)
-        if not stock_query:
-            return helpers.apology(f"Transaction failed. Your portfolio does not contain any shares of {symbol}.")
-
-        # Check if user owns more shares than they're selling.
-        shares_owned = int(stock_query[0]["shares"])
-        if shares_owned < qty:
-            return helpers.apology(f"Transaction failed. You requested to sell {qty} shares but you only own {shares_owned}.")
-
-        db.execute("BEGIN TRANSACTION")
-
-        # Get latest price.
-        unit_price = stock_info["price"]
-
-        # Update portfolio table. We can assume stock exists in portfolio from earlier query.
-        db.execute("UPDATE portfolio SET shares = (shares - ?), unit_price = ? WHERE user_id = ? AND SYMBOL = ?",
-                   qty, unit_price, user_id, symbol.upper())
-
-        # Clean up rows where user sells all shares
-        db.execute(
-            "DELETE FROM portfolio WHERE user_id = ? AND symbol = ? AND shares = 0",
-            user_id, symbol.upper()
-        )
-
-        transaction_value = unit_price * qty
-        cash_balance = helpers.get_cash_balance(db, user_id)
-        cash_after = cash_balance + transaction_value
-
-        db.execute("UPDATE users SET cash = (cash + ?) WHERE id = ?",
-                   transaction_value, user_id)
-
-        db.execute("INSERT INTO transactions (user_id, action, symbol, qty, unit_price, cash_after)\
-                   VALUES (?, ?, ?, ?, ?, ?)", user_id, 'sell', symbol.upper(), qty, unit_price, cash_after)
-
-        helpers.write_to_balance_snapshots(db, user_id, force=True)
-
-        db.execute("COMMIT")
-
-        flash(f"Sale Sucessful! You sold {qty} share(s) of {symbol} for {helpers.usd(unit_price * qty)}.")
-
-        # Send argument used to trigger CSS effect.
-        return redirect(url_for("index", sold="true"))
-
-    if request.method == "GET":
-        user_id = helpers.get_user_id(session)
-
-        balance_raw = helpers.get_cash_balance(db, user_id)
-        balance_formatted = helpers.usd(balance_raw)
-
-        # Select stock portfolio to provide <option>s in jinja for <select> element.
-        stock_query = db.execute(
-            "SELECT symbol, name, shares, unit_price FROM portfolio WHERE user_id = ?", user_id)
-
-        return render_template("sell.html", balance_formatted=balance_formatted, balance_raw=balance_raw, stock_query=stock_query)
+    pass
 
 
 @app.route("/history")
@@ -289,27 +132,7 @@ def history():
 @helpers.login_required
 def quote():
     """Get stock quote."""
-    if request.method == "GET":
-        return render_template("quote.html")
-
-    if request.method == "POST":
-        # helpers.py 'lookup()' method return format
-        # {
-        #    "name": quote_data["companyName"],
-        #    "price": quote_data["latestPrice"],
-        #    "symbol": symbol.upper()
-        # }
-        query = request.form.get("symbol")
-        info = helpers.validate_symbol(query)
-
-        if not info:
-            return redirect(url_for("quote"))
-
-        name=info["name"]
-        symbol=info["symbol"]
-        price=info["price"]
-
-        return render_template("quoted.html", name=name, symbol=symbol, price=price)
+    pass
 
 
 @app.route("/research", methods=["GET"])
@@ -341,29 +164,7 @@ def research():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
-    UM = UserManager(session)
-
-    # Forget any user_id
-    session.clear()
-
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-
-        if not username:
-            return helpers.apology("must provide username", 403)
-        elif not password:
-            return helpers.apology("must provide password", 403)
-
-        if UM.login(username, password):
-            # Redirect user to home page
-            return redirect(url_for("index"))
-        else:
-            return helpers.apology("invalid username and/or password", 403)
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("login.html")
+    pass
 
 
 @app.route("/logout")
@@ -380,32 +181,11 @@ def logout():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    UM = UserManager(session)
-
-    # Forget any user_id
-    session.clear()
-
-    if request.method == "POST":
-        username = request.form.get("username", None)
-        password = request.form.get("password", None)
-        confirmation = request.form.get("confirmation", None)
-
-        if not username or not password or not confirmation:
-            return helpers.apology("Please fill out all fields in the registration form and try again.", 400)
-        if password != confirmation:
-            return helpers.apology("Password and confirmation are not equal.", 400)
-
-        if UM.register(username, password):
-            return redirect(url_for("login"))
-        else:
-            return helpers.apology("Username already in use.", 400)
-
-
-    if request.method == "GET":
-        return render_template("register.html")
+    pass
 
 
 if __name__ == "__main__":
     # Create background thread that has a persistent app context and db connection
     # use this to update global data, sync live prices, and write user balance_snapshots!
 
+    pass
