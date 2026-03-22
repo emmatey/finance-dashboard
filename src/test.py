@@ -57,10 +57,10 @@ def home():
     sm = SearchManager()
     
     
-    ret = sm.search_companies_local("i")
-    print(ret)
+    #ret = sm.search_companies_local("voo")
+    #print(ret)
 
-    yq_ret = sm.search_companies_online('i')
+    yq_ret = sm.search_companies_online('bitcoin')
     print(yq_ret)
 
     filler_page = """

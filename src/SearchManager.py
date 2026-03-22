@@ -53,7 +53,7 @@ class SearchManager(DbManager):
         if isinstance(res, list) and all(isinstance(i, dict) for i in res):
             for row in res:
                 quote_type = row.get("quoteType")
-                if quote_type != "EQUITY":
+                if quote_type in ['FUTURE', 'CURRENCY', 'OPTION']:
                     continue
                 
                 ticker = row.get('symbol')
@@ -63,6 +63,7 @@ class SearchManager(DbManager):
 
                 if ticker and name:
                     out.append({
+                        'quote_type': quote_type,
                         'ticker': ticker,
                         'company_name': name
                     })

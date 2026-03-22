@@ -36,9 +36,10 @@ class APIDataIO(DbManager):
                 }
         """
         sql = """
-        INSERT INTO symbols (ticker, company_name, last_price, last_updated)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO symbols (quote_type, ticker, company_name, last_price, last_updated)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(ticker) DO UPDATE SET
+            quote_type = excluded.quote_type,
             company_name = excluded.company_name,
             last_price = excluded.last_price,
             last_updated = CURRENT_TIMESTAMP
@@ -47,16 +48,19 @@ class APIDataIO(DbManager):
         for symbol, modules in modules_dict.items():
             price_module = modules.get('price')
             if price_module:
+                quote_type = price_module.get('quoteType', 'UNKNOWN')
                 company_name = (
                     price_module.get('longName') or 
                     price_module.get('shortName') or 
                     symbol.upper()
                 )
-                last_price = price_module.get('regularMarketPrice', 0)
-                symbols_tuples.append(tuple([symbol, company_name, last_price]))
+                last_price = price_module.get('regularMarketPrice')
+                if not last_price:
+                    continue
+                symbols_tuples.append(tuple([quote_type, symbol, company_name, last_price]))
 
             else:
-                logger.warning(f"'price' module not foud for {symbol}.")
+                logger.warning(f"'price' module not found for {symbol}.")
 
         self.bulk_query(sql, symbols_tuples)
         
