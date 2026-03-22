@@ -26,41 +26,27 @@ class TransactionManager(DbManager):
         """
         self.yq_service = yq_service
 
-    @staticmethod
-    def filter_user_symbol_query(symbol: str) -> str:
+    def exists_in_db(self, query: str):
         """
-        Strip out all non alphanum chars and symbols from search terms.
+        Check if the user's query exists in the db. 
+        User could search for symbol/tickers or company name string.
         """
-        if type(symbol) is not str:
-            logger.warning(
-                f"{symbol} is of invalid type. {type(symbol)} is not string. Returning empty str.")
-            return ""
+        # Convert user input to string and add 'LIKE' wildcards.
+        safe_query = f"%{str(query)}%"
 
-        buffer = []
-        for char in symbol:
-            if char.isalnum():
-                buffer.append(char)
-
-        return ''.join(buffer).upper()
-
-    def exists_in_db(self, symbol: str) -> dict | None:
+        sql = """
+        SELECT *
+        FROM symbols 
+        WHERE ticker LIKE ?
+        OR company_name LIKE ?
         """
-        Check if symbol exists in the local database.
 
-        Returns:
-            Dictionary with symbol data including last_updated timestamp if found,
-            None if not found
-        """
-        query = self.simple_query(
-            "SELECT ticker, last_updated FROM symbols WHERE ticker = ?",
-            (symbol, )
-        )
-        assert isinstance(query, list)
-        if query:
-            logger.debug(f"Symbol {symbol} found in DB")
-            return query[0] 
+        rows = self.simple_query(sql, tuple([safe_query, safe_query]))
+
+        if rows:
+            return rows
         else:
-            logger.debug(f"Symbol {symbol} not in DB")
+            logger.info(f"No data found for {query}")
             return None
 
     def exists_online(self, symbol: str) -> dict | bool:
@@ -196,7 +182,6 @@ class TransactionManager(DbManager):
         Query db to record a buy after prior verification.
 
         """
-       
 
     def write_pending_transaction_to_session(self, session, tx_type: str):
         """

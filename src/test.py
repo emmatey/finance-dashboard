@@ -53,9 +53,10 @@ def home():
     yqs = YahooQueryService()
     dae = Satan()
     moc = MarketOverviewCoordinator()
-
-    moc.initialize_regional_etfs()
-
+    
+    
+    ret = tm.exists_in_db("i")
+    print(ret)
 
 
     filler_page = """

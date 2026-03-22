@@ -55,20 +55,24 @@ LONG TERM FEATURES
     '/leaderboard'
         "User rankings by portfolio value"
             data required
-                - Username
-                - Rank
-                - portfolio value
-                - holdings value
-                - holdings qty.
-            - 
+                - Usernames
+                - holdings values
+            get_holdings_value()
 
     '/portfolio/<user_id>'
         "View someone's holdings"
+            data required
+            - Username
+            - Rank
+            - portfolio value
+            - holdings value
+            - holdings qty.
+            get_holdings_value() # also returns all holdings
 
 - Transaction Flow (4 routes)
     '/buy' 
         "Initiate buy, redirect to confirm"
-
+        verify_symbol() > 
     '/buy/confirm' (GET)
         "Show confirmation screen"
 
