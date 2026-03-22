@@ -10,6 +10,7 @@ from YahooAPIClient import YahooAPIClient
 from YahooQueryService import YahooQueryService
 from Satan import Satan
 from MarketOverviewCoordinator import MarketOverviewCoordinator
+from SearchManager import SearchManager
 import pandas as pd
 import datetime
 import numpy as np
@@ -53,11 +54,14 @@ def home():
     yqs = YahooQueryService()
     dae = Satan()
     moc = MarketOverviewCoordinator()
+    sm = SearchManager()
     
     
-    ret = tm.exists_in_db("i")
+    ret = sm.search_companies_local("i")
     print(ret)
 
+    yq_ret = sm.search_companies_online('i')
+    print(yq_ret)
 
     filler_page = """
         <body style="background-color: black; color: green;">

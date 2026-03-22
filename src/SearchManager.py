@@ -4,7 +4,7 @@ from YahooQueryService import YahooQueryService
 from datetime import datetime, timedelta
 import helpers
 import logging
-
+import yahooquery as yq
 
 logger = logging.getLogger(__name__)
 
@@ -14,16 +14,7 @@ class SearchManager(DbManager):
     Should show a union of db results and yq.search results in a search results page unless user types an exact match.
     In which case user should be directed right to the page in question.
     """
-    def __init__(self, yq_service=YahooQueryService()):
-        """
-        Initialize TransactionManager with Yahoo Query Service.
-
-        Args:
-            yq_service: Instance of YahooQueryService for fetching stock data
-        """
-        self.yq_service = yq_service
-        
-    def exists_in_db(self, query: str):
+    def search_companies_local(self, query: str):
         """
         Return the companies that are close to or the same as what the user is typing.
         """
@@ -45,42 +36,45 @@ class SearchManager(DbManager):
             logger.info(f"No data found for {query}")
             return None
 
-    def exists_online(self, symbol: str) -> dict | bool:
+    def search_companies_online(self, query: str):
         """
         Check if symbol exists online using YahooQueryService.
-
-        Args:
-            symbol: Stock ticker symbol
-
-        Returns:
-            The price module data payload if found, otherwise None.
         """
-        try:
-            modules = self.yq_service.yq_ticker_fetch_modules(symbol, 'price')
+        # Convert query to string.
+        safe_query: str = str(query)
 
-            if not modules:
-                logger.warning(f"{symbol} not found via YahooQueryService.")
-                return False
+        # Search with yahoo query search() method.
+        res_raw = yq.search(safe_query, quotes_count=10, news_count=0)
+        
+        # Extract relevant data.
+        out = []
+        res = res_raw.get('quotes')
+            # checks res is a list of dicts.
+        if isinstance(res, list) and all(isinstance(i, dict) for i in res):
+            for row in res:
+                quote_type = row.get("quoteType")
+                if quote_type != "EQUITY":
+                    continue
+                
+                ticker = row.get('symbol')
+                name = row.get('longname')
+                if not name:
+                    name = row.get('shortname')
 
-            # Extract price module for this symbol
-            price_module = modules.get(symbol, {}).get('price', {})
+                if ticker and name:
+                    out.append({
+                        'ticker': ticker,
+                        'company_name': name
+                    })
+        else:
+            logger.info(f"No data found for {query} in yahoofinance.")
 
-            # Check for a valid dictionary with actual price data
-            if isinstance(price_module, dict) and "regularMarketPrice" in price_module:
-                logger.info(f"Symbol {symbol} found online via YahooQuery!")
-                return price_module
+        # Return as list of dicts.
+        return out
 
-            # If YahooQuery failed, check the CS50 fallback
-            logger.warning(f"{symbol} not found on YahooQuery. Checking CS50.io...")
-            fallback = helpers.lookup(symbol)
-
-            if fallback:
-                logger.info(f"Symbol {symbol} found online via backup datasource!")
-                return True
-
-            logger.warning(f"{symbol} also not found on backup datasource.")
-            return False
-
-        except Exception as e:
-            logger.exception(f"Error checking {symbol} online:")
-            return False
+    def online_offline_union(self, online_results, offline_results):
+        """
+        Compares online and offline results from user query. Meaning API and DB.
+        Returns a dataset which eliminates dubplicate results.
+        """
+        pass
