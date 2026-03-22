@@ -41,7 +41,7 @@ class SearchManager(DbManager):
         Check if symbol exists online using YahooQueryService.
         """
         # Convert query to string.
-        safe_query: str = str(query)
+        safe_query: str = str(query).strip()
 
         # Search with yahoo query search() method.
         res_raw = yq.search(safe_query, quotes_count=10, news_count=0)
@@ -53,7 +53,7 @@ class SearchManager(DbManager):
         if isinstance(res, list) and all(isinstance(i, dict) for i in res):
             for row in res:
                 quote_type = row.get("quoteType")
-                if quote_type in ['FUTURE', 'CURRENCY', 'OPTION']:
+                if quote_type in ['FUTURE', 'CURRENCY', 'OPTION', 'INDEX']:
                     continue
                 
                 ticker = row.get('symbol')
@@ -73,9 +73,19 @@ class SearchManager(DbManager):
         # Return as list of dicts.
         return out
 
-    def online_offline_union(self, online_results, offline_results):
+    def online_offline_union(self, offline_results, online_results):
         """
         Compares online and offline results from user query. Meaning API and DB.
-        Returns a dataset which eliminates dubplicate results.
+        Returns a dataset which eliminates duplicate results.
         """
-        pass
+        results = offline_results + online_results
+        
+        seen = set()
+        unique_results = []
+        for res in results:
+            ticker = res.get('ticker')
+            if ticker and ticker not in seen:
+                seen.add(ticker)
+                unique_results.append(res)
+
+        return unique_results

@@ -57,11 +57,15 @@ def home():
     sm = SearchManager()
     
     
-    #ret = sm.search_companies_local("voo")
-    #print(ret)
+    ret = sm.search_companies_local("voo")
+    print(ret)
 
-    yq_ret = sm.search_companies_online('bitcoin')
+    yq_ret = sm.search_companies_online('voo')
     print(yq_ret)
+
+    unique = sm.online_offline_union(offline_results=ret, online_results=yq_ret)
+    print()
+    print(unique)
 
     filler_page = """
         <body style="background-color: black; color: green;">
