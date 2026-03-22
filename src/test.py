@@ -54,9 +54,7 @@ def home():
     dae = Satan()
     moc = MarketOverviewCoordinator()
 
-    data = moc.prepare_market_overview()
-    print(data)
-    print(data.get('screeners').keys())
+    moc.initialize_regional_etfs()
 
 
 

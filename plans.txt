@@ -49,9 +49,18 @@ LONG TERM FEATURES
          
     '/quote'
         "Quick price lookup + buy/sell buttons"
+            - VERSION 2.0 FEATURE
+            - MVP only requires research page.
 
     '/leaderboard'
         "User rankings by portfolio value"
+            data required
+                - Username
+                - Rank
+                - portfolio value
+                - holdings value
+                - holdings qty.
+            - 
 
     '/portfolio/<user_id>'
         "View someone's holdings"

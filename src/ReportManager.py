@@ -57,7 +57,7 @@ class ReportManager(DbManager):
         return self._calculate_holdings_value(user_id=0, all_users=True)
 
 
-    def _calculate_holdings_value(self, user_id: int = 0, all_users: bool = False) -> Dict[int, float]:
+    def _calculate_holdings_value(self, user_id: int = 0, all_users: bool = False):
         """
         Internal method to calculate holdings values for one or all users.
 
@@ -123,6 +123,7 @@ class ReportManager(DbManager):
 
         # Calculate holdings value
         holdings_value_per_user = {}
+        holdings_per_user = {}
         for user, history in user_grouped.items():
             user_shares = defaultdict(float)
             for tx in history:
@@ -130,8 +131,11 @@ class ReportManager(DbManager):
 
             current_value = sum(qty * price_map.get(symbol_id, 0) for symbol_id, qty in user_shares.items())
             holdings_value_per_user[user] = round(current_value, 2)
+            holdings_per_user[user] = user_shares
 
-        return holdings_value_per_user
+
+
+        return holdings_value_per_user, holdings_per_user
 
 
     def get_portfolio_view(self, user_id: int) -> List[Dict[str, Union[str, float]]]:

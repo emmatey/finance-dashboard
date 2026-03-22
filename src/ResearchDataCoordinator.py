@@ -173,7 +173,7 @@ class ResearchDataCoordinator(DbManager):
         if not yqs_instance or not db_io_instance:
             raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
 
-        # Collect list of modules required
+        # Collect list of modules required by updater functions who are associated with 'stale' data.
         modules_set = set()
         for table, status in fresh_report.items():
             if status is False:
@@ -192,7 +192,7 @@ class ResearchDataCoordinator(DbManager):
 
         # Call refresh functions for stale db tables
         for table, status in fresh_report.items():
-            # Fresh report has a default k:v pair "fresh_report = {"symbol": symbol}"
+            # Fresh report has a default k:v pair "fresh_report = {"symbol": symbol}" key is literally the string "symbol" skipping here.
             if table == "symbol":
                 continue
             if status is False:
