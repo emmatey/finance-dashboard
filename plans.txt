@@ -91,14 +91,10 @@ LONG TERM FEATURES
     '/logout'
 
 - Search Bar
-    Event listener listens for keystroke and starts a timer,
-    on every keystroke resets timer. After x MS, query db for what they
-    searched, and generate a data list based on the SQL query.
-
-    user types > exists_in_db() > return > datalist > user hits enter > 
-    render...
     union of exists_in_db + yq.search(query) 
-
+    
+    if only one result, skip results page and go to research page!
+    
     requires a search results page and route!
 
 - Daemons
