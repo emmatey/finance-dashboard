@@ -70,9 +70,11 @@ LONG TERM FEATURES
             get_holdings_value() # also returns all holdings
 
 - Transaction Flow (4 routes)
+One thing to remember for the buy/sell is to check the price data again before confirmation of the sale assuming the user has been
+on the page a given qty of time.
     '/buy' 
         "Initiate buy, redirect to confirm"
-        verify_symbol() > 
+        
     '/buy/confirm' (GET)
         "Show confirmation screen"
 

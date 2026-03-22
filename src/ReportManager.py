@@ -42,8 +42,8 @@ class ReportManager(DbManager):
         Returns:
             Total portfolio value as float, or 0.0 if no holdings
         """
-        result = self._calculate_holdings_value(user_id=user_id, all_users=False)
-        return result.get(user_id, 0.0)
+        holdings_value_per_user, holdings_per_user = self._calculate_holdings_value(user_id=user_id, all_users=False)
+        return holdings_value_per_user.get(user_id, 0.0)
 
 
     def get_all_holdings_values(self) -> Dict[int, float]:
@@ -54,7 +54,9 @@ class ReportManager(DbManager):
         Returns:
             Dictionary mapping user_id to portfolio value: {user_id: value}
         """
-        return self._calculate_holdings_value(user_id=0, all_users=True)
+        holdings_value_per_user, holdings_per_user = self._calculate_holdings_value(user_id=0, all_users=True)
+
+        return holdings_value_per_user
 
 
     def _calculate_holdings_value(self, user_id: int = 0, all_users: bool = False):

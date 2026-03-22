@@ -13,6 +13,11 @@ class TransactionManager(DbManager):
     """
     Handles Buy/Sell, Deposit/Withdraw, and supporting methods.
 
+    Data flow:
+        Fetch current price > show user their current holdings of the given stock as well as price data >
+        on confirm fetch price agian > write tx to database
+
+        Note: Price update daemon will be updating all holding prices in the background, no need to manually do this here.
     Attributes:
         yq_service: YahooQueryService instance for API interactions
     """
@@ -27,33 +32,28 @@ class TransactionManager(DbManager):
         self.yq_service = yq_service
 
 
-    def record_buy_order_in_transactions_table(self, ):
+    def record_transacton(self, ):
         """
-        Query db to record a buy after prior verification.
-
-        """
-
-    def write_pending_transaction_to_session(self, session, tx_type: str):
-        """
+        
 
         """
         pass
 
-    ## Buy route ##
-    # Verify symbol exists - Done
-        # if exists but not in db, call insert funciton. DONE
-    # Calculate purchase price - Can be done in route
-        #
-    # Check user can afford - Can be done with balance func (exists) - purchase price calculated
-    # Record order in session token with age
+    def get_pricing_info(self):
+        """
 
-    # Redirect to confirmation screen!
-        # Render transaction data
-        # Fetch new price from DB (updated by daemnon every 60 seconds globally)
-        # System to fetch updated data
+        """
 
-    # Recirect to confirm route
-        # fetch new price from DB
-        # Write to transactions -
-        # balance snapshot
-        # redirect home
+    def check_can_afford(self, user_id, ticker, qty) -> bool:
+        """
+        """
+        pass
+
+    
+
+
+    # What this needs to be
+        # Record buy/sell to transactions table
+        # Get info about user holdings of the relevant stock for the confirmation screen
+
+
