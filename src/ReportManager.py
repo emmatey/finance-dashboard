@@ -58,44 +58,74 @@ class ReportManager(DbManager):
 
         return holdings_value_per_user
 
-    def get_holding_qty_value_per_user(self, user_id, ticker):
+    def get_holding_qty_value_per_user(self, user_id: int, ticker: str) -> dict | None:
         """
-        Check the quantity and value of a given holding per user.
-        """
-        _, holdings_per_user = self.calculate_holdings(user_id=0, all_users=True)
-        ticker = str(ticker).upper()
+        Get quantity and current value of a specific stock holding for a user.
 
-        # holdings_per_user {user_id: [{symbol_id: qty_owned}, {}]}
-        this_users_holdings = holdings_per_user.get(user_id)
-        if not isinstance(this_users_holdings, dict):
-            return
+        Args:
+            user_id: User's ID
+            ticker: Stock ticker symbol (e.g., 'AAPL')
+
+        Returns:
+            Dict with keys: user_id, ticker, ticker_id, current_price, qty_owned, holding_value
+            Returns None if:
+                - User has no holdings
+                - Ticker not found in database
+                - User doesn't own this ticker
+                - Price not available
+
+        Example:
+            >>> rm = ReportManager()
+            >>> holding = rm.get_holding_qty_value_per_user(1, 'AAPL')
+            >>> print(holding)
+            {'user_id': 1, 'ticker': 'AAPL', 'ticker_id': 5, 
+             'current_price': 150.25, 'qty_owned': 10, 'holding_value': 1502.50}
+        """
+        ticker = ticker.upper().strip()
+
+        # Get this user's holdings (not all users!)
+        _, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
+
+        user_holdings = holdings_per_user.get(user_id)
+        if not user_holdings:
+            logger.debug(f"User {user_id} has no holdings")
+            return None
+
+        # Get ticker info from DB
+        ticker_info = self.simple_query("""
+            SELECT id, last_price
+            FROM symbols
+            WHERE ticker = ?
+        """, (ticker,))
+
+        if not ticker_info:
+            logger.warning(f"Ticker {ticker} not found in database")
+            return None
+
+        assert not isinstance(ticker_info, int)
         
-        ticker_sql = """
-        SELECT id, last_price
-        FROM symbols
-        WHERE ticker = ?
-        """
-        row = self.simple_query(ticker_sql, (str(ticker), ))
-        if not isinstance(row, list):
-            return
-        if len(row) != 1:
-            return
-        if not isinstance(row[0], dict):
-            return
+        ticker_id = ticker_info[0]['id']
+        current_price = ticker_info[0]['last_price']
 
-        ticker_id = row[0].get('id')
-        current_price = row[0].get('last_price')
-        ticker_qty_owned = this_users_holdings.get(ticker_id)
+        if current_price is None:
+            logger.warning(f"Price not available for {ticker}")
+            return None
 
-        if ticker_id and current_price and ticker_qty_owned:
-            return {
-                'user_id': user_id,
-                'ticker': ticker,
-                'ticker_id': ticker_id,
-                'current_price': current_price, 
-                'qty_owned': ticker_qty_owned,
-                'holding_value': current_price * ticker_qty_owned
-            }
+        # Check if user owns this ticker
+        qty_owned = user_holdings.get(ticker_id, 0)
+
+        if qty_owned == 0:
+            logger.debug(f"User {user_id} does not own {ticker}")
+            return None
+
+        return {
+            'user_id': user_id,
+            'ticker': ticker,
+            'ticker_id': ticker_id,
+            'current_price': current_price, 
+            'qty_owned': qty_owned,
+            'holding_value': round(current_price * qty_owned, 2)
+        }
 
     def calculate_holdings(self, user_id: int = 0, all_users: bool = False):
         """
