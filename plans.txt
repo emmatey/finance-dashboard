@@ -100,6 +100,7 @@ on the page a given qty of time.
     requires a search results page and route!
 
 - Daemons
+    Satan will be handling all db writes and api queries via a process queue and thereadding.
     Every 60 seconds the prices will be updated.(global events)
     Every 24 hours all users will have balance snapshot taken. (global events)
     Every 24 hours trim all data over 5 yrs old
