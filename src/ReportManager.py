@@ -31,7 +31,6 @@ class ReportManager(DbManager):
             return None
         return res[0]['cash']
 
-
     def get_single_user_holdings_value(self, user_id: int) -> float:
         """
         Sum the current market value of a single user's holdings.
@@ -44,7 +43,6 @@ class ReportManager(DbManager):
         """
         holdings_value_per_user, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
         return holdings_value_per_user.get(user_id, 0.0)
-
 
     def get_all_users_holdings_values(self) -> Dict[int, float]:
         """
@@ -103,7 +101,7 @@ class ReportManager(DbManager):
             return None
 
         assert not isinstance(ticker_info, int)
-        
+
         ticker_id = ticker_info[0]['id']
         current_price = ticker_info[0]['last_price']
 
@@ -285,7 +283,6 @@ class ReportManager(DbManager):
         # https://stackoverflow.com/questions/72899/how-can-i-sort-a-list-of-dictionaries-by-a-value-of-the-dictionary-in-python
         return sorted(index_view, key=lambda x: x["current_value"], reverse=True)
 
-
     def get_transaction_history_per_user(self, user_id: int) -> Dict[int, List[Dict[str, Any]]]:
         """
         Query transactions history table to get all records from given userID.
@@ -317,7 +314,6 @@ class ReportManager(DbManager):
 
         return dict(grouped)
 
-
     def _delete_holdings_with_zero_quantity(
         self,
         transaction_history: Dict[int, List[Dict[str, Any]]]
@@ -345,7 +341,6 @@ class ReportManager(DbManager):
             del transaction_history[stock_id]
 
         return transaction_history
-
 
     def _adjust_for_stock_splits(
         self,
@@ -399,7 +394,6 @@ class ReportManager(DbManager):
                         tx['unit_price'] /= split_ratio
 
         return transaction_history
-
 
     def _get_cost_basis(
         self,
