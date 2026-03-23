@@ -26,33 +26,36 @@ class TransactionManager(CommonQueries):
         # Get user's cash balance
         pass
 
-    def check_can_afford(self, user_id, ticker, qty) -> bool:
+    def check_can_afford(self, user_id: int, ticker: str, qty: int) -> bool:
         """
-        Check if user can afford a tx.
-        return balance if yes, return False or something if no.
-        Assume stock has already been upserted into db
+        Check if user can afford a transaction.
+        
+        Args:
+            user_id: User's ID
+            ticker: Stock ticker symbol
+            qty: Number of shares to buy
+            
+        Returns:
+            True if user can afford the transaction, False otherwise
         """
-        # Check input
-        ticker = str(ticker).strip()
-
-        # Check ticker's price
-        overview = self.get_stock_basic_overview(ticker)
-        if not overview or not isinstance(overview, dict):
-            logger.warning(f"No data found for {ticker}. Transaction failed.")
+        # Get current price (uses CommonQueries.get_stock_basic_overview)
+        price = self.get_current_price(ticker)
+        
+        if not price:
+            logger.warning(f"No price found for {ticker}. Transaction blocked.")
             return False
         
-        price = overview.get("last_price")
         # Calculate trade value
         tx_value = price * qty
-
-        # Get user balance
-        row = self.simple_query("SELECT cash FROM users WHERE id = ?", (user_id, ))
-        balance = 0
-        if row and isinstance(row, list):
-            balance = row[0].get('cash', 0)
-         
-        # Compare
-        if tx_value >= balance:
+        
+        # Get user balance (uses CommonQueries.get_balance)
+        balance = self.get_balance(user_id)
+        
+        if balance is None:
+            logger.error(f"User {user_id} not found")
+            return False
+        
+        if balance >= tx_value:
             return True
         else:
             return False

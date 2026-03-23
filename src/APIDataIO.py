@@ -630,7 +630,7 @@ class APIDataIO(DbManager):
                it.transaction_value, it.filer_name, it.filer_relation,
                it.transaction_text, it.last_updated
         FROM insider_trades AS it
-        JOIN symbols AS s ON s.id = it.symbol_idk
+        JOIN symbols AS s ON s.id = it.symbol_id
         WHERE s.ticker IN ({placeholders})
         ORDER BY it.transaction_date DESC
         LIMIT ?
