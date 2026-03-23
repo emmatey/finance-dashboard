@@ -30,7 +30,7 @@ LONG TERM FEATURES
         rdc.research_data_update_orchestrator() on nav to refresh data prior to Getters
 
         - Top Bar (Name + Symbol + Price)
-            Symbols table getter - TODO
+            Symbols table getter - get_stock_basic_overview()
         
         - Price History graph
             io.get_historical_prices()
