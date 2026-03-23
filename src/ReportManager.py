@@ -32,7 +32,7 @@ class ReportManager(DbManager):
         return res[0]['cash']
 
 
-    def get_holdings_value(self, user_id: int) -> float:
+    def get_single_user_holdings_value(self, user_id: int) -> float:
         """
         Sum the current market value of a single user's holdings.
 
@@ -42,11 +42,11 @@ class ReportManager(DbManager):
         Returns:
             Total portfolio value as float, or 0.0 if no holdings
         """
-        holdings_value_per_user, holdings_per_user = self._calculate_holdings_value(user_id=user_id, all_users=False)
+        holdings_value_per_user, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
         return holdings_value_per_user.get(user_id, 0.0)
 
 
-    def get_all_holdings_values(self) -> Dict[int, float]:
+    def get_all_users_holdings_values(self) -> Dict[int, float]:
         """
         Sum the current market value of all users' holdings.
         Used by daemon for midnight balance snapshots.
@@ -54,14 +54,52 @@ class ReportManager(DbManager):
         Returns:
             Dictionary mapping user_id to portfolio value: {user_id: value}
         """
-        holdings_value_per_user, holdings_per_user = self._calculate_holdings_value(user_id=0, all_users=True)
+        holdings_value_per_user, holdings_per_user = self.calculate_holdings(user_id=0, all_users=True)
 
         return holdings_value_per_user
 
-
-    def _calculate_holdings_value(self, user_id: int = 0, all_users: bool = False):
+    def get_holding_qty_value_per_user(self, user_id, ticker):
         """
-        Internal method to calculate holdings values for one or all users.
+        Check the quantity and value of a given holding per user.
+        """
+        _, holdings_per_user = self.calculate_holdings(user_id=0, all_users=True)
+        ticker = str(ticker).upper()
+
+        # holdings_per_user {user_id: [{symbol_id: qty_owned}, {}]}
+        this_users_holdings = holdings_per_user.get(user_id)
+        if not isinstance(this_users_holdings, dict):
+            return
+        
+        ticker_sql = """
+        SELECT id, last_price
+        FROM symbols
+        WHERE ticker = ?
+        """
+        row = self.simple_query(ticker_sql, (str(ticker), ))
+        if not isinstance(row, list):
+            return
+        if len(row) != 1:
+            return
+        if not isinstance(row[0], dict):
+            return
+
+        ticker_id = row[0].get('id')
+        current_price = row[0].get('last_price')
+        ticker_qty_owned = this_users_holdings.get(ticker_id)
+
+        if ticker_id and current_price and ticker_qty_owned:
+            return {
+                'user_id': user_id,
+                'ticker': ticker,
+                'ticker_id': ticker_id,
+                'current_price': current_price, 
+                'qty_owned': ticker_qty_owned,
+                'holding_value': current_price * ticker_qty_owned
+            }
+
+    def calculate_holdings(self, user_id: int = 0, all_users: bool = False):
+        """
+        Calculate holdings values and qtys for one or all users.
 
         Args:
             user_id: The user's ID (ignored if all_users=True)
@@ -69,6 +107,7 @@ class ReportManager(DbManager):
 
         Returns:
             Dictionary mapping user_id to portfolio value: {user_id: value}
+             Dictionary mapping user_id to holdings id's and their quantaties.
 
         Raises:
             ValueError: If all_users is False and user_id is 0
@@ -135,10 +174,7 @@ class ReportManager(DbManager):
             holdings_value_per_user[user] = round(current_value, 2)
             holdings_per_user[user] = user_shares
 
-
-
         return holdings_value_per_user, holdings_per_user
-
 
     def get_portfolio_view(self, user_id: int) -> List[Dict[str, Union[str, float]]]:
         """

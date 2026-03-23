@@ -56,16 +56,8 @@ def home():
     moc = MarketOverviewCoordinator()
     sm = SearchManager()
     
-    
-    ret = sm.search_companies_local("voo")
-    print(ret)
-
-    yq_ret = sm.search_companies_online('voo')
-    print(yq_ret)
-
-    unique = sm.online_offline_union(offline_results=ret, online_results=yq_ret)
-    print()
-    print(unique)
+    res = rm.get_holding_qty_value_per_user(1, "msft")
+    print(res)
 
     filler_page = """
         <body style="background-color: black; color: green;">

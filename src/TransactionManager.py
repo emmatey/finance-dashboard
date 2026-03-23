@@ -41,7 +41,7 @@ class TransactionManager(DbManager):
 
     def get_pricing_info(self):
         """
-
+        
         """
 
     def check_can_afford(self, user_id, ticker, qty) -> bool:
