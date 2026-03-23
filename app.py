@@ -60,8 +60,6 @@ def teardown_db(exception):
 @helpers.login_required
 def index():
     """Show portfolio of stocks"""
-    db= DbManager()
-    user_id = helpers.get_user_id(session)
 
     # Check if balance snapshots has been updated in the last 24 hrs
     # Update stock prices
@@ -70,14 +68,6 @@ def index():
 
 
     # Writes datapoint for graphs on homepage every 24 hrs.
-    helpers.write_to_balance_snapshots(db, user_id)
-
-    graph_dataset = db.query("SELECT snap_datetime, portfolio_value, cash_balance, grand_total\
-                       FROM balance_snapshots WHERE user_id=?", (user_id, ))
-
-
-    return render_template("index.html", stock_query=stock_query, holdings_value=display_holdings_value, \
-                           cash_balance=display_cash_balance, grand_total=grand_total, graph_dataset=graph_dataset)
 
 
 @app.route("/buy", methods=["GET", "POST"])

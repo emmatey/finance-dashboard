@@ -28,7 +28,6 @@ class DbManager:
             return result
         return wrapper
 
-
     @staticmethod
     def get_root(anchor="requirements.txt") -> Path:
         """
@@ -43,7 +42,6 @@ class DbManager:
                 return parent
 
         raise RuntimeError(f"Project root not found, missing anchor file {anchor}")
-
 
     @staticmethod
     def get_db(db_name="finance.db"):
@@ -98,7 +96,6 @@ class DbManager:
 
         else:
             return g.db
-
 
     @time_method
     def select_query(self, query: str, placeholders: tuple = ()) -> list[dict]:

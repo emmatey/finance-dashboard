@@ -1,9 +1,8 @@
 import logging
 import math
 from CommonQueries import CommonQueries
-from DbManager import DbManager
 from collections import defaultdict, deque
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Union, Any
 
 
 logger = logging.getLogger(__name__)
@@ -14,179 +13,6 @@ class ReportManager(CommonQueries):
 
     Read from DB, format for frontend.
     """
-
-    def get_single_user_holdings_value(self, user_id: int) -> float:
-        """
-        Sum the current market value of a single user's holdings.
-
-        Args:
-            user_id: The user's ID
-
-        Returns:
-            Total portfolio value as float, or 0.0 if no holdings
-        """
-        holdings_value_per_user, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
-        return holdings_value_per_user.get(user_id, 0.0)
-
-    def get_all_users_holdings_values(self) -> Dict[int, float]:
-        """
-        Sum the current market value of all users' holdings.
-        Used by daemon for midnight balance snapshots.
-
-        Returns:
-            Dictionary mapping user_id to portfolio value: {user_id: value}
-        """
-        holdings_value_per_user, holdings_per_user = self.calculate_holdings(user_id=0, all_users=True)
-
-        return holdings_value_per_user
-
-    def get_holding_qty_value_per_user(self, user_id: int, ticker: str) -> dict | None:
-        """
-        Get quantity and current value of a specific stock holding for a user.
-
-        Args:
-            user_id: User's ID
-            ticker: Stock ticker symbol (e.g., 'AAPL')
-
-        Returns:
-            Dict with keys: user_id, ticker, ticker_id, current_price, qty_owned, holding_value
-            Returns None if:
-                - User has no holdings
-                - Ticker not found in database
-                - User doesn't own this ticker
-                - Price not available
-
-        Example:
-            >>> rm = ReportManager()
-            >>> holding = rm.get_holding_qty_value_per_user(1, 'AAPL')
-            >>> print(holding)
-            {'user_id': 1, 'ticker': 'AAPL', 'ticker_id': 5, 
-             'current_price': 150.25, 'qty_owned': 10, 'holding_value': 1502.50}
-        """
-        ticker = ticker.upper().strip()
-
-        # Get this user's holdings (not all users!)
-        _, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
-
-        user_holdings = holdings_per_user.get(user_id)
-        if not user_holdings:
-            logger.debug(f"User {user_id} has no holdings")
-            return None
-
-        # Get ticker info from DB
-        ticker_info = self.select_query("""
-            SELECT id, last_price
-            FROM symbols
-            WHERE ticker = ?
-        """, (ticker,))
-
-        if not ticker_info:
-            logger.warning(f"Ticker {ticker} not found in database")
-            return None
-
-        assert not isinstance(ticker_info, int)
-
-        ticker_id = ticker_info[0]['id']
-        current_price = ticker_info[0]['last_price']
-
-        if current_price is None:
-            logger.warning(f"Price not available for {ticker}")
-            return None
-
-        # Check if user owns this ticker
-        qty_owned = user_holdings.get(ticker_id, 0)
-
-        if qty_owned == 0:
-            logger.debug(f"User {user_id} does not own {ticker}")
-            return None
-
-        return {
-            'user_id': user_id,
-            'ticker': ticker,
-            'ticker_id': ticker_id,
-            'current_price': current_price, 
-            'qty_owned': qty_owned,
-            'holding_value': round(current_price * qty_owned, 2)
-        }
-
-    def calculate_holdings(self, user_id: int = 0, all_users: bool = False):
-        """
-        Calculate holdings values and qtys for one or all users.
-
-        Args:
-            user_id: The user's ID (ignored if all_users=True)
-            all_users: If True, calculate for all users
-
-        Returns:
-            Dictionary mapping user_id to portfolio value: {user_id: value}
-             Dictionary mapping user_id to holdings id's and their quantaties.
-
-        Raises:
-            ValueError: If all_users is False and user_id is 0
-        """
-        if user_id == 0 and all_users is False:
-            logger.error("_calculate_holdings_value called without user_id and all_users=False")
-            raise ValueError("If all_users is false, a user ID is required.")
-
-        base_sql = """
-            SELECT user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
-            FROM transactions
-        """
-        if all_users:
-            tx_sql = base_sql + " ORDER BY transaction_datetime"
-            params = ()
-        else:
-            tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
-            params = (user_id,)
-
-        tx_query = self.select_query(tx_sql, params)
-        
-        if not tx_query:
-            logger.warning("_calculate_holdings_value: no transactions found")
-            return {}
-
-        # Group by symbol_id
-        symbol_id_grouped = defaultdict(list)
-        for row in tx_query:
-            symbol_id_grouped[row.get('symbol_id')].append(row)
-
-        # Adjust for splits
-        adjusted = self._adjust_for_stock_splits(symbol_id_grouped)
-
-        # Query updated prices
-        symbols = list(adjusted.keys())
-        if not symbols:
-            logger.debug("No holdings found for user(s). Returning empty result.")
-            return {}
-        
-        placeholders = ", ".join(['?' for _ in symbols])
-        price_rows = self.select_query(f"SELECT id, last_price FROM symbols WHERE id IN ({placeholders})", tuple(symbols))
-        
-        if not price_rows:
-            logger.error("_calculate_holdings_value: failed to fetch prices")
-            return {}
-            
-        price_map = {row['id']: row['last_price'] for row in price_rows}
-
-        # Group by user
-        user_grouped = defaultdict(list)
-        for history in adjusted.values():
-            for tx in history:
-                user_grouped[tx.get('user_id')].append(tx)
-
-        # Calculate holdings value
-        holdings_value_per_user = {}
-        holdings_per_user = {}
-        for user, history in user_grouped.items():
-            user_shares = defaultdict(float)
-            for tx in history:
-                user_shares[tx['symbol_id']] += tx['qty']
-
-            current_value = sum(qty * price_map.get(symbol_id, 0) for symbol_id, qty in user_shares.items())
-            holdings_value_per_user[user] = round(current_value, 2)
-            holdings_per_user[user] = user_shares
-
-        return holdings_value_per_user, holdings_per_user
 
     def get_portfolio_view(self, user_id: int) -> List[Dict[str, Union[str, float]]]:
         """
@@ -297,6 +123,34 @@ class ReportManager(CommonQueries):
             grouped[row.get('symbol_id')].append(row)
 
         return dict(grouped)
+    
+    def record_balance_snapshot(self, user_id: int) -> bool:
+        """
+        Record a balance snapshot for a single user.
+        To be used after every buy and sell order.
+        """
+        cash_balance = self.get_balance(user_id)
+        portfolio_value = self.get_single_user_holdings_value(user_id)
+
+        sql = """
+        INSERT INTO balance_snapshots (user_id, portfolio_value, cash_balance)
+        VALUES (?, ?, ?)
+        """
+        rows = self.modify_query(sql, (user_id, portfolio_value, cash_balance))
+        if rows:
+            logger.info(f"Balance snapshot recorded for user #{user_id}!")
+            logger.info(f"Cash balance = {cash_balance} Portfolio value = {portfolio_value}")
+            return True
+        else:
+            logger.warning(f"Balance snapshot for user #{user_id} failed!")
+            return False
+
+    def get_balance_snapshot_history(self, user_id: int):
+        """
+        Retrieves the balance snapshot data history for a given user.
+        Used to power the account value history graph.
+        """
+        pass
 
     def _delete_holdings_with_zero_quantity(
         self,
@@ -458,3 +312,173 @@ class ReportManager(CommonQueries):
                 }
 
         return cost_basis_data
+    
+    def get_single_user_holdings_value(self, user_id: int) -> float:
+        """
+        Sum the current market value of a single user's holdings.
+
+        Args:
+            user_id: The user's ID
+
+        Returns:
+            Total portfolio value as float, or 0.0 if no holdings
+        """
+        holdings_value_per_user, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
+        return holdings_value_per_user.get(user_id, 0.0)
+
+    def get_all_users_holdings_values(self) -> Dict[int, float]:
+        """
+        Sum the current market value of all users' holdings.
+        Used by daemon for midnight balance snapshots.
+
+        Returns:
+            Dictionary mapping user_id to portfolio value: {user_id: value}
+        """
+        holdings_value_per_user, holdings_per_user = self.calculate_holdings(user_id=0, all_users=True)
+
+        return holdings_value_per_user
+
+    def get_holding_qty_value_per_user(self, user_id: int, ticker: str) -> dict | None:
+        """
+        Get quantity and current value of a specific stock holding for a user.
+
+        Args:
+            user_id: User's ID
+            ticker: Stock ticker symbol (e.g., 'AAPL')
+
+        Returns:
+            Dict with keys: user_id, ticker, ticker_id, current_price, qty_owned, holding_value
+            Returns None if:
+                - User has no holdings
+                - Ticker not found in database
+                - User doesn't own this ticker
+                - Price not available
+
+        Example:
+            >>> rm = ReportManager()
+            >>> holding = rm.get_holding_qty_value_per_user(1, 'AAPL')
+            >>> print(holding)
+            {'user_id': 1, 'ticker': 'AAPL', 'ticker_id': 5, 
+             'current_price': 150.25, 'qty_owned': 10, 'holding_value': 1502.50}
+        """
+        ticker = ticker.upper().strip()
+
+        # Get this user's holdings (not all users!)
+        _, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
+
+        user_holdings = holdings_per_user.get(user_id)
+        if not user_holdings:
+            logger.debug(f"User {user_id} has no holdings")
+            return None
+
+        # Get ticker info from DB
+        ticker_info = self.select_query("""
+            SELECT id, last_price
+            FROM symbols
+            WHERE ticker = ?
+        """, (ticker,))
+        if not ticker_info:
+            logger.warning(f"Ticker {ticker} not found in database")
+            return None
+
+        ticker_id = ticker_info[0]['id']
+        current_price = ticker_info[0]['last_price']
+
+        if current_price is None:
+            logger.warning(f"Price not available for {ticker}")
+            return None
+
+        # Check if user owns this ticker
+        qty_owned = user_holdings.get(ticker_id, 0)
+
+        if qty_owned == 0:
+            logger.debug(f"User {user_id} does not own {ticker}")
+            return None
+
+        return {
+            'user_id': user_id,
+            'ticker': ticker,
+            'ticker_id': ticker_id,
+            'current_price': current_price, 
+            'qty_owned': qty_owned,
+            'holding_value': round(current_price * qty_owned, 2)
+        }
+
+    def calculate_holdings(self, user_id: int = 0, all_users: bool = False):
+        """
+        Calculate holdings values and qtys for one or all users.
+
+        Args:
+            user_id: The user's ID (ignored if all_users=True)
+            all_users: If True, calculate for all users
+
+        Returns:
+            Dictionary mapping user_id to portfolio value: {user_id: value}
+             Dictionary mapping user_id to holdings id's and their quantaties.
+
+        Raises:
+            ValueError: If all_users is False and user_id is 0
+        """
+        if user_id == 0 and all_users is False:
+            logger.error("_calculate_holdings_value called without user_id and all_users=False")
+            raise ValueError("If all_users is false, a user ID is required.")
+
+        base_sql = """
+            SELECT user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
+            FROM transactions
+        """
+        if all_users:
+            tx_sql = base_sql + " ORDER BY transaction_datetime"
+            params = ()
+        else:
+            tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
+            params = (user_id,)
+
+        tx_query = self.select_query(tx_sql, params)
+        
+        if not tx_query:
+            logger.warning("_calculate_holdings_value: no transactions found")
+            return {}
+
+        # Group by symbol_id
+        symbol_id_grouped = defaultdict(list)
+        for row in tx_query:
+            symbol_id_grouped[row.get('symbol_id')].append(row)
+
+        # Adjust for splits
+        adjusted = self._adjust_for_stock_splits(symbol_id_grouped)
+
+        # Query updated prices
+        symbols = list(adjusted.keys())
+        if not symbols:
+            logger.debug("No holdings found for user(s). Returning empty result.")
+            return {}
+        
+        placeholders = ", ".join(['?' for _ in symbols])
+        price_rows = self.select_query(f"SELECT id, last_price FROM symbols WHERE id IN ({placeholders})", tuple(symbols))
+        
+        if not price_rows:
+            logger.error("_calculate_holdings_value: failed to fetch prices")
+            return {}
+            
+        price_map = {row['id']: row['last_price'] for row in price_rows}
+
+        # Group by user
+        user_grouped = defaultdict(list)
+        for history in adjusted.values():
+            for tx in history:
+                user_grouped[tx.get('user_id')].append(tx)
+
+        # Calculate holdings value
+        holdings_value_per_user = {}
+        holdings_per_user = {}
+        for user, history in user_grouped.items():
+            user_shares = defaultdict(float)
+            for tx in history:
+                user_shares[tx['symbol_id']] += tx['qty']
+
+            current_value = sum(qty * price_map.get(symbol_id, 0) for symbol_id, qty in user_shares.items())
+            holdings_value_per_user[user] = round(current_value, 2)
+            holdings_per_user[user] = user_shares
+
+        return holdings_value_per_user, holdings_per_user
