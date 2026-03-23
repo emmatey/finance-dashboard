@@ -78,7 +78,7 @@ class ResearchDataCoordinator(CommonQueries):
         symbol = symbol.upper()
 
         # Thank you to "https://www.datacamp.com/tutorial/cte-sql"
-        query = self.simple_query(
+        query = self.select_query(
             """
             WITH target AS (
                 SELECT id

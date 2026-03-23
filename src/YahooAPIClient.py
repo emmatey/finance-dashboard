@@ -28,7 +28,7 @@ class YahooAPIClient(DbManager):
             yq_api_retries as retries
         FROM global_events
         """
-        result = self.simple_query(query, ())
+        result = self.select_query(query, ())
         print(result)
         assert isinstance(result, list)
         if not result:
@@ -71,7 +71,7 @@ class YahooAPIClient(DbManager):
         yq_api_down_at = CURRENT_TIMESTAMP,
         yq_api_retries = 0
         """
-        self.simple_query(query, ())
+        self.modify_query(query, ())
 
     def set_api_up(self):
         """
@@ -81,7 +81,7 @@ class YahooAPIClient(DbManager):
         UPDATE global_events
         SET yq_api_status = 'UP', yq_api_down_at = NULL, yq_api_retries = 0
         """
-        self.simple_query(query, ())
+        self.modify_query(query, ())
 
     def api_increment_retries(self):
         """
@@ -91,7 +91,7 @@ class YahooAPIClient(DbManager):
         UPDATE global_events
         SET yq_api_retries = yq_api_retries + 1
         """
-        self.simple_query(query, ())
+        self.modify_query(query, ())
 
     def api_downcrement(self, api_up: bool, func, attempts, args):
         """

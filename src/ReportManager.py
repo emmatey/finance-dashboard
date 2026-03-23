@@ -74,7 +74,7 @@ class ReportManager(CommonQueries):
             return None
 
         # Get ticker info from DB
-        ticker_info = self.simple_query("""
+        ticker_info = self.select_query("""
             SELECT id, last_price
             FROM symbols
             WHERE ticker = ?
@@ -139,7 +139,7 @@ class ReportManager(CommonQueries):
             tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
             params = (user_id,)
 
-        tx_query = self.simple_query(tx_sql, params)
+        tx_query = self.select_query(tx_sql, params)
         
         if not isinstance(tx_query, list):
             logger.warning("_calculate_holdings_value: no transactions found")
@@ -160,7 +160,7 @@ class ReportManager(CommonQueries):
             return {}
         
         placeholders = ", ".join(['?' for _ in symbols])
-        price_rows = self.simple_query(f"SELECT id, last_price FROM symbols WHERE id IN ({placeholders})", tuple(symbols))
+        price_rows = self.select_query(f"SELECT id, last_price FROM symbols WHERE id IN ({placeholders})", tuple(symbols))
         
         if not isinstance(price_rows, list):
             logger.error("_calculate_holdings_value: failed to fetch prices")

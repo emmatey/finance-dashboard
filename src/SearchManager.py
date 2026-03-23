@@ -26,7 +26,7 @@ class SearchManager(CommonQueries):
         OR company_name LIKE ?
         LIMIT {limit}
         """
-        rows = self.simple_query(sql, tuple([safe_query, safe_query]))
+        rows = self.select_query(sql, tuple([safe_query, safe_query]))
 
         if rows:
             return rows

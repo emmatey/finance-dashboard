@@ -101,41 +101,58 @@ class DbManager:
 
 
     @time_method
-    def simple_query(self, query: str, placeholders: tuple = ()) -> list[dict] | int:
+    def select_query(self, query: str, placeholders: tuple = ()) -> list[dict]:
         """
-        Handles db queries, manage cursor lifecycle, extract result from
-        row datastructure and return as a list of dicts.
+        Handles SELECT and WITH queries, returns results as a list of dicts.
 
         args: 'query': SQL literal: str,
         placeholders: tuple of placeholders e.g in the query 'query("SELECT * FROM table WHERE id = ?", (1,))' '?' is the placeholder, and would be
             populated by passing (value, ) to this function
 
-        SELECT Returns [{}, {}] i.e. list of rows formatted as dicts {col: val} or number of rows effected by non-selects
+        Returns [{}, {}] i.e. list of rows formatted as dicts {col: val}
         """
         query = query.lstrip()
         con = self.get_db()
         cur = con.cursor()
-        row_count = 0
 
         try:
-            # Check if query is SELECT
-            if query.split(None, 1)[0].upper() in ["SELECT", "WITH"]:
-                logger.debug(f"Executing Query: {query}")
-                cur.execute(query, placeholders)
-                rows = cur.fetchall()
-                return rows
-
-            # If not SELECT, requires transaction.
-            else:
-                logger.debug(f"Executing Query: {query}")
-                cur.execute(query, placeholders)
-                row_count = cur.rowcount
-                con.commit()
-                return row_count
+            logger.debug(f"Executing SELECT Query: {query}")
+            cur.execute(query, placeholders)
+            rows = cur.fetchall()
+            return rows
 
         except Exception:
             con.rollback()
-            logger.exception(f"Simple query failed  | Params: {placeholders}")
+            logger.exception(f"Select query failed  | Params: {placeholders}")
+            raise
+
+        finally:
+            cur.close()
+
+    @time_method
+    def modify_query(self, query: str, placeholders: tuple = ()) -> int:
+        """
+        Handles non-SELECT queries (INSERT, UPDATE, DELETE, etc.), returns number of rows affected.
+
+        args: 'query': SQL literal: str,
+        placeholders: tuple of placeholders
+
+        Returns number of rows affected by the query
+        """
+        query = query.lstrip()
+        con = self.get_db()
+        cur = con.cursor()
+
+        try:
+            logger.debug(f"Executing MODIFY Query: {query}")
+            cur.execute(query, placeholders)
+            row_count = cur.rowcount
+            con.commit()
+            return row_count
+
+        except Exception:
+            con.rollback()
+            logger.exception(f"Modify query failed  | Params: {placeholders}")
             raise
 
         finally:

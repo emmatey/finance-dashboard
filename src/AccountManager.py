@@ -10,7 +10,7 @@ class AccountManager(DbManager):
 
     def login(self, username, password, session):
         # Query database for username
-        rows = self.simple_query(
+        rows = self.select_query(
             "SELECT * FROM users WHERE username = ?", (username, )
             )
         assert rows is list
@@ -27,7 +27,7 @@ class AccountManager(DbManager):
 
     def register(self, username, password):
         # Make sure name isn't already used.
-        check_name = self.simple_query(
+        check_name = self.select_query(
             "SELECT username FROM users WHERE username = ?", (username, )
                                 )
         if check_name:
@@ -35,6 +35,6 @@ class AccountManager(DbManager):
 
         hash = generate_password_hash(password)
         # update DB with username and pw hash.
-        return self.simple_query(
+        return self.modify_query(
             "INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash)
             )

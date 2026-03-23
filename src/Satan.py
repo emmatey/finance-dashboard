@@ -38,7 +38,7 @@ class Satan(DbManager):
 
             # Query all cash
             cash_sql = "SELECT id, cash FROM users"
-            cash_query = self.simple_query(cash_sql, ())
+            cash_query = self.select_query(cash_sql, ())
             cash_map = {row.get('id'): row.get('cash') for row in cash_query}
 
             # Calculate holdings value
@@ -94,7 +94,7 @@ class Satan(DbManager):
             logger.info("Starting price update cycle.")
 
             # Query DB for all active symbols
-            query = self.simple_query("SELECT ticker FROM symbols", ())
+            query = self.select_query("SELECT ticker FROM symbols", ())
             tickers = [row.get('ticker') for row in query]
 
             if not tickers:

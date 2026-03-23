@@ -23,7 +23,7 @@ class CommonQueries(DbManager):
             User's cash balance as float, or None if user not found
         """
         sql = "SELECT cash FROM users WHERE id = ?"
-        res = self.simple_query(sql, (user_id,))
+        res = self.select_query(sql, (user_id,))
         
         if not isinstance(res, list) or not res:
             return None
@@ -33,7 +33,7 @@ class CommonQueries(DbManager):
         """
         Update user's cash balance. Returns True on success.
         """
-        rows = self.simple_query(
+        rows = self.modify_query(
             """
             UPDATE users
             SET cash = ?
@@ -52,7 +52,7 @@ class CommonQueries(DbManager):
         sql = """
         SELECT username FROM users WHERE id = ?
         """
-        result = self.simple_query(sql , (user_id,))
+        result = self.select_query(sql , (user_id,))
         assert isinstance(result, list)
 
         if result:
@@ -69,7 +69,7 @@ class CommonQueries(DbManager):
         FROM users
         WHERE username = ?
         """
-        result = self.simple_query(sql, (username.strip(),))
+        result = self.select_query(sql, (username.strip(),))
         assert isinstance(result, list)
 
         if result:
@@ -87,7 +87,7 @@ class CommonQueries(DbManager):
         FROM symbols
         WHERE ticker = ?
         """
-        result = self.simple_query(sql, (ticker,))
+        result = self.select_query(sql, (ticker,))
         assert isinstance(result, list)
         if result:
             return result[0]['id']
@@ -106,7 +106,7 @@ class CommonQueries(DbManager):
         FROM symbols 
         WHERE ticker = ?
         """
-        rows = self.simple_query(sql, (safe_query, ))
+        rows = self.select_query(sql, (safe_query, ))
 
         if rows and isinstance(rows, list):
             return rows[0]

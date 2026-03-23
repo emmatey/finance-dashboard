@@ -73,7 +73,7 @@ class MarketOverviewCoordinator(CommonQueries):
         JOIN symbols AS s ON s.id = fm.symbol_id
         WHERE s.ticker IN ({placeholders})
         """
-        res = self.simple_query(sql, tuple(symbols.values()))
+        res = self.select_query(sql, tuple(symbols.values()))
         assert isinstance(res, list)
 
         oldest = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
@@ -120,7 +120,7 @@ class MarketOverviewCoordinator(CommonQueries):
             SELECT MIN(unixepoch(last_updated)) as oldest_update
             FROM screener_results
         """
-        res = self.simple_query(sql, ())
+        res = self.select_query(sql, ())
 
         if not isinstance(res, list) or not res:
             logger.info("No screener data found - performing initial load")
