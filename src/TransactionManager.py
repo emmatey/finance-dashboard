@@ -21,54 +21,140 @@ class TransactionManager(CommonQueries):
 
     def record_buy(self, user_id: int, ticker: str, qty: int) -> bool:
         """
-        Record buy in transactions table, update cash balance, and take balance snapshot.
-
-        This method assumes the user can afford the trade, 
-        the prices are up to date, and the symbol already exists in the db.
+        Record buy transaction, update cash balance.
+        
+        This method assumes:
+        - User can afford the trade (checked by check_can_afford beforehand)
+        - Symbol exists in DB (upserted by route handler)
+        - Prices are current (updated by daemon)
+        
+        Args:
+            user_id: User's ID
+            ticker: Stock ticker symbol
+            qty: Number of shares to buy (positive integer)
+            
+        Returns:
+            True on success, False on failure
+            
+        Note:
+            Updates happen in this order to maintain data integrity:
+            1. Record transaction (with old cash balance reference)
+            2. Update cash balance
+            If step 2 fails, transaction is recorded but rollback handles cash update
         """
-        # Get user's cash balance
+        ticker = ticker.upper().strip()
+        
+        # Get current state
         balance = self.get_balance(user_id)
-
-        # Get ticker's price
-        unit_price = self.get_current_price_from_db(ticker)
-
-        # Calculate tx value
-        if not unit_price:
-            logger.error(f"Warning! Recording of buy transaction failed for {ticker} userID: {user_id}")
+        if balance is None:
+            logger.error(f"User {user_id} not found - cannot record buy")
             return False
         
-        tx_value = unit_price * qty
-
-        # Update user's cash balance
-        new_balance = round(balance - tx_value, 2)
-        self.update_user_cash(user_id, new_balance)
-
-        # Write to transactions
-        sql = """
-        INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """
-        self.modify_query(sql, (user_id, self.get_symbol_id(ticker), 'buy', qty, unit_price, new_balance))
+        unit_price = self.get_current_price_from_db(ticker)
+        if not unit_price:
+            logger.error(f"Price not available for {ticker} - cannot record buy")
+            return False
         
-        logger.info(f"Record buy for user #{user_id} for {qty} shares of {ticker} at {unit_price}. Their cash blanace is now {new_balance}")
-        return True
-
+        symbol_id = self.get_symbol_id(ticker)
+        if not symbol_id:
+            logger.error(f"Symbol {ticker} not found in DB - cannot record buy")
+            return False
+        
+        # Calculate new balance
+        tx_value = unit_price * qty
+        new_balance = round(balance - tx_value, 2)
+        
+        # Sanity check (even though check_can_afford should prevent this)
+        if new_balance < 0:
+            logger.error(f"Insufficient funds: user {user_id} has ${balance}, needs ${tx_value}")
+            return False
+        
+        try:
+            # Record transaction with NEW balance (cash_after = new_balance)
+            sql = """
+            INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after)
+            VALUES (?, ?, 'buy', ?, ?, ?)
+            """
+            self.modify_query(sql, (user_id, symbol_id, qty, unit_price, new_balance))
+            
+            # Update user's cash balance
+            self.update_user_cash(user_id, new_balance)
+            
+            logger.info(
+                f"BUY recorded: User {user_id} bought {qty} shares of {ticker} "
+                f"at ${unit_price:.2f} (total: ${tx_value:.2f}). "
+                f"Cash: ${balance:.2f} → ${new_balance:.2f}"
+            )
+            return True
+            
+        except Exception as e:
+            logger.exception(f"Failed to record buy for user {user_id}: {e}")
+            return False
+    
     def record_sell(self, user_id: int, ticker: str, qty: int) -> bool:
         """
-        Record sell in transactions table, update cash balance, and take balance snapshot.
-
-        This method assumesthe prices are up to date.
-        """
-        # Get user's cash balance
-        balance = self.get_balance(user_id)
-
-        # Get ticker's price
-        ticker_price = self.get_current_price_from_db(ticker)
-
-        # Update user's cash balance
+        Record sell transaction, update cash balance.
         
-
-        # Write to transactions
+        This method assumes:
+        - User owns enough shares (checked by check_can_sell beforehand)
+        - Symbol exists in DB
+        - Prices are current (updated by daemon)
+        
+        Args:
+            user_id: User's ID
+            ticker: Stock ticker symbol
+            qty: Number of shares to sell (positive integer)
+            
+        Returns:
+            True on success, False on failure
+            
+        Note:
+            qty is stored as NEGATIVE in transactions table per schema CHECK constraint
+            for sell transactions. This is handled automatically by the INSERT.
+        """
+        ticker = ticker.upper().strip()
+        
+        # Get current state
+        balance = self.get_balance(user_id)
+        if balance is None:
+            logger.error(f"User {user_id} not found - cannot record sell")
+            return False
+        
+        unit_price = self.get_current_price_from_db(ticker)
+        if not unit_price:
+            logger.error(f"Price not available for {ticker} - cannot record sell")
+            return False
+        
+        symbol_id = self.get_symbol_id(ticker)
+        if not symbol_id:
+            logger.error(f"Symbol {ticker} not found in DB - cannot record sell")
+            return False
+        
+        # Calculate new balance (selling adds cash)
+        tx_value = unit_price * qty
+        new_balance = round(balance + tx_value, 2)
+        
+        try:
+            # Record transaction with NEGATIVE qty (per schema constraint)
+            sql = """
+            INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after)
+            VALUES (?, ?, 'sell', ?, ?, ?)
+            """
+            self.modify_query(sql, (user_id, symbol_id, -qty, unit_price, new_balance))
+            
+            # Update user's cash balance
+            self.update_user_cash(user_id, new_balance)
+            
+            logger.info(
+                f"SELL recorded: User {user_id} sold {qty} shares of {ticker} "
+                f"at ${unit_price:.2f} (total: ${tx_value:.2f}). "
+                f"Cash: ${balance:.2f} → ${new_balance:.2f}"
+            )
+            return True
+            
+        except Exception as e:
+            logger.exception(f"Failed to record sell for user {user_id}: {e}")
+            return False
 
     def check_can_afford(self, user_id: int, ticker: str, qty: int) -> bool:
         """

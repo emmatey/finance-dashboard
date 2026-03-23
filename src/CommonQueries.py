@@ -12,7 +12,7 @@ class CommonQueries(DbManager):
     their specific manager classes.
     """
     
-    def get_balance(self, user_id: int) -> float:
+    def get_balance(self, user_id: int) -> float | None:
         """
         Returns user's cash balance.
 
@@ -27,7 +27,7 @@ class CommonQueries(DbManager):
         
         if not res:
             logger.warning(f"Balance inquiry failed for {user_id}")
-            return 0.0
+            return None
         return res[0]['cash']
     
     def update_user_cash(self, user_id: int, new_balance: float) -> bool:
