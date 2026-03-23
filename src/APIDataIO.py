@@ -276,7 +276,7 @@ class APIDataIO(DbManager):
         FROM news
         WHERE uuid IN ({uuid_placeholders})
         """
-        uuid_rows = self.simple_query(uuid_sql, tuple(uuid_set))
+        uuid_rows = self.select_query(uuid_sql, tuple(uuid_set))
         uuid_cipher = {i.get('uuid'): i.get('news_id') for i in uuid_rows} # type: ignore
 
         # Find symbol id for associated ticker
@@ -285,7 +285,7 @@ class APIDataIO(DbManager):
         FROM symbols
         WHERE ticker in ({ticker_placeholders})
         """
-        ticker_rows = self.simple_query(ticker_sql, tuple(ticker_set))
+        ticker_rows = self.select_query(ticker_sql, tuple(ticker_set))
         ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows} # type: ignore
 
         # go from {uuid: [ticker]} to {news_id: [ticker_id]}
@@ -439,7 +439,7 @@ class APIDataIO(DbManager):
             INFO: Inserted 50 fresh screener results across 2 screeners
         """
         # Clear old screener data
-        self.simple_query("DELETE FROM screener_results")
+        self.modify_query("DELETE FROM screener_results")
 
         # Insert fresh screener results
         sql = """
@@ -477,7 +477,7 @@ class APIDataIO(DbManager):
         WHERE s.ticker IN ({placeholders})
         """
 
-        return self.simple_query(sql, symbols)
+        return self.select_query(sql, symbols)
 
     @ResearchDataCoordinator.register_as_research('financial_metrics', o=True)
     def get_financial_metrics(self, symbols):
@@ -501,7 +501,7 @@ class APIDataIO(DbManager):
         WHERE s.ticker IN ({placeholders})
         """
 
-        rows = self.simple_query(sql, symbols)
+        rows = self.select_query(sql, symbols)
         rows_clean = []
         for row in rows: # type: ignore
             # remove primary key from select *
@@ -528,7 +528,7 @@ class APIDataIO(DbManager):
             ORDER BY n.providerPublishTime DESC
             LIMIT ?
             """
-            return self.simple_query(sql, (symbol.upper(), limit))
+            return self.select_query(sql, (symbol.upper(), limit))
         else:
             sql = """
             SELECT uuid, title, publisher, link,
@@ -700,10 +700,10 @@ class APIDataIO(DbManager):
             WHERE s.ticker IN ({placeholders})
         """
         
-        rows = self.simple_query(sql, tuple(tickers))
+        rows = self.select_query(sql, tuple(tickers))
         
-        if not isinstance(rows, list):
-            logger.warning("get_regional_overview: unexpected return type from simple_query")
+        if not rows:
+            logger.warning("get_regional_overview: no data found")
             return []
         
         # Map ticker symbols back to region names
@@ -789,9 +789,9 @@ class APIDataIO(DbManager):
             LIMIT ?
         """
 
-        rows = self.simple_query(sql, (screener_name, limit))
+        rows = self.select_query(sql, (screener_name, limit))
 
-        if not isinstance(rows, list):
+        if not rows:
             logger.warning(f"get_screener_results: no results found for screener '{screener_name}'")
             return []
 

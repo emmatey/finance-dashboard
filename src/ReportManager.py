@@ -141,7 +141,7 @@ class ReportManager(CommonQueries):
 
         tx_query = self.select_query(tx_sql, params)
         
-        if not isinstance(tx_query, list):
+        if not tx_query:
             logger.warning("_calculate_holdings_value: no transactions found")
             return {}
 
@@ -162,7 +162,7 @@ class ReportManager(CommonQueries):
         placeholders = ", ".join(['?' for _ in symbols])
         price_rows = self.select_query(f"SELECT id, last_price FROM symbols WHERE id IN ({placeholders})", tuple(symbols))
         
-        if not isinstance(price_rows, list):
+        if not price_rows:
             logger.error("_calculate_holdings_value: failed to fetch prices")
             return {}
             
@@ -222,9 +222,9 @@ class ReportManager(CommonQueries):
         
         placeholders = ', '.join(['?' for _ in stock_ids])
         sql = f"SELECT id, ticker, company_name, last_price FROM symbols WHERE id IN ({placeholders})"
-        query_raw = self.simple_query(sql, tuple(stock_ids))
+        query_raw = self.select_query(sql, tuple(stock_ids))
         
-        if not isinstance(query_raw, list):
+        if not query_raw:
             logger.error(f"get_portfolio_view: failed to fetch symbols for user_id={user_id}")
             return []
             
@@ -286,9 +286,9 @@ class ReportManager(CommonQueries):
             WHERE user_id = ? 
             ORDER BY transaction_datetime
         """
-        result = self.simple_query(sql, (user_id,))
+        result = self.select_query(sql, (user_id,))
         
-        if not isinstance(result, list):
+        if not result:
             logger.warning(f"get_transaction_history_per_user: no transactions for user_id={user_id}")
             return {}
 
@@ -348,9 +348,9 @@ class ReportManager(CommonQueries):
         
         placeholders = ", ".join(['?' for _ in symbol_ids])
         sql = f"SELECT symbol_id, unixepoch(split_date) AS date, split_ratio AS ratio FROM stock_splits WHERE symbol_id IN ({placeholders})"
-        query = self.simple_query(sql, tuple(symbol_ids))
+        query = self.select_query(sql, tuple(symbol_ids))
         
-        if not isinstance(query, list):
+        if not query:
             logger.debug("_adjust_for_stock_splits: no splits found")
             return transaction_history
 

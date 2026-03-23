@@ -74,7 +74,6 @@ class MarketOverviewCoordinator(CommonQueries):
         WHERE s.ticker IN ({placeholders})
         """
         res = self.select_query(sql, tuple(symbols.values()))
-        assert isinstance(res, list)
 
         oldest = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
         tickers_found = 0
@@ -122,7 +121,7 @@ class MarketOverviewCoordinator(CommonQueries):
         """
         res = self.select_query(sql, ())
 
-        if not isinstance(res, list) or not res:
+        if not res:
             logger.info("No screener data found - performing initial load")
             needs_update = True
         else:

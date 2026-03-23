@@ -25,7 +25,7 @@ class CommonQueries(DbManager):
         sql = "SELECT cash FROM users WHERE id = ?"
         res = self.select_query(sql, (user_id,))
         
-        if not isinstance(res, list) or not res:
+        if not res:
             return None
         return res[0]['cash']
     
@@ -53,7 +53,6 @@ class CommonQueries(DbManager):
         SELECT username FROM users WHERE id = ?
         """
         result = self.select_query(sql , (user_id,))
-        assert isinstance(result, list)
 
         if result:
             return result[0]['username']
@@ -70,7 +69,6 @@ class CommonQueries(DbManager):
         WHERE username = ?
         """
         result = self.select_query(sql, (username.strip(),))
-        assert isinstance(result, list)
 
         if result:
             return result[0]['id']
@@ -88,7 +86,6 @@ class CommonQueries(DbManager):
         WHERE ticker = ?
         """
         result = self.select_query(sql, (ticker,))
-        assert isinstance(result, list)
         if result:
             return result[0]['id']
         else:
@@ -108,7 +105,7 @@ class CommonQueries(DbManager):
         """
         rows = self.select_query(sql, (safe_query, ))
 
-        if rows and isinstance(rows, list):
+        if rows:
             return rows[0]
         else:
             logger.info(f"No data found locally for {safe_query}.")
