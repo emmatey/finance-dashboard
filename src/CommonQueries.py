@@ -49,13 +49,14 @@ class CommonQueries(DbManager):
         """
         Get username from user_id
         """
-        result = self.simple_query("""
-                                   SELECT username FROM users WHERE id = ?
-                                   """, (user_id,))
+        sql = """
+        SELECT username FROM users WHERE id = ?
+        """
+        result = self.simple_query(sql , (user_id,))
         assert isinstance(result, list)
-        username = result[0]['username'] 
+
         if result:
-            return username
+            return result[0]['username']
         else:
             return None
     
@@ -70,9 +71,9 @@ class CommonQueries(DbManager):
         """
         result = self.simple_query(sql, (username.strip(),))
         assert isinstance(result, list)
-        id = result[0]['id']
-        if id:
-            return id
+
+        if result:
+            return result[0]['id']
         else:
             return None
     
@@ -112,3 +113,23 @@ class CommonQueries(DbManager):
         else:
             logger.info(f"No data found locally for {safe_query}.")
             return None
+        
+    def get_current_price(self, symbol: str) -> float | None:
+        """
+        Returns the current price of a given symbol.
+        """
+        res = self.get_stock_basic_overview(symbol)
+        if not res:
+            return None
+        else:
+            return res.get('last_price')
+        
+    def symbol_exists_in_db(self, symbol: str) -> bool:
+        """
+        Checks if a symbol exists in the db.
+        """
+        res = self.get_stock_basic_overview(symbol)
+        if res:
+            return True
+        else:
+            return False
