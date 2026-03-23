@@ -1,4 +1,5 @@
 from flask import Flask
+from CommonQueries import CommonQueries
 from AccountManager import AccountManager
 from DbManager import DbManager
 from dotenv import load_dotenv
@@ -55,11 +56,9 @@ def home():
     dae = Satan()
     moc = MarketOverviewCoordinator()
     sm = SearchManager()
+    cc = CommonQueries()
     
-    res = io.get_stock_basic_overview('msft')
-    print(res)
-    res = io.get_stock_basic_overview("I DONT EXIST")
-    print(res)
+    tm.record_buy(1, "USO", 2)
 
     filler_page = """
         <body style="background-color: black; color: green;">

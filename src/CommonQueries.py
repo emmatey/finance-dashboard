@@ -12,7 +12,7 @@ class CommonQueries(DbManager):
     their specific manager classes.
     """
     
-    def get_balance(self, user_id: int):
+    def get_balance(self, user_id: int) -> float:
         """
         Returns user's cash balance.
 
@@ -26,20 +26,20 @@ class CommonQueries(DbManager):
         res = self.select_query(sql, (user_id,))
         
         if not res:
-            return None
+            logger.warning(f"Balance inquiry failed for {user_id}")
+            return 0.0
         return res[0]['cash']
     
     def update_user_cash(self, user_id: int, new_balance: float) -> bool:
         """
         Update user's cash balance. Returns True on success.
         """
-        rows = self.modify_query(
-            """
+        sql = """
             UPDATE users
             SET cash = ?
             WHERE id = ?
-            """, (new_balance, user_id)
-        )
+            """
+        rows = self.modify_query(sql, (new_balance, user_id))
         if rows:
             return True
         else:
@@ -111,7 +111,7 @@ class CommonQueries(DbManager):
             logger.info(f"No data found locally for {safe_query}.")
             return None
         
-    def get_current_price(self, symbol: str) -> float | None:
+    def get_current_price_from_db(self, symbol: str) -> float | None:
         """
         Returns the current price of a given symbol.
         """
