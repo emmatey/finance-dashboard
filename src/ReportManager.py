@@ -1,5 +1,6 @@
 import logging
 import math
+from CommonQueries import CommonQueries
 from DbManager import DbManager
 from collections import defaultdict, deque
 from typing import Dict, List, Optional, Tuple, Union, Any
@@ -7,29 +8,12 @@ from typing import Dict, List, Optional, Tuple, Union, Any
 
 logger = logging.getLogger(__name__)
 
-class ReportManager(DbManager):
+class ReportManager(CommonQueries):
     """
     Handles displaying information about user. I.e holdings, transaction history, account balance/grand total
 
     Read from DB, format for frontend.
     """
-
-    def get_balance(self, user_id: int) -> Optional[float]:
-        """
-        Returns user's cash balance.
-
-        Args:
-            user_id: The user's ID
-
-        Returns:
-            User's cash balance as float, or None if user not found
-        """
-        sql = "SELECT cash FROM users WHERE id = ?"
-        res = self.simple_query(sql, (user_id,))
-        
-        if not isinstance(res, list) or not res:
-            return None
-        return res[0]['cash']
 
     def get_single_user_holdings_value(self, user_id: int) -> float:
         """

@@ -1,4 +1,3 @@
-from DbManager import DbManager
 from APIDataIO import APIDataIO
 from YahooQueryService import YahooQueryService
 from datetime import datetime, timedelta
@@ -9,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class TransactionManager(DbManager):
+class TransactionManager(APIDataIO):
     """
     Handles Buy/Sell, Deposit/Withdraw, and supporting methods.
 
@@ -18,38 +17,50 @@ class TransactionManager(DbManager):
         on confirm fetch price agian > write tx to database
 
         Note: Price update daemon will be updating all holding prices in the background, no need to manually do this here.
-    Attributes:
-        yq_service: YahooQueryService instance for API interactions
     """
 
-    def __init__(self, yq_service=YahooQueryService()):
+    def record_trade(self, tx_type: str, user_id, ticker, qty):
         """
-        Initialize TransactionManager with Yahoo Query Service.
-
-        Args:
-            yq_service: Instance of YahooQueryService for fetching stock data
+    
         """
-        self.yq_service = yq_service
-
-
-    def record_transacton(self, ):
-        """
-        
-
-        """
+        # Get user's cash balance
         pass
-
-    def get_pricing_info(self):
-        """
-        
-        """
 
     def check_can_afford(self, user_id, ticker, qty) -> bool:
         """
+        Check if user can afford a tx.
+        return balance if yes, return False or something if no.
+        Assume stock has already been upserted into db
+        """
+        # Check input
+        ticker = str(ticker).strip()
+
+        # Check ticker's price
+        overview = self.get_stock_basic_overview(ticker)
+        if not overview or not isinstance(overview, dict):
+            logger.warning(f"No data found for {ticker}. Transaction failed.")
+            return False
+        
+        price = overview.get("last_price")
+        # Calculate trade value
+        tx_value = price * qty
+
+        # Get user balance
+        row = self.simple_query("SELECT cash FROM users WHERE id = ?", (user_id, ))
+        balance = 0
+        if row and isinstance(row, list):
+            balance = row[0].get('cash', 0)
+         
+        # Compare
+        if tx_value >= balance:
+            return True
+        else:
+            return False
+
+    def record_balance_snapshot(self):
+        """
         """
         pass
-
-    
 
 
     # What this needs to be
