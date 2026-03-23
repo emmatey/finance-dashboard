@@ -130,6 +130,10 @@ class ReportManager(CommonQueries):
         To be used after every buy and sell order.
         """
         cash_balance = self.get_balance(user_id)
+        if cash_balance is None:
+            logger.error(f"Cannot snapshot user {user_id} - user not found")
+            return False
+        # portfolio_value returns 0.0 if no holdings.
         portfolio_value = self.get_single_user_holdings_value(user_id)
 
         sql = """
