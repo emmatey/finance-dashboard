@@ -1,14 +1,13 @@
-from DbManager import DbManager
-from APIDataIO import APIDataIO
+from CommonQueries import CommonQueries
 from YahooQueryService import YahooQueryService
 from datetime import datetime, timedelta
 import helpers
 import logging
-import yahooquery as yq
+import ya
 
 logger = logging.getLogger(__name__)
 
-class SearchManager(DbManager):
+class SearchManager(CommonQueries):
     """
     Handle the search bar.
     Should show a union of db results and yq.search results in a search results page unless user types an exact match.
@@ -44,7 +43,7 @@ class SearchManager(DbManager):
         safe_query: str = str(query).strip()
 
         # Search with yahoo query search() method.
-        res_raw = yq.search(safe_query, quotes_count=10, news_count=0)
+        res_raw = yqs.search(safe_query, quotes_count=10, news_count=0)
         
         # Extract relevant data.
         out = []

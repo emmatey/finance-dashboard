@@ -1,4 +1,4 @@
-from APIDataIO import APIDataIO
+from CommonQueries import CommonQueries
 from YahooQueryService import YahooQueryService
 from datetime import datetime, timedelta
 import helpers
@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class TransactionManager(APIDataIO):
+class TransactionManager(CommonQueries):
     """
     Handles Buy/Sell, Deposit/Withdraw, and supporting methods.
 

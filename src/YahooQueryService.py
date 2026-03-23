@@ -40,6 +40,27 @@ class YahooQueryService:
         self.search_factory = search_factory
         self.screener_factory = screener_factory
 
+    @yq_exception_handler()
+    def yq_search(self, query: str, quotes_count: int = 20, news_count: int = 0) -> dict | None:
+        """
+        Search for symbols by company name or ticker using Yahoo Finance search.
+        
+        Wrapped with circuit breaker exception handling.
+        
+        Args:
+            query: Company name or ticker fragment to search for
+            quotes_count: Maximum number of quote results to return (default: 20)
+            news_count: Maximum number of news results to return (default: 0)
+            
+        Returns:
+            Dict with keys 'quotes' (list of symbol results) and optionally 'news'
+            None if API is down or request fails
+            
+        https://yahooquery.dpguthrie.com/guide/misc/#search
+        """
+        res = yq.search(query, news_count=news_count, quotes_count=quotes_count)
+        return res
+    
     @DbManager.time_method
     @yq_exception_handler()
     def yq_ticker_fetch_modules(
