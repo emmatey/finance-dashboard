@@ -458,6 +458,26 @@ class APIDataIO(DbManager):
 
     ### GETTERS ###
     
+    def get_stock_basic_overview(self, symbol: str):
+        """
+        Retrieve data from the symbols table about a given holding.
+        """
+        # Convert user input to string.
+        safe_query = str(symbol).upper()
+
+        sql = f"""
+        SELECT *
+        FROM symbols 
+        WHERE ticker = ?
+        """
+        rows = self.simple_query(sql, (safe_query, ))
+
+        if rows:
+            return rows
+        else:
+            logger.info(f"No data found locally for {safe_query}.")
+            return None
+
     @ResearchDataCoordinator.register_as_research('historical_prices', o=True)
     def get_historical_prices(self, symbols):
         """

@@ -56,7 +56,9 @@ def home():
     moc = MarketOverviewCoordinator()
     sm = SearchManager()
     
-    res = rm.get_holding_qty_value_per_user(1, "msft")
+    res = io.get_stock_basic_overview('msft')
+    print(res)
+    res = io.get_stock_basic_overview("I DONT EXIST")
     print(res)
 
     filler_page = """

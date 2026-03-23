@@ -14,19 +14,19 @@ class SearchManager(DbManager):
     Should show a union of db results and yq.search results in a search results page unless user types an exact match.
     In which case user should be directed right to the page in question.
     """
-    def search_companies_local(self, query: str):
+    def search_companies_local(self, query: str, limit=15):
         """
         Return the companies that are close to or the same as what the user is typing.
         """
         # Convert user input to string and add 'LIKE' wildcards.
         safe_query = f"%{str(query)}%"
 
-        sql = """
+        sql = f"""
         SELECT *
         FROM symbols 
         WHERE ticker LIKE ?
         OR company_name LIKE ?
-        LIMIT 15
+        LIMIT {limit}
         """
         rows = self.simple_query(sql, tuple([safe_query, safe_query]))
 
