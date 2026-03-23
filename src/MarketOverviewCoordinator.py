@@ -1,13 +1,13 @@
 import datetime as dt
 import logging
 from APIDataIO import APIDataIO as io
+from CommonQueries import CommonQueries
 from YahooQueryService import YahooQueryService as yqs
-from DbManager import DbManager
 
 logger = logging.getLogger(__name__)
 
 
-class MarketOverviewCoordinator(DbManager):
+class MarketOverviewCoordinator(CommonQueries):
     """
     Handles updating and retrieving data for the home page market overview.
     """

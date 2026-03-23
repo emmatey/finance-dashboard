@@ -3,7 +3,6 @@ from YahooQueryService import YahooQueryService
 from datetime import datetime, timedelta
 import helpers
 import logging
-import ya
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +38,18 @@ class SearchManager(CommonQueries):
         """
         Check if symbol exists online using YahooQueryService.
         """
+        yqs = YahooQueryService()
+
         # Convert query to string.
         safe_query: str = str(query).strip()
 
         # Search with yahoo query search() method.
-        res_raw = yqs.search(safe_query, quotes_count=10, news_count=0)
+        res_raw = yqs.yq_search(safe_query, quotes_count=10, news_count=0)
+        
+        # Handle API failure
+        if not res_raw:  # None from circuit breaker
+            logger.warning(f"Yahoo search failed for '{safe_query}' - API may be down")
+            return []
         
         # Extract relevant data.
         out = []

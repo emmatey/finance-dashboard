@@ -1,6 +1,6 @@
 import logging
 
-from DbManager import DbManager
+from CommonQueries import CommonQueries
 from enum import Enum
 from time import time
 from typing import Dict
@@ -24,7 +24,7 @@ class TableLifetimes(Enum):
     insider_trades = 86400  # 24 hours
 
 
-class ResearchDataCoordinator(DbManager):
+class ResearchDataCoordinator(CommonQueries):
     """
     Handles updating of individual SQL tables of finance data based on the age
     of the records.
