@@ -65,7 +65,7 @@ class TransactionManager(CommonQueries):
         new_balance = round(balance - tx_value, 2)
 
         try:
-            # Record transaction with NEW balance (cash_after = new_balance)
+            # Put both queries in try block because im high on ACID
             sql = """
             INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after)
             VALUES (?, ?, 'buy', ?, ?, ?)
