@@ -29,21 +29,6 @@ class CommonQueries(DbManager):
             logger.warning(f"Balance inquiry failed for {user_id}")
             return None
         return res[0]['cash']
-    
-    def update_user_cash(self, user_id: int, new_balance: float) -> bool:
-        """
-        Update user's cash balance. Returns True on success.
-        """
-        sql = """
-            UPDATE users
-            SET cash = ?
-            WHERE id = ?
-            """
-        rows = self.modify_query(sql, (new_balance, user_id))
-        if rows:
-            return True
-        else:
-            return False
 
     def get_username_from_user_id(self, user_id: int) -> str | None:
         """
@@ -130,3 +115,5 @@ class CommonQueries(DbManager):
             return True
         else:
             return False
+        
+    

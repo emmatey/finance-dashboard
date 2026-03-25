@@ -418,7 +418,7 @@ class ReportManager(CommonQueries):
 
         Returns:
             Dictionary mapping user_id to portfolio value: {user_id: value}
-             Dictionary mapping user_id to holdings id's and their quantaties.
+            Dictionary mapping user_id to holdings id's and their quantaties.
 
         Raises:
             ValueError: If all_users is False and user_id is 0
