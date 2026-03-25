@@ -153,11 +153,6 @@ class CommonQueries(DbManager):
             logger.warning("_calculate_holdings_value: no transactions found")
             return {}
 
-        # Group by symbol_id
-        symbol_id_grouped = defaultdict(list)
-        for row in tx_query:
-            symbol_id_grouped[row.get('symbol_id')].append(row)
-
         # Adjust for splits
         adjusted = self._adjust_for_stock_splits(symbol_id_grouped)
 

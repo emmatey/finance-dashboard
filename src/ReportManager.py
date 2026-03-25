@@ -34,7 +34,7 @@ class ReportManager(CommonQueries):
                 - gain_loss_pct: Percentage gain/loss
             Sorted by current_value descending
         """
-        raw_history = self.get_transaction_history_per_user(user_id)
+        raw_history = self.get_transaction_history(user_id)
         trimmed_history = self._delete_holdings_with_zero_quantity(raw_history)
         adjusted_history = self._adjust_for_stock_splits(trimmed_history)
         cost_basis_data = self._get_cost_basis(adjusted_history)
@@ -93,36 +93,45 @@ class ReportManager(CommonQueries):
         # https://stackoverflow.com/questions/72899/how-can-i-sort-a-list-of-dictionaries-by-a-value-of-the-dictionary-in-python
         return sorted(index_view, key=lambda x: x["current_value"], reverse=True)
 
-    def get_transaction_history_per_user(self, user_id: int) -> Dict[int, List[Dict[str, Any]]]:
+    def get_transaction_history(self, user_id: int = 0, all_users: bool = False) -> dict[int, list[dict]]:
         """
-        Query transactions history table to get all records from given userID.
-
+        Query transaction history, grouped by symbol_id.
+    
         Args:
-            user_id: The user's ID
-
+            user_id: The user's ID. Required if all_users is False.
+            all_users: If True, fetch transactions for all users.
+    
         Returns:
-            Dictionary grouped by symbol_id: {symbol_id: [{row}, {row}, ...], ...}
-            Each row contains: transaction_id, user_id, symbol_id, transaction_type,
-                             qty, unit_price, cash_after, date (unix timestamp)
+            Dict of {symbol_id: [transactions]} where each transaction contains:
+            transaction_id, user_id, symbol_id, transaction_type,
+            qty, unit_price, cash_after, date (unix timestamp)
+    
+        Raises:
+            ValueError: If all_users is False and user_id is 0
         """
-        sql = """
-            SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, cash_after,
-                   unixepoch(transaction_datetime) AS date
-            FROM transactions 
-            WHERE user_id = ? 
-            ORDER BY transaction_datetime
-        """
-        result = self.select_query(sql, (user_id,))
-        
-        if not result:
-            logger.warning(f"get_transaction_history_per_user: no transactions for user_id={user_id}")
-            return {}
+        if user_id == 0 and all_users is False:
+            logger.error("get_transaction_history called without user_id and all_users=False")
+            raise ValueError("If all_users is false, a user ID is required.")
 
+        base_sql = """
+            SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
+            FROM transactions
+        """
+        if all_users:
+            tx_sql = base_sql + " ORDER BY transaction_datetime"
+            params = ()
+        else:
+            tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
+            params = (user_id,)
+
+        tx_query = self.select_query(tx_sql, params)
+
+        # Group transactions by symbol.
         grouped = defaultdict(list)
-        for row in result:
-            grouped[row.get('symbol_id')].append(row)
-
-        return dict(grouped)
+        for tx in tx_query:
+            grouped[tx.get('symbol_id')].append(tx)
+        
+        return grouped
     
     def record_balance_snapshot(self, user_id: int) -> bool:
         """
