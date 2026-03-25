@@ -1,7 +1,6 @@
 import logging
-import math
 from CommonQueries import CommonQueries
-from collections import defaultdict, deque
+from collections import deque
 from typing import Dict, List, Union, Any
 
 
@@ -34,9 +33,7 @@ class ReportManager(CommonQueries):
                 - gain_loss_pct: Percentage gain/loss
             Sorted by current_value descending
         """
-        raw_history = self.get_transaction_history(user_id)
-        trimmed_history = self._delete_holdings_with_zero_quantity(raw_history)
-        adjusted_history = self._adjust_for_stock_splits(trimmed_history)
+        adjusted_history = self.get_transaction_history(user_id)
         cost_basis_data = self._get_cost_basis(adjusted_history)
 
         # Query db for all stocks at once to avoid the so called 'N+1 queries' problem.
@@ -92,46 +89,6 @@ class ReportManager(CommonQueries):
         # Sort the list of dicts by current_value
         # https://stackoverflow.com/questions/72899/how-can-i-sort-a-list-of-dictionaries-by-a-value-of-the-dictionary-in-python
         return sorted(index_view, key=lambda x: x["current_value"], reverse=True)
-
-    def get_transaction_history(self, user_id: int = 0, all_users: bool = False) -> dict[int, list[dict]]:
-        """
-        Query transaction history, grouped by symbol_id.
-    
-        Args:
-            user_id: The user's ID. Required if all_users is False.
-            all_users: If True, fetch transactions for all users.
-    
-        Returns:
-            Dict of {symbol_id: [transactions]} where each transaction contains:
-            transaction_id, user_id, symbol_id, transaction_type,
-            qty, unit_price, cash_after, date (unix timestamp)
-    
-        Raises:
-            ValueError: If all_users is False and user_id is 0
-        """
-        if user_id == 0 and all_users is False:
-            logger.error("get_transaction_history called without user_id and all_users=False")
-            raise ValueError("If all_users is false, a user ID is required.")
-
-        base_sql = """
-            SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
-            FROM transactions
-        """
-        if all_users:
-            tx_sql = base_sql + " ORDER BY transaction_datetime"
-            params = ()
-        else:
-            tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
-            params = (user_id,)
-
-        tx_query = self.select_query(tx_sql, params)
-
-        # Group transactions by symbol.
-        grouped = defaultdict(list)
-        for tx in tx_query:
-            grouped[tx.get('symbol_id')].append(tx)
-        
-        return grouped
     
     def record_balance_snapshot(self, user_id: int) -> bool:
         """
@@ -164,34 +121,6 @@ class ReportManager(CommonQueries):
         Used to power the account value history graph.
         """
         pass
-
-    def _delete_holdings_with_zero_quantity(
-        self,
-        transaction_history: Dict[int, List[Dict[str, Any]]]
-    ) -> Dict[int, List[Dict[str, Any]]]:
-        """
-        Remove the record of holdings the user no longer owns to avoid calculating
-        extra stock splits needlessly, and to format the data for later display.
-
-        Args:
-            transaction_history: Dict of {symbol_id: [transactions]}
-
-        Returns:
-            Filtered dict with zero-quantity holdings removed
-        """
-        empty = []
-        for stock_id, tx_history in transaction_history.items():
-            qty = 0
-            for tx in tx_history:
-                # Db rule: sell orders have negative qty
-                qty += tx.get('qty', 0)
-            if math.isclose(qty, 0.0, abs_tol=1e-5):
-                empty.append(stock_id)
-
-        for stock_id in empty:
-            del transaction_history[stock_id]
-
-        return transaction_history
 
     def _get_cost_basis(
         self,

@@ -1,6 +1,7 @@
 from collections import defaultdict
 from DbManager import DbManager
 import logging
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -132,48 +133,30 @@ class CommonQueries(DbManager):
         Raises:
             ValueError: If all_users is False and user_id is 0
         """
-        if user_id == 0 and all_users is False:
-            logger.error("_calculate_holdings_value called without user_id and all_users=False")
-            raise ValueError("If all_users is false, a user ID is required.")
+        tx_history_company_grouped = self.get_transaction_history(user_id=user_id, all_users=all_users)
 
-        base_sql = """
-            SELECT user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
-            FROM transactions
-        """
-        if all_users:
-            tx_sql = base_sql + " ORDER BY transaction_datetime"
-            params = ()
-        else:
-            tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
-            params = (user_id,)
-
-        tx_query = self.select_query(tx_sql, params)
-        
-        if not tx_query:
-            logger.warning("_calculate_holdings_value: no transactions found")
-            return {}
-
-        # Adjust for splits
-        adjusted = self._adjust_for_stock_splits(symbol_id_grouped)
 
         # Query updated prices
-        symbols = list(adjusted.keys())
+        symbols = list(tx_history_company_grouped.keys())
         if not symbols:
             logger.debug("No holdings found for user(s). Returning empty result.")
             return {}
         
         placeholders = ", ".join(['?' for _ in symbols])
-        price_rows = self.select_query(f"SELECT id, last_price FROM symbols WHERE id IN ({placeholders})", tuple(symbols))
-        
+        sql = f"""
+        SELECT id, last_price 
+        FROM symbols
+        WHERE id IN ({placeholders})
+        """
+        price_rows = self.select_query(sql, tuple(symbols))
         if not price_rows:
-            logger.error("_calculate_holdings_value: failed to fetch prices")
+            logger.error("Failed to fetch prices.")
             return {}
-            
         price_map = {row['id']: row['last_price'] for row in price_rows}
 
         # Group by user
         user_grouped = defaultdict(list)
-        for history in adjusted.values():
+        for history in tx_history_company_grouped.values():
             for tx in history:
                 user_grouped[tx.get('user_id')].append(tx)
 
@@ -190,6 +173,52 @@ class CommonQueries(DbManager):
             holdings_per_user[user] = user_shares
 
         return holdings_value_per_user, holdings_per_user
+    
+    def get_transaction_history(self, user_id: int = 0, all_users: bool = False) -> dict[int, list[dict]]:
+        """
+        Query transaction history, grouped by symbol_id.
+        Returns only active holdings, split-adjusted.
+    
+        Args:
+            user_id: The user's ID. Required if all_users is False.
+            all_users: If True, fetch transactions for all users.
+    
+        Returns:
+            Dict of {symbol_id: [transactions]} where each transaction contains:
+            transaction_id, user_id, symbol_id, transaction_type,
+            qty, unit_price, date (unix timestamp).
+            Zero-quantity holdings are excluded.
+            Quantities and prices are adjusted for stock splits.
+    
+        Raises:
+            ValueError: If all_users is False and user_id is 0
+        """
+        if user_id == 0 and all_users is False:
+            logger.error("get_transaction_history called without user_id and all_users=False")
+            raise ValueError("If all_users is false, a user ID is required.")
+
+        base_sql = """
+            SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
+            FROM transactions
+        """
+        if all_users:
+            tx_sql = base_sql + " ORDER BY transaction_datetime"
+            params = ()
+        else:
+            tx_sql = base_sql + " WHERE user_id = ? ORDER BY transaction_datetime"
+            params = (user_id,)
+
+        tx_query = self.select_query(tx_sql, params)
+
+        # Group transactions by symbol.
+        grouped = defaultdict(list)
+        for tx in tx_query:
+            grouped[tx.get('symbol_id')].append(tx)
+        
+        trimmed = self._delete_holdings_with_zero_quantity(grouped)
+        split_adjusted = self._adjust_for_stock_splits(trimmed)
+
+        return split_adjusted
         
     def get_single_user_holdings_value(self, user_id: int) -> float:
         """
@@ -329,5 +358,31 @@ class CommonQueries(DbManager):
                             continue
                         tx['qty'] *= split_ratio
                         tx['unit_price'] /= split_ratio
+
+        return transaction_history
+    
+    def _delete_holdings_with_zero_quantity(
+        self, transaction_history):
+        """
+        Remove the record of holdings the user no longer owns to avoid calculating
+        extra stock splits needlessly, and to format the data for later display.
+
+        Args:
+            transaction_history: Dict of {symbol_id: [transactions]}
+
+        Returns:
+            Filtered dict with zero-quantity holdings removed
+        """
+        empty = []
+        for stock_id, tx_history in transaction_history.items():
+            qty = 0
+            for tx in tx_history:
+                # Db rule: sell orders have negative qty
+                qty += tx.get('qty', 0)
+            if math.isclose(qty, 0.0, abs_tol=1e-5):
+                empty.append(stock_id)
+
+        for stock_id in empty:
+            del transaction_history[stock_id]
 
         return transaction_history
