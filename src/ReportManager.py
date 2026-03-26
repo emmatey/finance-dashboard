@@ -1,6 +1,6 @@
 import logging
 from CommonQueries import CommonQueries
-from collections import deque
+from collections import deque, defaultdict
 from typing import Dict, List, Union, Any
 
 
@@ -115,12 +115,37 @@ class ReportManager(CommonQueries):
             logger.warning(f"Balance snapshot for user #{user_id} failed!")
             return False
 
-    def get_balance_snapshot_history(self, user_id: int):
+    def get_balance_snapshot_history(self, user_id: int) -> dict[str, list]:
         """
         Retrieves the balance snapshot data history for a given user.
         Used to power the account value history graph.
+
+        Returns 
+        {
+            date: [],
+            cash: [],
+            holdings: [],
+            combined: []
+        }
         """
-        pass
+
+        sql = """
+        SELECT 
+            snap_datetime AS date, 
+            cash_balance AS cash,
+            portfolio_value AS holdings,
+            grand_total as combined
+        FROM balance_snapshots
+        WHERE user_id = ?
+        """
+        rows = self.select_query(sql, (user_id, ))
+
+        formatted = defaultdict(list)
+        for row in rows:
+            for key in row.keys():
+                formatted[key].append(row[key])
+        
+        return dict(formatted)
 
     def _get_cost_basis(
         self,

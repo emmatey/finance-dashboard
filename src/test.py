@@ -58,8 +58,8 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    ret = tm.check_can_sell(1, "mmm", 1000)
-    print(ret)
+    res = rm.get_balance_snapshot_history(1)
+    print(res)
 
 
     filler_page = """
