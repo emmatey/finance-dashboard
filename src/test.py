@@ -58,8 +58,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    res = rm.get_balance_snapshot_history(1)
-    print(res)
+    dae.price_updater()
 
 
     filler_page = """

@@ -3,6 +3,7 @@ import logging
 from CommonQueries import CommonQueries
 from enum import Enum
 from ReportManager import ReportManager
+from YahooQueryService import YahooQueryService
 
 
 
@@ -72,25 +73,27 @@ class Satan(CommonQueries):
             logger.exception("balance_snapshot_all_users failed")
             return False
 
-    def price_updater(self, yq_service) -> bool:
+    def price_updater(self, yq_service=None) -> bool:
         """
         Update all stock prices using YahooQueryService.
-
         Designed to be called once per execution by threading.Timer or scheduler.
         Thread loop and timing should be managed in app.py.
 
         Args:
-            yq_service: Instance of YahooQueryService for API calls
+            yq_service: Instance of YahooQueryService for API calls.
+                        Instantiates a new instance if not provided.
 
         Returns:
-            True on success, False on failure
+            True on success, False on failure.
+            Returns False early if circuit breaker is active.
 
         Note:
-
             Fetches prices in batches of 200 to avoid API limits.
-            Uses yq_ticker_price_map() which includes circuit breaker protection.
-            Marks symbols as inactive if price fetch fails.
+            Uses yq_ticker_fetch_price_map() which includes circuit breaker protection.
         """
+        if yq_service is None:
+            yq_service = YahooQueryService()
+            
         try:
             logger.info("Starting price update cycle.")
 
@@ -122,32 +125,35 @@ class Satan(CommonQueries):
 
             for batch in batches:
                 # Call through API gateway with exception handling
-                price_map = yq_service.yq_ticker_price_map(batch)
+                price_map = yq_service.yq_ticker_fetch_price_map(batch)
 
                 # price_map returns None if circuit breaker is active
                 if price_map is None:
                     logger.warning("Price map returned None - API may be down or circuit breaker active")
-                    continue
+                    return False
 
                 for symbol, price in price_map.items():
+                    symbol_safe = str(symbol).strip().upper()
                     if isinstance(price, float):
                         # Successful price retrieval
-                        updated_symbols.append((price, symbol.upper()))
+                        updated_symbols.append((price, symbol_safe))
                     elif isinstance(price, str):
                         # Error message from API
                         logger.debug(f"Price fetch failed for {symbol}: {price}")
-                        failed_symbols.append((symbol.upper(),))
+                        failed_symbols.append((symbol_safe,))
                     elif price is None:
                         # Price not available in response
                         logger.debug(f"Price not available for {symbol}")
-                        failed_symbols.append((symbol.upper(),))
+                        failed_symbols.append((symbol_safe,))
 
             # Update symbols table with new prices
             if updated_symbols:
-                self.bulk_query(
-                    "UPDATE symbols SET last_price = ?, last_updated = CURRENT_TIMESTAMP WHERE ticker = ?",
-                    updated_symbols
-                )
+                update_sql = """
+                UPDATE symbols
+                SET last_price = ?, last_updated = CURRENT_TIMESTAMP
+                WHERE ticker = ?
+                """
+                self.bulk_query(update_sql, updated_symbols)
 
             logger.info(f"Price update complete. Updated: {len(updated_symbols)}, Failed: {len(failed_symbols)}")
             return True
