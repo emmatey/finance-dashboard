@@ -50,11 +50,3 @@ def teardown_db(exception):
 
     if db is not None:
         db.close()
-
-
-
-if __name__ == "__main__":
-    # Create background thread that has a persistent app context and db connection
-    # use this to update global data, sync live prices, and write user balance_snapshots!
-
-    pass

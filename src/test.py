@@ -58,8 +58,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    dae.price_updater()
-
+    
 
     filler_page = """
         <body style="background-color: black; color: green;">
@@ -67,3 +66,4 @@ def home():
         </body>
     """
     return filler_page
+
