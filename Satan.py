@@ -185,16 +185,20 @@ if __name__ == "__main__":
             price_value = record.get("price")
             if price_value is not None:
                 price_age = now - price_value
-                price_age_limit = TableLifetimes['price'].value
+                price_age_limit = TableLifetimes['price'].value or 0
                 if price_age > price_age_limit:
                     price_update_status = satan.price_updater()
             else:
                 logger.info("No last_price_update found; running price updater.")
                 price_update_status = satan.price_updater()
 
-            snap_age = now - record.get("snap", 0)
-            snap_age_limit = TableLifetimes['balance_snapshot'].value
-            if snap_age > snap_age_limit:
+            snap_value = record.get("snap")
+            if snap_value is not None:
+                snap_age = now - snap_value
+                if snap_age > TableLifetimes['balance_snapshot'].value:
+                    snapshot_status = satan.balance_snapshot_all_users()
+            else:
+                logger.info("No last_snapshot_update found; running snapshot.")
                 snapshot_status = satan.balance_snapshot_all_users()
         else:
             logger.info(f"No global events table entries found relevant to satan.py. Running updaters regardless.")
@@ -211,9 +215,12 @@ if __name__ == "__main__":
         for col in col_names:
             placeholder.append(f"{col} = CURRENT_TIMESTAMP")
 
-        global_events_sql = f"""
-        UPDATE global_events
-        SET {", ".join(i for i in placeholder)}
-        WHERE id = 1
-        """
-        satan.modify_query(global_events_sql, ())
+        if placeholder:
+            global_events_sql = f"""
+            UPDATE global_events
+            SET {", ".join(i for i in placeholder)}
+            WHERE id = 1
+            """
+            satan.modify_query(global_events_sql, ())
+        else:
+            logger.info("No funcitons in satan.py evaluated to true. Skipping write to global events.")
