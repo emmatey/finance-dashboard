@@ -1,6 +1,6 @@
 import logging
 
-from DbManager import DbManager
+from CommonQueries import CommonQueries
 from enum import Enum
 from ReportManager import ReportManager
 
@@ -18,7 +18,7 @@ class TableLifetimes(Enum):
     balance_snapshot = 86400  # 24 hours
 
 
-class Satan(DbManager):
+class Satan(CommonQueries):
     """
     The deamon manager (please laugh). Will be run in a separate process to app.py
     """
@@ -27,42 +27,43 @@ class Satan(DbManager):
         """
         Create balance snapshots for ALL users.
 
-        Designed to be called once per execution by threading.Timer or scheduler.
-        Thread loop and timing should be managed in app.py.
-
         Returns:
             True on success, False on failure
         """
         try:
-            rm = ReportManager()
-
-            # Query all cash
-            cash_sql = "SELECT id, cash FROM users"
-            cash_query = self.select_query(cash_sql, ())
-            cash_map = {row.get('id'): row.get('cash') for row in cash_query}
-
-            # Calculate holdings value
-            holdings_value_per_user = rm.get_all_holdings_values()
+            # {id: val, id: val}
+            holdings = self.get_all_users_holdings_values()
+            
+            # Get cash balance
+            cash_sql = """
+            SELECT id, cash
+            FROM users
+            """
+            #[{id, val}, {id, val}]
+            cash_rows = self.select_query(cash_sql, ())
 
             # Zip values
-            grand_total_per_user = []
-            for user in cash_map:
-                # [(user_id, cash_balance, portfolio_value)]
-                grand_total_per_user.append((
-                    user,
-                    cash_map[user],
-                    holdings_value_per_user.get(user, 0)
-                ))
-                logger.info(f"Snapshot created for User: {user}!")
-                logger.info(f"Balance: {cash_map[user]} Holdings: {holdings_value_per_user.get(user, 0)}.")
+            # Goal shape = [(id, cash, holdings), ...]
+            snapshot_tuples = []
+            for row in cash_rows:
+                id = row.get('id')
+                if id is None:
+                    logger.warning(
+                        f"Corrupt row in users table {row}."
+                        f"Unable to record balance snapshot.")
+                    continue
+                cash = row.get('cash', 0)
+                portfolio_value = holdings.get(id, 0)
+
+                snapshot_tuples.append((id, cash, portfolio_value))
 
             # Insert snapshots
-            sql = """
+            snap_sql = """
                 INSERT INTO balance_snapshots
                 (user_id, cash_balance, portfolio_value)
                 VALUES (?, ?, ?)
             """
-            self.bulk_query(sql, grand_total_per_user)
+            self.bulk_query(snap_sql, snapshot_tuples)
 
             logger.info("All user snapshots completed successfully.")
             return True
