@@ -192,10 +192,13 @@ class TransactionManager(CommonQueries):
         # Normalize ticker
         ticker = str(ticker).upper().strip()
 
-        # Get ticker_id
-        self.get_symbol_id(ticker)
-        
         # Check qty of ownership
-        self.select_query("")
+        record = self.get_holding_info_per_user(user_id=user_id, ticker=ticker)
+        qty_owned = 0
+        if isinstance(record, dict):
+            qty_owned = record.get("qty_owned", 0)
+
         # Compare to qty of sale
-    
+        if qty_owned < qty:
+            return False
+        return True

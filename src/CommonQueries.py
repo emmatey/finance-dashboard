@@ -245,7 +245,7 @@ class CommonQueries(DbManager):
 
         return holdings_value_per_user
 
-    def get_holding_qty_value_per_user(self, user_id: int, ticker: str) -> dict | None:
+    def get_holding_info_per_user(self, user_id: int, ticker: str) -> dict | None:
         """
         Get quantity and current value of a specific stock holding for a user.
 

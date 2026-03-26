@@ -58,7 +58,9 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    tm.record_buy(1, "USO", 2)
+    ret = tm.check_can_sell(1, "mmm", 1000)
+    print(ret)
+
 
     filler_page = """
         <body style="background-color: black; color: green;">
