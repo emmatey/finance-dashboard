@@ -145,7 +145,7 @@ class MarketOverviewCoordinator(CommonQueries):
 
         if not needs_update:
             return
-
+        
         screeners = yqs_instance.yq_screener_fetch_screeners(screeners=screener_names, count=screener_count)
         filtered_screeners = yqs_instance._filter_screener_data(screeners)
 

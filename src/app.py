@@ -1,8 +1,6 @@
-import sys
-sys.path.append('src')
-
 import helpers
 import logging
+import sys
 
 from flask import Flask, flash, g, redirect, render_template, request, session, url_for
 from flask_session import Session

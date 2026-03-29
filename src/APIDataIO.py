@@ -537,7 +537,7 @@ class APIDataIO(DbManager):
             ORDER BY providerPublishTime DESC
             LIMIT ?
             """
-            return self.simple_query(sql, (limit,))
+            return self.select_query(sql, (limit,))
 
     @ResearchDataCoordinator.register_as_research('company_profile', o=True)
     def get_company_profile(self, symbols):
@@ -582,7 +582,7 @@ class APIDataIO(DbManager):
         WHERE s.ticker IN ({placeholders})
         """
 
-        return self.simple_query(sql, symbols)
+        return self.select_query(sql, symbols)
 
     @ResearchDataCoordinator.register_as_research('insider_trades', o=True)
     def get_insider_trades(self, symbols, limit: int = 50):
@@ -636,7 +636,7 @@ class APIDataIO(DbManager):
         LIMIT ?
         """
 
-        return self.simple_query(sql, symbols + (limit,))
+        return self.select_query(sql, symbols + (limit,))
 
     def get_regional_overview(self, symbols) -> List[Dict[str, Union[str, float]]]:
         """
