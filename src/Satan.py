@@ -187,15 +187,6 @@ if __name__ == "__main__":
             'regional_markets': moc.initialize_regional_etfs,
             'screeners': moc.screener_data_update_orchestrator
         }
-        def print_hi():
-            print("hi")
-        updaters = {
-            'price': print_hi,
-            'balance_snapshot': print_hi,
-            'regional_markets': print_hi,
-            'screeners': print_hi
-        }
-
         fresh_sql = """
         SELECT
             unixepoch(last_price_update) AS price,             

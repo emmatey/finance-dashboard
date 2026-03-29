@@ -854,6 +854,7 @@ class YahooQueryService:
                 # Extract price module data
                 price_data = {
                     'symbol': ticker,
+                    'quoteType': quote.get('quoteType'), 
                     'longName': quote.get('longName'),
                     'shortName': quote.get('shortName'),
                     'regularMarketPrice': quote.get('regularMarketPrice')
