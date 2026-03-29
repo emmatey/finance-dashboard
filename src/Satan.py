@@ -101,7 +101,6 @@ class Satan(CommonQueries):
             Returns False early if circuit breaker is active.
 
         Note:
-            Fetches prices in batches of 200 to avoid API limits.
             Uses yq_ticker_fetch_price_map() which includes circuit breaker protection.
         """
         if yq_service is None:
@@ -112,52 +111,35 @@ class Satan(CommonQueries):
 
             # Query DB for all active symbols
             query = self.select_query("SELECT ticker FROM symbols", ())
-            tickers = [row.get('ticker') for row in query]
+            tickers = [row.get('ticker', "") for row in query]
 
             if not tickers:
                 logger.info("No active symbols to update.")
                 return True
 
-            # Break into batches of 200
-            batch_size = 200
-            batches = []
-            buffer = []
-            for t in tickers:
-                if len(buffer) < batch_size:
-                    buffer.append(t)
-                else:
-                    batches.append(buffer)
-                    buffer = []
-                    buffer.append(t)
-            if buffer:
-                batches.append(buffer)
-
             # Fetch prices for all batches using YahooQueryService (with circuit breaker)
             updated_symbols = []
             failed_symbols = []
 
-            for batch in batches:
-                # Call through API gateway with exception handling
-                price_map = yq_service.yq_ticker_fetch_price_map(batch)
-
-                # price_map returns None if circuit breaker is active
-                if price_map is None:
-                    logger.warning("Price map returned None - API may be down or circuit breaker active")
-                    return False
-
-                for symbol, price in price_map.items():
-                    symbol_safe = str(symbol).strip().upper()
-                    if isinstance(price, float):
-                        # Successful price retrieval
-                        updated_symbols.append((price, symbol_safe))
-                    elif isinstance(price, str):
-                        # Error message from API
-                        logger.debug(f"Price fetch failed for {symbol}: {price}")
-                        failed_symbols.append((symbol_safe,))
-                    elif price is None:
-                        # Price not available in response
-                        logger.debug(f"Price not available for {symbol}")
-                        failed_symbols.append((symbol_safe,))
+            # Call through API gateway with exception handling
+            price_map = yq_service.yq_ticker_fetch_price_map(tickers)
+            # price_map returns None if circuit breaker is active
+            if price_map is None:
+                logger.warning("Price map returned None - API may be down or circuit breaker active")
+                return False
+            for symbol, price in price_map.items():
+                symbol_safe = str(symbol).strip().upper()
+                if isinstance(price, float):
+                    # Successful price retrieval
+                    updated_symbols.append((price, symbol_safe))
+                elif isinstance(price, str):
+                    # Error message from API
+                    logger.debug(f"Price fetch failed for {symbol}: {price}")
+                    failed_symbols.append((symbol_safe,))
+                elif price is None:
+                    # Price not available in response
+                    logger.debug(f"Price not available for {symbol}")
+                    failed_symbols.append((symbol_safe,))
 
             # Update symbols table with new prices
             if updated_symbols:
@@ -174,7 +156,6 @@ class Satan(CommonQueries):
         except Exception:
             logger.exception("price_updater failed")
             return False
-
 
 if __name__ == "__main__":
     

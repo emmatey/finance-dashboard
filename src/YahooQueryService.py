@@ -120,6 +120,7 @@ class YahooQueryService:
 
         return raw_modules
 
+    @DbManager.time_method
     @yq_exception_handler()
     def yq_ticker_fetch_price_map(
         self,
