@@ -49,6 +49,8 @@ class APIDataIO(DbManager):
             price_module = modules.get('price')
             if price_module:
                 quote_type = price_module.get('quoteType', 'UNKNOWN')
+                if quote_type == 'UNKNOWN':
+                    logger.debug(f"Missing quoteType for {symbol}, price_module keys: {list(price_module.keys())}")
                 company_name = (
                     price_module.get('longName') or 
                     price_module.get('shortName') or 
