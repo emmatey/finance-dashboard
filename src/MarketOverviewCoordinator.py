@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+import time
 from APIDataIO import APIDataIO as io
 from CommonQueries import CommonQueries
 from YahooQueryService import YahooQueryService as yqs
@@ -40,9 +41,8 @@ class MarketOverviewCoordinator(CommonQueries):
         'volume_spike_bullish',
         'volume_spike_bearish'
     ]
-    SCREENER_UPDATE_FREQUENCY = 3600 # One Hour
 
-    def initialize_regional_etfs(self, symbols=SYMBOLS, yqs_instance=yqs(), dbio_instance=io()):
+    def initialize_regional_etfs(self, symbols: dict=SYMBOLS, yqs_instance=yqs(), dbio_instance=io()):
         """
         Initialize or refresh regional ETF data for homepage market overview display.
         
@@ -50,8 +50,6 @@ class MarketOverviewCoordinator(CommonQueries):
         that represent major global markets. This method ensures all necessary data
         exists in the database for get_regional_overview() to display current market
         performance.
-        
-        Method checks if 'financial_metrics' have been updated today, and skips API calls if so.
     
         Example:
             >>> coordinator = MarketOverviewCoordinator()
@@ -65,34 +63,6 @@ class MarketOverviewCoordinator(CommonQueries):
         """
         logger.info(f"Initializing regional ETF data for {len(symbols)} regions")
         
-        # Check if prev_close (via financial metrics) has been updated today already.
-        placeholders = ",".join(["?" for _ in symbols.values()])
-        sql = f"""
-        SELECT fm.last_updated 
-        FROM financial_metrics AS fm
-        JOIN symbols AS s ON s.id = fm.symbol_id
-        WHERE s.ticker IN ({placeholders})
-        """
-        res = self.select_query(sql, tuple(symbols.values()))
-
-        oldest = dt.datetime.max.replace(tzinfo=dt.timezone.utc)
-        tickers_found = 0
-        for row in res:
-            time = row.get('last_updated')
-            if isinstance(time, str):
-                tickers_found += 1
-                last_updated = dt.datetime.strptime(time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=dt.timezone.utc)
-                
-                if last_updated < oldest:
-                    oldest = last_updated
-
-            else:
-                logger.warning(f"Date-Time string {time} from {row} malformed, skipping. Should be str is {type(time)}.")
-
-        if oldest.date() == dt.date.today() and tickers_found == len(symbols.values()):
-            logger.info(f"All regional representative tickers present and updated today.")
-            return
-
         # Fetch comprehensive module data from Yahoo Finance
         tickers = list(symbols.values())
         modules = yqs_instance.yq_ticker_fetch_modules(
@@ -114,38 +84,6 @@ class MarketOverviewCoordinator(CommonQueries):
         Checks the age of screener data and updates if stale.
         Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
         """
-        # Check freshness of screener data
-        sql = """
-            SELECT MIN(unixepoch(last_updated)) as oldest_update
-            FROM screener_results
-        """
-        res = self.select_query(sql, ())
-
-        if not res:
-            logger.info("No screener data found - performing initial load")
-            needs_update = True
-        else:
-            oldest_update = res[0].get('oldest_update')
-
-            if oldest_update is None:
-                logger.info("No screener data found - performing initial load")
-                needs_update = True
-            else:
-                # Compare age against threshold
-                now = dt.datetime.now(dt.timezone.utc)
-                last_update = dt.datetime.fromtimestamp(oldest_update, dt.timezone.utc)
-                age = (now - last_update).total_seconds()
-
-                if age > self.SCREENER_UPDATE_FREQUENCY:
-                    logger.info(f"Screener data is {age:.0f}s old (threshold: {self.SCREENER_UPDATE_FREQUENCY}s) - updating")
-                    needs_update = True
-                else:
-                    logger.info(f"Screener data is fresh ({age:.0f}s old) - skipping update")
-                    needs_update = False
-
-        if not needs_update:
-            return
-        
         screeners = yqs_instance.yq_screener_fetch_screeners(screeners=screener_names, count=screener_count)
         filtered_screeners = yqs_instance._filter_screener_data(screeners)
 

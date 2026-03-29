@@ -3,6 +3,7 @@ import logging
 
 from CommonQueries import CommonQueries
 from enum import Enum
+from MarketOverviewCoordinator import MarketOverviewCoordinator as moc
 from time import time
 from YahooQueryService import YahooQueryService
 
@@ -18,7 +19,8 @@ class TableLifetimes(Enum):
     """
     price = 60  # symbols table
     balance_snapshot = 86400  # 24 hours
-
+    regional_markets = 3600 # 1 hour
+    screeners = 3600 # 1 hour
 
 class Satan(CommonQueries):
     """
@@ -26,7 +28,7 @@ class Satan(CommonQueries):
     Will be run in a separate process to app.py.
     Currently will not really be 'daemons' but just a script that does these two operations and then dies.
     """
-            
+      
     def balance_snapshot_all_users(self) -> bool:
         """
         Create balance snapshots for ALL users.
@@ -165,62 +167,27 @@ class Satan(CommonQueries):
             logger.exception("price_updater failed")
             return False
 
+updaters = {
+    'last_price_update': Satan.price_updater,
+    'last_screener_update': moc.screener_data_update_orchestrator,
+    'last_regional_update': moc.initialize_regional_etfs,
+    'last_snapshot_update': Satan.balance_snapshot_all_users,
+}
 
 if __name__ == "__main__":
     with app.app_context():
         satan = Satan()
-        price_update_status = False
-        snapshot_status = False
 
         fresh_sql = """
-        SELECT unixepoch(last_price_update) AS price, unixepoch(last_snapshot_update) AS snap
+        SELECT
+            last_price_update AS price             
+            last_snapshot_update AS snap
+            last_regional_etfs_update AS region
+            last_screener_data_update AS screen
         FROM global_events
         WHERE id = 1
         """
         row = satan.select_query(fresh_sql, ())
-        if row and isinstance(row, list):
-            record = row[0]
-            now = time()
 
-            price_value = record.get("price")
-            if price_value is not None:
-                price_age = now - price_value
-                price_age_limit = TableLifetimes['price'].value or 0
-                if price_age > price_age_limit:
-                    price_update_status = satan.price_updater()
-            else:
-                logger.info("No last_price_update found; running price updater.")
-                price_update_status = satan.price_updater()
-
-            snap_value = record.get("snap")
-            if snap_value is not None:
-                snap_age = now - snap_value
-                if snap_age > TableLifetimes['balance_snapshot'].value:
-                    snapshot_status = satan.balance_snapshot_all_users()
-            else:
-                logger.info("No last_snapshot_update found; running snapshot.")
-                snapshot_status = satan.balance_snapshot_all_users()
-        else:
-            logger.info(f"No global events table entries found relevant to satan.py. Running updaters regardless.")
-            snapshot_status = satan.balance_snapshot_all_users()
-            price_update_status = satan.price_updater()
-
-        col_names = []
-        if price_update_status is True:
-            col_names.append('last_price_update')
-        if snapshot_status is True:
-            col_names.append('last_snapshot_update')
-
-        placeholder = []
-        for col in col_names:
-            placeholder.append(f"{col} = CURRENT_TIMESTAMP")
-
-        if placeholder:
-            global_events_sql = f"""
-            UPDATE global_events
-            SET {", ".join(i for i in placeholder)}
-            WHERE id = 1
-            """
-            satan.modify_query(global_events_sql, ())
-        else:
-            logger.info("No funcitons in satan.py evaluated to true. Skipping write to global events.")
+        
+       
