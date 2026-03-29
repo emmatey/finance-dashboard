@@ -55,7 +55,7 @@ class ResearchDataCoordinator(CommonQueries):
             return func
         return decorator
 
-    def create_research_fresh_report(self, symbol):
+    def create_research_fresh_report(self, symbol: str):
         """
         Check the age of stored data using a single optimized CTE query.
 
@@ -75,7 +75,7 @@ class ResearchDataCoordinator(CommonQueries):
             each table.
         """
         now = time()
-        symbol = symbol.upper()
+        symbol = str(symbol).strip().upper()
 
         # Thank you to "https://www.datacamp.com/tutorial/cte-sql"
         query = self.select_query(
@@ -132,7 +132,7 @@ class ResearchDataCoordinator(CommonQueries):
             raise ValueError(f"Symbol {symbol} not found")
 
         res = query[0] # type: ignore
-        fresh_report = {"symbol": symbol}
+        fresh_report: dict[str, bool | str] = {"symbol": symbol}
 
         for name, create_time in res.items():
             if name in TableLifetimes.__members__:
@@ -140,17 +140,17 @@ class ResearchDataCoordinator(CommonQueries):
                     logger.debug(f"Data for {name} is missing/None. Marking as stale.")
                     create_time = 0
                 if TableLifetimes[name].value > (now - create_time):
-                    logger.debug(f"Data for {name} is fresh. Age={now - create_time} Threshold={TableLifetimes[name].value}")
+                    logger.debug(f"Data for {name} is fresh. Age={now - create_time} Threshold={TableLifetimes[name].value}, Ticker={symbol}")
                     fresh_report[name] = True
                 else:
-                    logger.debug(f"Data for {name} is stale. Age={now - create_time} Threshold={TableLifetimes[name].value}")
+                    logger.debug(f"Data for {name} is stale. Age={now - create_time} Threshold={TableLifetimes[name].value}, Ticker={symbol}")
                     fresh_report[name] = False
             else:
                 logger.warning(f"Database returned column '{name}', but it is not tracked in TableLifetimes Enum.")
 
         return fresh_report
 
-    def research_data_update_orchestrator(self, fresh_report: dict[str, bool], yqs_instance=None, db_io_instance=None):
+    def research_data_update_orchestrator(self, fresh_report: dict[str, bool | str], yqs_instance=None, db_io_instance=None):
         """
         This only works for one company at a time.
 
@@ -186,9 +186,12 @@ class ResearchDataCoordinator(CommonQueries):
         modules = {}
         if modules_set:
             logger.info(f"Fetching {len(modules_set)} modules for {symbol}")
-            modules = yqs_instance.yq_ticker_get_modules(symbol, list(modules_set))
+            modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
             if not modules:
                 logger.error(f"Failed to fetch modules for {symbol}")
+            else:
+                # Upsert symbol using already-fetched modules (no extra API call)
+                db_io_instance.upsert_symbols(modules)
 
         # Call refresh functions for stale db tables
         for table, status in fresh_report.items():

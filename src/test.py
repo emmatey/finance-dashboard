@@ -58,42 +58,12 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    YQ_SCREENER_NAMES = [
-        'day_gainers', 
-        'day_losers', 
-        'most_actives', 
-        'most_watched_tickers', 
-        'fifty_two_wk_gainers', 
-        'fifty_two_wk_losers'
-    ]
-    """
-    Checks the age of screener data and updates if stale.
-    Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
-    """
-    screeners = yqs.yq_screener_fetch_screeners(screeners=YQ_SCREENER_NAMES, count=1)
-    filtered_screeners = yqs._filter_screener_data(screeners)
+    report = rdc.create_research_fresh_report('mmm')
+    print(report)
+    rdc.research_data_update_orchestrator(report, db_io_instance=io, yqs_instance=yqs)
+    row = db.select_query('SELECT * FROM symbols WHERE ticker = "MMM"', ())
+    print(row)
 
-    # Add custom volume spike screeners
-    relative_volumes_screener = yqs.extract_relative_volumes(filtered_screeners)
-    filtered_screeners.update(relative_volumes_screener)
-    
-    # Extract metadata and rankings
-    metadata = yqs.extract_screener_metadata(filtered_screeners)
-    
-    # Extract price and financial data
-    price_modules, financial_metrics = yqs.extract_screener_data(filtered_screeners)
-    print(price_modules)
-    print(financial_metrics)
-
-    ## Upsert symbols first (screener rankings reference symbol_id)
-    #io.upsert_symbols(price_modules)
-    #
-    ## Insert screener rankings (clears table first, so all get same timestamp)
-    #io.set_screeners_metadata(metadata)
-    #
-    ## Update financial metrics (incomplete data, don't update last_updated timestamp)
-    #io.set_financial_metrics(financial_metrics, from_screeners=True)
-    #logger.info(f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers")
 
     filler_page = """
         <body style="background-color: black; color: green;">
