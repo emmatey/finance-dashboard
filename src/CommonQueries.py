@@ -135,12 +135,11 @@ class CommonQueries(DbManager):
         """
         tx_history_company_grouped = self.get_transaction_history(user_id=user_id, all_users=all_users)
 
-
         # Query updated prices
         symbols = list(tx_history_company_grouped.keys())
         if not symbols:
             logger.debug("No holdings found for user(s). Returning empty result.")
-            return {}
+            return {}, {}
         
         placeholders = ", ".join(['?' for _ in symbols])
         sql = f"""
@@ -151,7 +150,7 @@ class CommonQueries(DbManager):
         price_rows = self.select_query(sql, tuple(symbols))
         if not price_rows:
             logger.error("Failed to fetch prices.")
-            return {}
+            return {}, {}
         price_map = {row['id']: row['last_price'] for row in price_rows}
 
         # Group by user

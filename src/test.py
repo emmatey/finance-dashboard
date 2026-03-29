@@ -60,7 +60,7 @@ def home():
     
     
 
-    
+    moc.initialize_regional_etfs()
 
 
 

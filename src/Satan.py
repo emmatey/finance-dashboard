@@ -3,7 +3,7 @@ import logging
 
 from CommonQueries import CommonQueries
 from enum import Enum
-from MarketOverviewCoordinator import MarketOverviewCoordinator as moc
+from MarketOverviewCoordinator import MarketOverviewCoordinator
 from time import time
 from YahooQueryService import YahooQueryService
 
@@ -167,27 +167,39 @@ class Satan(CommonQueries):
             logger.exception("price_updater failed")
             return False
 
-updaters = {
-    'last_price_update': Satan.price_updater,
-    'last_screener_update': moc.screener_data_update_orchestrator,
-    'last_regional_update': moc.initialize_regional_etfs,
-    'last_snapshot_update': Satan.balance_snapshot_all_users,
-}
 
 if __name__ == "__main__":
+    
     with app.app_context():
         satan = Satan()
-
+        moc = MarketOverviewCoordinator()
+        updaters = {
+            'price': satan.price_updater,
+            'balance_snapshot': moc.screener_data_update_orchestrator,
+            'regional_markets': moc.initialize_regional_etfs,
+            'screeners': satan.balance_snapshot_all_users,
+        }
         fresh_sql = """
         SELECT
-            last_price_update AS price             
-            last_snapshot_update AS snap
-            last_regional_etfs_update AS region
-            last_screener_data_update AS screen
+            last_price_update AS price,             
+            last_snapshot_update AS balance_snapshot,
+            last_regional_etfs_update AS regional_markets,
+            last_screener_data_update AS screeners
         FROM global_events
         WHERE id = 1
         """
         row = satan.select_query(fresh_sql, ())
+        res = {}
+        if row:
+            res = row[0]
 
-        
-       
+        for dataset in res:
+            last_updated = res.get('last_updated', 0)
+            try:
+                fresh_age = TableLifetimes[dataset].value
+                if (time() - last_updated) > fresh_age:
+                    updaters[dataset]()
+                else:
+                    logger.info(f"{dataset} up to date, skipping...") 
+            except KeyError:
+                logger.error(f"{dataset} not found in TableLifetimes enum, please review Satan.py")
