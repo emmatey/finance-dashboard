@@ -22,6 +22,14 @@ class TableLifetimes(Enum):
     regional_markets = 3600 # 1 hour
     screeners = 3600 # 1 hour
 
+column_map = {
+    # associates enum name to db schema col names.
+    'price': 'last_price_update',
+    'balance_snapshot': 'last_snapshot_update',
+    'regional_markets': 'last_regional_etfs_update',
+    'screeners': 'last_screener_data_update'
+}
+
 class Satan(CommonQueries):
     """
     The deamon manager (please laugh). 
@@ -175,16 +183,25 @@ if __name__ == "__main__":
         moc = MarketOverviewCoordinator()
         updaters = {
             'price': satan.price_updater,
-            'balance_snapshot': moc.screener_data_update_orchestrator,
+            'balance_snapshot': satan.balance_snapshot_all_users,
             'regional_markets': moc.initialize_regional_etfs,
-            'screeners': satan.balance_snapshot_all_users,
+            'screeners': moc.screener_data_update_orchestrator
         }
+        def print_hi():
+            print("hi")
+        updaters = {
+            'price': print_hi,
+            'balance_snapshot': print_hi,
+            'regional_markets': print_hi,
+            'screeners': print_hi
+        }
+
         fresh_sql = """
         SELECT
-            last_price_update AS price,             
-            last_snapshot_update AS balance_snapshot,
-            last_regional_etfs_update AS regional_markets,
-            last_screener_data_update AS screeners
+            unixepoch(last_price_update) AS price,             
+            unixepoch(last_snapshot_update) AS balance_snapshot,
+            unixepoch(last_regional_etfs_update) AS regional_markets,
+            unixepoch(last_screener_data_update) AS screeners
         FROM global_events
         WHERE id = 1
         """
@@ -193,13 +210,29 @@ if __name__ == "__main__":
         if row:
             res = row[0]
 
+        updated = []
+        now = time()
         for dataset in res:
-            last_updated = res.get('last_updated', 0)
+            last_updated = res.get(dataset) or 0
             try:
                 fresh_age = TableLifetimes[dataset].value
-                if (time() - last_updated) > fresh_age:
+                if (now - int(last_updated)) > fresh_age:
                     updaters[dataset]()
+                    logger.info(f"Updating {dataset}, was {now - int(last_updated)} seconds old...")
+                    updated.append(dataset)
                 else:
                     logger.info(f"{dataset} up to date, skipping...") 
             except KeyError:
                 logger.error(f"{dataset} not found in TableLifetimes enum, please review Satan.py")
+        
+        updated_remove_alias = [column_map[i] for i in updated]
+        cols = ", ".join([f"{i} = CURRENT_TIMESTAMP" for i in updated_remove_alias])
+        update_sql = f"""
+        UPDATE global_events
+        SET {cols}
+        WHERE id = 1
+        """
+        if updated:
+            satan.modify_query(update_sql, ())
+        else:
+            logger.info("All datasets fresh, skipping Satan.py!")
