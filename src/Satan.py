@@ -110,7 +110,21 @@ class Satan(CommonQueries):
             logger.info("Starting price update cycle.")
 
             # Query DB for all active symbols
-            query = self.select_query("SELECT ticker FROM symbols", ())
+            tickers_query = """
+            SELECT DISTINCT s.ticker
+            FROM symbols s
+            WHERE s.id IN (
+                SELECT symbol_id 
+                FROM transactions
+                GROUP BY symbol_id
+                HAVING SUM(qty) > 0
+            )
+            OR s.ticker IN ('VOO', 'IEUR', 'ILF', 'AFK', 'EWA', 'INDA', 'EWJ', 'MCHI', 'GLD', 'CPER', 'USO')
+            """
+            # Checks for tickers users currently own and regional indicator ETFs
+            # Reduces time yahooquery takes as checking 1000+ tickers takes over 50 seconds
+            # A good place to update later, the source of price data in specific.
+            query = self.select_query(tickers_query, ())
             tickers = [row.get('ticker', "") for row in query]
 
             if not tickers:

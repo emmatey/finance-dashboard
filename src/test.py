@@ -58,12 +58,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    report = rdc.create_research_fresh_report('mmm')
-    print(report)
-    rdc.research_data_update_orchestrator(report, db_io_instance=io, yqs_instance=yqs)
-    row = db.select_query('SELECT * FROM symbols WHERE ticker = "MMM"', ())
-    print(row)
-
+    
 
     filler_page = """
         <body style="background-color: black; color: green;">
