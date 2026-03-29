@@ -17,7 +17,7 @@ class TableLifetimes(Enum):
     Done on a per-table basis because the 'research_api_helpers' are written to fetch and organize
     the data required to populate one record in one DB table each.
     """
-    price = 60  # symbols table
+    price = 60 # symbols table
     balance_snapshot = 86400  # 24 hours
     regional_markets = 3600 # 1 hour
     screeners = 3600 # 1 hour
@@ -109,8 +109,10 @@ class Satan(CommonQueries):
         try:
             logger.info("Starting price update cycle.")
 
+            placeholders = ", ".join(["?"for _ in MarketOverviewCoordinator.SYMBOLS.values()])
+            moc_symbols = tuple([s for s in MarketOverviewCoordinator.SYMBOLS.values()])
             # Query DB for all active symbols
-            tickers_query = """
+            tickers_query = f"""
             SELECT DISTINCT s.ticker
             FROM symbols s
             WHERE s.id IN (
@@ -119,12 +121,12 @@ class Satan(CommonQueries):
                 GROUP BY symbol_id
                 HAVING SUM(qty) > 0
             )
-            OR s.ticker IN ('VOO', 'IEUR', 'ILF', 'AFK', 'EWA', 'INDA', 'EWJ', 'MCHI', 'GLD', 'CPER', 'USO')
+            OR s.ticker IN ({placeholders})
             """
             # Checks for tickers users currently own and regional indicator ETFs
             # Reduces time yahooquery takes as checking 1000+ tickers takes over 50 seconds
             # A good place to update later, the source of price data in specific.
-            query = self.select_query(tickers_query, ())
+            query = self.select_query(tickers_query, moc_symbols)
             tickers = [row.get('ticker', "") for row in query]
 
             if not tickers:
