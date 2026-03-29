@@ -40,10 +40,30 @@ Features
         Tx type
         Abridged financial metrics?
 
+    Preview Order -
+        Symbol
+        Action
+        Qty
+        Trade value
+    
+    Transact -
+        Write to db from preview
+
     Quote - 
         Company financial metrics
         Company historical prices
         redirect to trade
         redirect to research
 
-RESOURCES
+    Search -
+
+
+RESOURCES 
+    users
+    portfolio
+    transactions
+    stocks
+    screeners
+    market
+    news
+    search
