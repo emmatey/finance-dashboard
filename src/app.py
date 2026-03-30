@@ -140,10 +140,38 @@ def register():
 @app.route("/login", methods=["POST"])
 def login():
     """
-
+    Logs in an existing user and sets session cookie.
+    
+    Request body (JSON):
+        username (str): The user's username.
+        password (str): The user's password.
+    
+    Returns:
+        200: Login successful. {"success": True}
+        400: Invalid request body. {"success": False, "error": str}
+        401: Invalid username or password. {"success": False, "error": str}
     """
+    # Checks for request body.
+    if not request.is_json:
+        return jsonify({"success": False, "error": "Missing JSON in request"}), 400
+    am = AccountManager()
 
-    return "hello"
+    # Extract response body from request.
+    request_body = dict(request.json)
+
+    # Extract username and password from request body
+    username = str(request_body.get('username', ''))
+    password= str(request_body.get('password', ''))
+
+    # Check if username and password are valid
+    ret = am.login(username=username, password=password, session=session)
+    if ret is False:
+        return jsonify({
+            "success": False,
+            "error": f"Username or password is invalid :("
+            }), 401
+
+    return jsonify({"success": True}), 200
 
 # Logout
 @app.route("/logout", methods=["POST"])

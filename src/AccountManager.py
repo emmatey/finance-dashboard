@@ -8,7 +8,7 @@ class AccountManager(CommonQueries):
     - User rank among active players.
     """
 
-    def login(self, username, password, session):
+    def login(self, username, password, session) -> bool:
         # Query database for username
         rows = self.select_query(
             "SELECT * FROM users WHERE username = ?", (username, )
