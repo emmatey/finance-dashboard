@@ -59,6 +59,17 @@ def teardown_db(exception):
 def register():
     """
     Registers a new user.
+
+    Request body (JSON):
+        username (str): Alphanumeric, no spaces, min 1 char.
+        password (str): ASCII only, min 5 chars, must contain at least
+                        one uppercase letter, one lowercase letter, and
+                        one non-letter character.
+
+    Returns:
+        201: Registration successful. {"success": True}
+        400: Invalid request body or validation failure. {"success": False, "error": str}
+        409: Username already in use. {"success": False, "error": str}
     """
     # Checks for request body.
     if not request.is_json:
