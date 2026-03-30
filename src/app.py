@@ -152,7 +152,7 @@ def logout():
     Logs out a user and redirects.
     """
     session.clear()
-    return redirect(url_for("login"))
+    return jsonify({"success": True}), 200
 
 @app.route("/")
 def home():
@@ -161,7 +161,4 @@ def home():
                 hi mom. Welcome to app.py!
             </body>
         """
-    from AccountManager import AccountManager
-    am = AccountManager()
-    print(am.register(username="jerma", password="123"))
     return filler_page
