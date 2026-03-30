@@ -58,7 +58,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    
+
 
     filler_page = """
         <body style="background-color: black; color: green;">

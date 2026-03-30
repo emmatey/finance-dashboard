@@ -57,6 +57,18 @@ Features
 
     Search -
 
+RESPONSE CONVENTIONS
+    errors
+    {
+        "success": False,
+        "error": str
+    }
+    non errors
+    {
+        "success": True
+    }
+
+
 
 RESOURCES 
     users
