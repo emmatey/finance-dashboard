@@ -52,10 +52,10 @@ def teardown_db(exception):
     if exception:
         logger.error(exception)
 
-### Account Actions ###
+### AUTH ###
 
 # Register
-@app.route("/register", methods=["POST"])
+@app.route("/auth/register", methods=["POST"])
 def register():
     """
     Registers a new user.
@@ -137,15 +137,15 @@ def register():
     return jsonify({"success": True}), 201
 
 # Login
-@app.route("/login", methods=["POST"])
+@app.route("/auth/login", methods=["POST"])
 def login():
     """
     Logs in an existing user and sets session cookie.
-    
+
     Request body (JSON):
         username (str): The user's username.
         password (str): The user's password.
-    
+
     Returns:
         200: Login successful. {"success": True}
         400: Invalid request body. {"success": False, "error": str}
@@ -174,13 +174,24 @@ def login():
     return jsonify({"success": True}), 200
 
 # Logout
-@app.route("/logout", methods=["POST"])
+@app.route("/auth/logout", methods=["POST"])
 def logout():
     """
-    Logs out a user and redirects.
+    Logs out a user.
     """
     session.clear()
     return jsonify({"success": True}), 200
+
+## USERS ##
+
+@app.route("/users", methods=["GET"])
+def users():
+    """
+    """
+    
+    return "hi!"
+
+
 
 @app.route("/")
 def home():

@@ -68,14 +68,33 @@ RESPONSE CONVENTIONS
         "success": True
     }
 
-
-
 RESOURCES 
+    auth
+        login
+        logout
+        register
     users
-    portfolio
-    transactions
-    stocks
+        summary
+        portfolio aka holdings
+        transactions - login required
+        balance_snapshots - login required
+    company
+        summary
+        description
+        insider_transacions
+        historical_prices
+        financial_metrics
     screeners
-    market
+        day_gainers - query param
+        day_losers - query param 
+        most_actives - query param 
+        most_watched_tickers - query param 
+        fifty_two_wk_gainers - query param 
+        fifty_two_wk_losers - query param
+        volume_spike_bullish - query param
+        volume_spike_bearish - query param
     news
+        company
+    market_overview
+        Shows regional ETF prices and yesterday's closing
     search
