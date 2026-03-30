@@ -74,13 +74,17 @@ def register():
     if not all(char.isascii() and char.isalnum() for char in username):
         return jsonify({
             "success": False,
-            "error": "Username must contain only ASCII chars."
+            "error": "Username must be alphanumeric (A-Z, 0-9) with no spaces."
+            }), 400
+    if len(username) < 1:
+        return jsonify({
+            "success": False,
+            "error": "Username must be at least 1 char long."
             }), 400
     
     # Check if pw meets website requirements
     # Password must have one capital, one uppercase, one lowercase, and one non-letter, and be 5 chars long.
     if len(password) < 5:
-        # Checks for non-ascii
         return jsonify({
             "success": False,
             "error": "Password must be at least 5 chars long."
@@ -105,7 +109,7 @@ def register():
             }), 400
     if all((char.isalpha() for char in password)):
             # Checks for non-letters
-                   return jsonify({
+        return jsonify({
             "success": False,
             "error": "Password must contain at least one non-letter character."
             }), 400
