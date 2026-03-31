@@ -1,7 +1,8 @@
 Features
-    Landing-
+    Auth -
         Register
         Login
+        Logout
 
     Homepage -
         Screeners
@@ -71,11 +72,40 @@ RESPONSE CONVENTIONS
 RESOURCES 
     auth
         login
+            to - POST {username: str, password: str}
+            from - {"success": bool}
         logout
+            to - POST
+            from - {"success": True}
         register
+            To - POST {username: str, password: str}
+            from - {"success": bool}
+    
     user
         summary
+            to - GET {username: str}
+            from - {
+                user_id: int,
+                snap_datetime: datetime,
+                portfolio_value: float,
+                cash_balance: float,
+                grand_total:, float,
+                rank: int
+            }
         portfolio_view
+            to - GET {username: str}
+            from - 1 dict per company [{
+                 symbol,
+                 name,
+                 shares,
+                 unit_price,
+                 cost_basis,
+                 current_value,
+                 total_cost,
+                 gain_loss,
+                 total_cost,
+                 gain_loss_pct
+            }]
         transactions - login required
         balance_snapshots - login required
     scoreboard

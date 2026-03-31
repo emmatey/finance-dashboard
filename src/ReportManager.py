@@ -208,6 +208,7 @@ class ReportManager(CommonQueries):
             WITH latest_snapshots AS (
                 SELECT *
                 FROM balance_snapshots
+                JOIN users ON users.id = balance_snapshots.user_id
                 WHERE snap_datetime IN (
                     SELECT MAX(snap_datetime)
                     FROM balance_snapshots
@@ -215,25 +216,26 @@ class ReportManager(CommonQueries):
                 )
             )
             SELECT 
-                user_id, snap_datetime, portfolio_value, 
+                username, user_id, snap_datetime, portfolio_value, 
                 cash_balance, grand_total,
                 RANK() OVER (ORDER BY grand_total DESC) AS rank
             FROM latest_snapshots
         """
         return self.select_query(sql, ())
-    
+
     def get_users_ranks(self, user_ids: list[int]) -> list[dict]:
         """Get rank for specific users"""
         if not user_ids:
             return []
         if not all(isinstance(i, int) for i in user_ids):
             raise TypeError("user_ids must contain only integers")
-        
+
         placeholders = ", ".join("?" * len(user_ids))
         sql = """
             WITH latest_snapshots AS (
                 SELECT *
                 FROM balance_snapshots
+                JOIN users ON users.id = balance_snapshots.user_id
                 WHERE snap_datetime IN (
                     SELECT MAX(snap_datetime)
                     FROM balance_snapshots
@@ -241,7 +243,7 @@ class ReportManager(CommonQueries):
                 )
             )
             SELECT 
-                user_id, snap_datetime, portfolio_value,
+                username, user_id, snap_datetime, portfolio_value,
                 cash_balance, grand_total,
                 RANK() OVER (ORDER BY grand_total DESC) AS rank
             FROM latest_snapshots
