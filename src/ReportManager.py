@@ -214,12 +214,14 @@ class ReportManager(CommonQueries):
                     FROM balance_snapshots
                     GROUP BY user_id
                 )
-            )
-            SELECT 
-                username, user_id, snap_datetime, portfolio_value, 
+            ),
+            ranked AS (
+                SELECT username, user_id, snap_datetime, portfolio_value,
                 cash_balance, grand_total,
                 RANK() OVER (ORDER BY grand_total DESC) AS rank
-            FROM latest_snapshots
+                FROM latest_snapshots
+            )
+            SELECT * FROM ranked 
         """
         return self.select_query(sql, ())
 
@@ -231,7 +233,7 @@ class ReportManager(CommonQueries):
             raise TypeError("user_ids must contain only integers")
 
         placeholders = ", ".join("?" * len(user_ids))
-        sql = """
+        sql = f"""
             WITH latest_snapshots AS (
                 SELECT *
                 FROM balance_snapshots
@@ -241,12 +243,14 @@ class ReportManager(CommonQueries):
                     FROM balance_snapshots
                     GROUP BY user_id
                 )
-            )
-            SELECT 
-                username, user_id, snap_datetime, portfolio_value,
+            ),
+            ranked AS (
+                SELECT username, user_id, snap_datetime, portfolio_value,
                 cash_balance, grand_total,
                 RANK() OVER (ORDER BY grand_total DESC) AS rank
-            FROM latest_snapshots
-            WHERE user_id IN ({})
-        """.format(placeholders)
+                FROM latest_snapshots
+            )
+            SELECT * FROM ranked 
+            WHERE user_id IN ({placeholders})
+        """
         return self.select_query(sql, tuple(user_ids))
