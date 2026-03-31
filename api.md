@@ -75,7 +75,7 @@ RESOURCES
         register
     user
         summary
-        portfolio aka holdings
+        portfolio_view
         transactions - login required
         balance_snapshots - login required
     scoreboard

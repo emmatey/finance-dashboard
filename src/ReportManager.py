@@ -202,40 +202,49 @@ class ReportManager(CommonQueries):
 
         return cost_basis_data
 
-    def get_user_ranks(self, user_id: list[int] | None=None):
-        """
-        Query balance snapshots to get the users' rank
-        Scoreboard is based on balance snapshots.
-        This is updated every 24 hrs.
-        """
-        snapshots_sql = """
-        WITH latest_snapshots AS (
-            SELECT *
-            FROM balance_snapshots
-            WHERE snap_datetime IN (
-                SELECT MAX(snap_datetime)
+    def get_all_users_ranks(self) -> list[dict]:
+        """Get rank for all users"""
+        sql = """
+            WITH latest_snapshots AS (
+                SELECT *
                 FROM balance_snapshots
-                GROUP BY user_id
+                WHERE snap_datetime IN (
+                    SELECT MAX(snap_datetime)
+                    FROM balance_snapshots
+                    GROUP BY user_id
+                )
             )
-        )
-        SELECT 
-            user_id,
-            snap_datetime,
-            portfolio_value,
-            cash_balance,
-            grand_total,
-            RANK() OVER (ORDER BY grand_total desc) AS rank
-        FROM latest_snapshots
+            SELECT 
+                user_id, snap_datetime, portfolio_value, 
+                cash_balance, grand_total,
+                RANK() OVER (ORDER BY grand_total DESC) AS rank
+            FROM latest_snapshots
         """
-        user_id_tuple = ()
-        if user_id and not isinstance(user_id, list):
-            try:
-                user_id = [int(user_id)]
-                user_id_tuple = tuple(user_id)
-                placeholders = ", ".join(("?" for _ in user_id))
-                snapshots_sql += f"WHERE user_id IN {placeholders}"
-            except TypeError:
-                logger.error(f"user_id must be an int or list of ints. Was {type(user_id)}")
-                return {}
-        rows = self.select_query(snapshots_sql, tuple(user_id_tuple))
-        print(rows)
+        return self.select_query(sql, ())
+    
+    def get_users_ranks(self, user_ids: list[int]) -> list[dict]:
+        """Get rank for specific users"""
+        if not user_ids:
+            return []
+        if not all(isinstance(i, int) for i in user_ids):
+            raise TypeError("user_ids must contain only integers")
+        
+        placeholders = ", ".join("?" * len(user_ids))
+        sql = """
+            WITH latest_snapshots AS (
+                SELECT *
+                FROM balance_snapshots
+                WHERE snap_datetime IN (
+                    SELECT MAX(snap_datetime)
+                    FROM balance_snapshots
+                    GROUP BY user_id
+                )
+            )
+            SELECT 
+                user_id, snap_datetime, portfolio_value,
+                cash_balance, grand_total,
+                RANK() OVER (ORDER BY grand_total DESC) AS rank
+            FROM latest_snapshots
+            WHERE user_id IN ({})
+        """.format(placeholders)
+        return self.select_query(sql, tuple(user_ids))
