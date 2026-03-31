@@ -151,6 +151,31 @@ class TransactionManager(CommonQueries):
                 )
         return True
 
+    def record_balance_snapshot(self, user_id: int) -> bool:
+        """
+        Record a balance snapshot for a single user.
+        To be used after every buy and sell order.
+        """
+        cash_balance = self.get_balance(user_id)
+        if cash_balance is None:
+            logger.error(f"Cannot snapshot user {user_id} - user not found")
+            return False
+        # portfolio_value returns 0.0 if no holdings.
+        portfolio_value = self.get_single_user_holdings_value(user_id)
+
+        sql = """
+        INSERT INTO balance_snapshots (user_id, portfolio_value, cash_balance)
+        VALUES (?, ?, ?)
+        """
+        rows = self.modify_query(sql, (user_id, portfolio_value, cash_balance))
+        if rows:
+            logger.info(f"Balance snapshot recorded for user #{user_id}!")
+            logger.info(f"Cash balance = {cash_balance} Portfolio value = {portfolio_value}")
+            return True
+        else:
+            logger.warning(f"Balance snapshot for user #{user_id} failed!")
+            return False
+        
     def check_can_afford(self, user_id: int, ticker: str, qty: int) -> bool:
         """
         Check if user can afford a transaction.

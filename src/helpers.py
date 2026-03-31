@@ -47,10 +47,3 @@ def login_required(f):
 def usd(value):
     """Format value as USD."""
     return f"${value:,.2f}"
-
-def get_user_id(session):
-    """Get user_id from session or redirect to logout if missing."""
-    user_id = session.get("user_id")
-    if user_id is None:
-        return redirect(url_for("logout"))
-    return user_id

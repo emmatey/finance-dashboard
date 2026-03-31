@@ -3,6 +3,7 @@ import logging
 import sys
 
 from AccountManager import AccountManager
+from CommonQueries import CommonQueries
 from flask import Flask, flash, g, redirect, render_template, request, session, url_for, jsonify
 from flask_session import Session
 
@@ -182,14 +183,41 @@ def logout():
     session.clear()
     return jsonify({"success": True}), 200
 
-## USERS ##
+## USER ##
 
-@app.route("/users", methods=["GET"])
-def users():
+@app.route("/user/summary", methods=["GET"])
+def user_summary():
     """
+    Returns user summary
+    used to populate scoreboard and user summary card on homepage
+    data required
+        username
+        cash balance
+        holdings value
+        grand total
+        rank among users
     """
+    cc = CommonQueries()
+    # check for query paramaters
+    username = request.args.get('username')
+    if not username:
+        return jsonify({
+            "success": False,
+            "error": "Username is required :("
+            }), 400
+
+    user_id = cc.get_user_id_from_username(username=username)
+    if not user_id:
+        return jsonify({
+            "success": False,
+            "error": f"Username {username} is invalid :("
+            }), 400
     
-    return "hi!"
+    balance = cc.get_balance(user_id=user_id) or 0
+    holdings_value = cc.get_single_user_holdings_value(user_id=user_id) or 0
+    grand_total = balance + holdings_value
+    
+
 
 
 

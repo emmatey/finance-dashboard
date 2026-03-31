@@ -73,11 +73,13 @@ RESOURCES
         login
         logout
         register
-    users
+    user
         summary
         portfolio aka holdings
         transactions - login required
         balance_snapshots - login required
+    scoreboard
+        'returns a summary of all users and their rankings'
     company
         summary
         description

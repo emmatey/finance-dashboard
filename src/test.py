@@ -58,7 +58,8 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-
+    rank = rm.get_user_rank(user_id=1)
+    #print(rank)
 
     filler_page = """
         <body style="background-color: black; color: green;">

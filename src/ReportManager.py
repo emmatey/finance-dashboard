@@ -89,31 +89,6 @@ class ReportManager(CommonQueries):
         # Sort the list of dicts by current_value
         # https://stackoverflow.com/questions/72899/how-can-i-sort-a-list-of-dictionaries-by-a-value-of-the-dictionary-in-python
         return sorted(index_view, key=lambda x: x["current_value"], reverse=True)
-    
-    def record_balance_snapshot(self, user_id: int) -> bool:
-        """
-        Record a balance snapshot for a single user.
-        To be used after every buy and sell order.
-        """
-        cash_balance = self.get_balance(user_id)
-        if cash_balance is None:
-            logger.error(f"Cannot snapshot user {user_id} - user not found")
-            return False
-        # portfolio_value returns 0.0 if no holdings.
-        portfolio_value = self.get_single_user_holdings_value(user_id)
-
-        sql = """
-        INSERT INTO balance_snapshots (user_id, portfolio_value, cash_balance)
-        VALUES (?, ?, ?)
-        """
-        rows = self.modify_query(sql, (user_id, portfolio_value, cash_balance))
-        if rows:
-            logger.info(f"Balance snapshot recorded for user #{user_id}!")
-            logger.info(f"Cash balance = {cash_balance} Portfolio value = {portfolio_value}")
-            return True
-        else:
-            logger.warning(f"Balance snapshot for user #{user_id} failed!")
-            return False
 
     def get_balance_snapshot_history(self, user_id: int) -> dict[str, list]:
         """
@@ -226,4 +201,31 @@ class ReportManager(CommonQueries):
                 }
 
         return cost_basis_data
-    
+
+    def get_user_rank(self, user_id):
+        """
+        Query balance snapshots to get the users' rank
+        Scoreboard is based on balance snapshots.
+        This is updated every 24 hrs.
+        """
+        snapshots_sql = """
+        WITH latest_snapshots AS (
+            SELECT *
+            FROM balance_snapshots
+            WHERE snap_datetime IN (
+                SELECT MAX(snap_datetime)
+                FROM balance_snapshots
+                GROUP BY user_id
+            )
+        )
+        SELECT 
+            user_id,
+            snap_datetime,
+            portfolio_value,
+            cash_balance,
+            grand_total,
+            RANK() OVER (ORDER BY grand_total desc) AS rank
+        FROM latest_snapshots
+        """
+        rows = self.select_query(snapshots_sql, ())
+        print(rows)
