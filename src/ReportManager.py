@@ -202,7 +202,7 @@ class ReportManager(CommonQueries):
 
         return cost_basis_data
 
-    def get_user_rank(self, user_id):
+    def get_user_ranks(self, user_id: list[int] | None=None):
         """
         Query balance snapshots to get the users' rank
         Scoreboard is based on balance snapshots.
@@ -227,5 +227,15 @@ class ReportManager(CommonQueries):
             RANK() OVER (ORDER BY grand_total desc) AS rank
         FROM latest_snapshots
         """
-        rows = self.select_query(snapshots_sql, ())
+        user_id_tuple = ()
+        if user_id and not isinstance(user_id, list):
+            try:
+                user_id = [int(user_id)]
+                user_id_tuple = tuple(user_id)
+                placeholders = ", ".join(("?" for _ in user_id))
+                snapshots_sql += f"WHERE user_id IN {placeholders}"
+            except TypeError:
+                logger.error(f"user_id must be an int or list of ints. Was {type(user_id)}")
+                return {}
+        rows = self.select_query(snapshots_sql, tuple(user_id_tuple))
         print(rows)
