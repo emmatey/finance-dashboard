@@ -70,63 +70,229 @@ RESPONSE CONVENTIONS
     }
 
 RESOURCES 
-    auth
+
+    AUTH
         login
-            to - POST {username: str, password: str}
-            from - {"success": bool}
+            to   - POST {username: str, password: str}
+            from - {success: bool}
         logout
-            to - POST
-            from - {"success": True}
+            to   - POST
+            from - {success: bool}
         register
-            To - POST {username: str, password: str}
-            from - {"success": bool}
-    
-    user
+            to   - POST {username: str, password: str}
+            from - {success: bool}
+
+    USER
         summary
-            to - GET {username: str}
+            to   - GET ?username=str (optional, defaults to logged in user)
             from - {
+                username: str,
                 user_id: int,
-                snap_datetime: datetime,
+                snap_datetime: int,
                 portfolio_value: float,
                 cash_balance: float,
-                grand_total:, float,
+                grand_total: float,
                 rank: int
             }
         portfolio_view
-            to - GET {username: str}
-            from - 1 dict per company [{
-                 symbol,
-                 name,
-                 shares,
-                 unit_price,
-                 cost_basis,
-                 current_value,
-                 total_cost,
-                 gain_loss,
-                 total_cost,
-                 gain_loss_pct
+            to   - GET ?username=str (optional, defaults to logged in user)
+            from - [{
+                symbol: str,
+                name: str,
+                shares: float,
+                unit_price: float,
+                cost_basis: float,
+                current_value: float,
+                total_cost: float,
+                gain_loss: float,
+                gain_loss_pct: float
             }]
         transactions - login required
+            to   - GET ?username=str (optional, defaults to logged in user)
+            from - [{
+                transaction_id: int,
+                username: str,
+                ticker: str,
+                transaction_type: str,
+                qty: float,
+                unit_price: float,
+                date: int
+            }]
         balance_snapshots - login required
-    scoreboard
-        'returns a summary of all users and their rankings'
-    company
+            to   - GET
+            from - [{
+                snap_datetime: int,
+                cash_balance: float,
+                portfolio_value: float,
+                grand_total: float
+            }]
+
+    SCOREBOARD
+        to   - GET
+        from - [{
+            username: str,
+            portfolio_value: float,
+            cash_balance: float,
+            grand_total: float,
+            rank: int
+        }]
+
+    RESEARCH
+        to   - GET ?ticker=str
+        note - calls full orchestrator, updates all stale tables,
+               returns all company data in one response
+        from - {
+            summary: {
+                ticker: str,
+                name: str,
+                price: float
+            },
+            description: {
+                description: str,
+                industry: str,
+                website: str,
+                employee_count: int
+            },
+            financial_metrics: {
+                market_cap: float,
+                eps: float,
+                beta: float,
+                trailing_pe: float,
+                forward_pe: float,
+                profit_margin: float,
+                dividend_yield: float,
+                fifty_two_week_high: float,
+                fifty_two_week_low: float,
+                fifty_day_average: float,
+                two_hundred_day_average: float,
+                target_price: float,
+                analyst_count: int,
+                rating: str
+            },
+            insider_transactions: [{
+                transaction_date: str,
+                shares: float,
+                transaction_value: float,
+                transaction_text: str,
+                filer_name: str,
+                filer_relation: str
+            }],
+            historical_prices: [{
+                price_timestamp: int,
+                adjclose: float,
+                trade_volume: int
+            }],
+            news: [{
+                title: str,
+                link: str,
+                publisher: str,
+                thumbnail: str,
+                providerPublishTime: int
+            }]
+        }
+
+    COMPANY
+        note - individual routes, each checks freshness for
+               its own table only
         summary
+            to   - GET ?ticker=str
+            from - {
+                ticker: str,
+                name: str,
+                price: float
+            }
         description
-        insider_transacions
+            to   - GET ?ticker=str
+            from - {
+                description: str,
+                industry: str,
+                website: str,
+                employee_count: int
+            }
+        insider_transactions
+            to   - GET ?ticker=str
+            from - [{
+                transaction_date: str,
+                shares: float,
+                transaction_value: float,
+                transaction_text: str,
+                filer_name: str,
+                filer_relation: str
+            }]
         historical_prices
+            to   - GET ?ticker=str
+            from - [{
+                price_timestamp: int,
+                adjclose: float,
+                trade_volume: int
+            }]
         financial_metrics
-    screeners
-        day_gainers - query param
-        day_losers - query param 
-        most_actives - query param 
-        most_watched_tickers - query param 
-        fifty_two_wk_gainers - query param 
-        fifty_two_wk_losers - query param
-        volume_spike_bullish - query param
-        volume_spike_bearish - query param
-    news
-        company
-    market_overview
-        Shows regional ETF prices and yesterday's closing
-    search
+            to   - GET ?ticker=str
+            from - {
+                market_cap: float,
+                eps: float,
+                beta: float,
+                trailing_pe: float,
+                forward_pe: float,
+                profit_margin: float,
+                dividend_yield: float,
+                fifty_two_week_high: float,
+                fifty_two_week_low: float,
+                fifty_day_average: float,
+                two_hundred_day_average: float,
+                target_price: float,
+                analyst_count: int,
+                rating: str
+            }
+
+    SCREENERS
+        to   - GET ?name=str
+        from - [{
+            rank: int,
+            ticker: str,
+            name: str
+        }]
+
+    NEWS
+        to   - GET ?ticker=str (optional, returns all news if omitted)
+        from - [{
+            title: str,
+            link: str,
+            publisher: str,
+            thumbnail: str,
+            providerPublishTime: int
+        }]
+
+    MARKET_OVERVIEW
+        to   - GET
+        from - [{
+            region: str,
+            ticker: str,
+            current_price: float,
+            prev_close: float,
+            pct_change: float
+        }]
+
+    TRADE
+        to   - GET ?ticker=str
+        from - {
+            ticker: str,
+            name: str,
+            current_price: float,
+            cash_balance: float,
+            qty_owned: float
+        }
+        to   - POST {
+            ticker: str,
+            qty: int,
+            transaction_type: str
+        }
+        from - {success: bool}
+
+    SEARCH
+        to   - GET ?q=str
+        from - [{
+            ticker: str,
+            name: str,
+            quote_type: str
+        }]
