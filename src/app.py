@@ -5,6 +5,7 @@ import sys
 from AccountManager import AccountManager
 from CommonQueries import CommonQueries
 from ReportManager import ReportManager
+from TransactionManager import TransactionManager
 from flask import Flask, g, request, session, jsonify
 from flask_session import Session
 
@@ -121,7 +122,7 @@ def register():
             "error": "Password must contain at least one lowercase letter."
             }), 400
     if all((char.isalpha() for char in password)):
-            # Checks for non-letters
+        # Checks for non-letters
         return jsonify({
             "success": False,
             "error": "Password must contain at least one non-letter character."
@@ -172,6 +173,11 @@ def login():
             "success": False,
             "error": f"Username or password is invalid :("
             }), 401
+
+    # Update user balance/holdings value in db on login.
+    tm = TransactionManager()
+    user_id = am.get_user_id_from_username(username=username)
+    tm.record_balance_snapshot(user_id=user_id)
 
     return jsonify({"success": True}), 200
 
@@ -240,7 +246,7 @@ def user_summary():
     }
     missing = []
     for k, v in out_data.items():
-        if not v:
+        if v is None:
             missing.append(k)
     if missing:
         return jsonify({
