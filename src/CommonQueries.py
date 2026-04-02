@@ -32,7 +32,7 @@ class CommonQueries(DbManager):
             return None
         return res[0]['cash']
 
-    def get_username_from_user_id(self, user_id: int) -> str | None:
+    def get_username_from_user_id(self, user_id: int) -> str:
         """
         Get username from user_id
         """
@@ -44,9 +44,9 @@ class CommonQueries(DbManager):
         if result:
             return result[0]['username']
         else:
-            return None
+            return ""
     
-    def get_user_id_from_username(self, username: str) -> int | None:
+    def get_user_id_from_username(self, username: str) -> int:
         """
         Get user_id from username
         """
@@ -60,7 +60,7 @@ class CommonQueries(DbManager):
         if result:
             return result[0]['id']
         else:
-            return None
+            return 0
     
     def get_symbol_id(self, ticker: str) -> int | None:
         """

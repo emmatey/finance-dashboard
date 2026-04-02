@@ -226,7 +226,18 @@ class ReportManager(CommonQueries):
         return self.select_query(sql, ())
 
     def get_users_ranks(self, user_ids: list[int]) -> list[dict]:
-        """Get rank for specific users"""
+        """
+        Get rank for specific users
+        returns {
+            username,
+            user_id,
+            snap_datetime,(datetime of the source of the balnace figures)
+            portfolio_value,
+            cash_balance,
+            grand_total,
+            rank
+            }
+        """
         if not user_ids:
             return []
         if not all(isinstance(i, int) for i in user_ids):
@@ -246,8 +257,8 @@ class ReportManager(CommonQueries):
             ),
             ranked AS (
                 SELECT username, user_id, snap_datetime, portfolio_value,
-                cash_balance, grand_total,
-                RANK() OVER (ORDER BY grand_total DESC) AS rank
+                    cash_balance, grand_total,
+                    RANK() OVER (ORDER BY grand_total DESC) AS rank
                 FROM latest_snapshots
             )
             SELECT * FROM ranked 

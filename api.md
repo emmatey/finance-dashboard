@@ -92,17 +92,17 @@ RESPONSE CONVENTIONS
 RESOURCES 
 
     AUTH
-        login
+        login - DONE 3/30
             to   - POST {username: str, password: str}
             from - {success: bool}
-        logout
+        logout - DONE 3/30
             to   - POST
             from - {success: bool}
-        register
+        register - DONE 3/30
             to   - POST {username: str, password: str}
             from - {success: bool}
 
-    USER
+    USER 
         summary
             to   - GET ?username=str (optional, defaults to logged in user)
             from - {
@@ -141,7 +141,7 @@ RESOURCES
                 cash_after: float
             }]
         balance_snapshots
-            to   - GET
+            to   - GET ?username=str
             from - [{
                 snap_datetime: int,
                 cash_balance: float,
@@ -163,7 +163,6 @@ RESOURCES
         }]
 
     RESEARCH
-
         to - GET ?ticker=str
         from - All the below data from COMPANY.
             In the background served via research update orchistrator.   

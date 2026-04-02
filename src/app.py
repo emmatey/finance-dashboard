@@ -4,7 +4,8 @@ import sys
 
 from AccountManager import AccountManager
 from CommonQueries import CommonQueries
-from flask import Flask, flash, g, redirect, render_template, request, session, url_for, jsonify
+from ReportManager import ReportManager
+from flask import Flask, g, request, session, jsonify
 from flask_session import Session
 
 
@@ -198,28 +199,57 @@ def user_summary():
         rank among users
     """
     cc = CommonQueries()
+    rm = ReportManager()
+
     # check for query paramaters
-    username = request.args.get('username')
-    if not username:
+    username_query = request.args.get('username', "")
+    user_id_session = session.get('user_id', 0)
+    if not user_id_session and not username_query:
         return jsonify({
             "success": False,
-            "error": "Username is required :("
+            "error": "Username is required, username not found in query parameter nor session :("
             }), 400
 
-    user_id = cc.get_user_id_from_username(username=username)
-    if not user_id:
+    user_id = 0
+    if username_query: # query paramater should override the logged in user's ID
+        user_id = cc.get_user_id_from_username(username=username_query)
+        if not user_id:
+            return jsonify({
+                "success": False,
+                "error": f"Username {username_query} is invalid :("
+                }), 400
+    else:
+        user_id = user_id_session
+
+    ret = rm.get_users_ranks(user_ids=[user_id])
+    if isinstance(ret, list) and len(ret) < 1:
         return jsonify({
-            "success": False,
-            "error": f"Username {username} is invalid :("
-            }), 400
+                "success": False,
+                "error": f"Username {username_query} is invalid :("
+                }), 400
     
-    balance = cc.get_balance(user_id=user_id) or 0
-    holdings_value = cc.get_single_user_holdings_value(user_id=user_id) or 0
-    grand_total = balance + holdings_value
-    
-
-
-
+    user_info = ret[0]
+    out_data = {
+        "username": user_info.get("username"),
+        "user_id": user_info.get("user_id"),
+        "snap_datetime": user_info.get("snap_datetime"),
+        "portfolio_value": user_info.get("portfolio_value"),
+        "cash_balance": user_info.get("cash_balance"),
+        "grand_total": user_info.get("grand_total"),
+        "rank": user_info.get("rank")
+    }
+    missing = []
+    for k, v in out_data.items():
+        if not v:
+            missing.append(k)
+    if missing:
+        return jsonify({
+                "success": False,
+                "error": f"Data {missing} not found for user {user_id}"
+                }), 400
+    else:
+        out_data["success"] = True
+        return jsonify(out_data)
 
 @app.route("/")
 def home():
