@@ -4,13 +4,16 @@ Features
         Login
         Logout
 
-    Homepage -
+    Homepage - Requires login
         Screeners
         Regional ETFs
-        News
-        User Balance
-        User Portfolio Value
-        User Ranking
+        Latest News
+        User summary card
+        [
+            User Balance
+            User Portfolio Value
+            User Ranking
+        ]
 
     Research -
         Company Summary (symbol, name, price)
@@ -20,17 +23,27 @@ Features
         Company price history
         Company news
     
-    Profile -
-        User balance
-        User portfolio value
-        User grand total
-        User holdings
-        User "portfolio view" (holdings/qty/price/cost basis) as a table
-        User balance snapshot history
+    Profile - 
+            As a line chart with three modes
+        [
+            User grand total - mode 1
+            User portfolio value - mode 2
+            User balance - mode 3
+            User balance snapshot history
+        ]
+        User "portfolio view" (holdings/qty/price/cost basis)
+            as a table
+            and as a pie chart
+     
+    Transaction History - Requires login
+        - Chronological history of transactions
+        - Pagination
     
     Scoreboard -
-        User rankings
-        User portfolio view
+        User rankings summary
+        Navigate to portfolios of users as described in /profile page
+        Will show things like holdings and balance history
+            Not obfuscated like in a real finance app because its a paper trading competition game.
     
     Trade -
         Company search
@@ -57,6 +70,13 @@ Features
         redirect to research
 
     Search -
+        Probably cant to live data lists.
+        On search navigaes to a new search page which is 
+            a untion of db results and yq.search() results
+        SEARCH HEADERS
+            Companies
+            Users
+            News
 
 RESPONSE CONVENTIONS
     errors
@@ -88,7 +108,7 @@ RESOURCES
             from - {
                 username: str,
                 user_id: int,
-                snap_datetime: int,
+                snap_datetime: int, (for 'last updated' text)
                 portfolio_value: float,
                 cash_balance: float,
                 grand_total: float,
@@ -96,6 +116,7 @@ RESOURCES
             }
         portfolio_view
             to   - GET ?username=str (optional, defaults to logged in user)
+            # List of info about each owned company.
             from - [{
                 symbol: str,
                 name: str,
@@ -116,9 +137,10 @@ RESOURCES
                 transaction_type: str,
                 qty: float,
                 unit_price: float,
-                date: int
+                date: int,
+                cash_after: float
             }]
-        balance_snapshots - login required
+        balance_snapshots
             to   - GET
             from - [{
                 snap_datetime: int,
@@ -129,6 +151,9 @@ RESOURCES
 
     SCOREBOARD
         to   - GET
+        # Data from a combo of daily Satan updates and updates on user login
+        # Wont trigger refreshes, can live with scoreboard being global refreshed daily.
+        # potentially could use /users with no query paramater instead of being its own route
         from - [{
             username: str,
             portfolio_value: float,
@@ -138,62 +163,16 @@ RESOURCES
         }]
 
     RESEARCH
-        to   - GET ?ticker=str
-        note - calls full orchestrator, updates all stale tables,
-               returns all company data in one response
-        from - {
-            summary: {
-                ticker: str,
-                name: str,
-                price: float
-            },
-            description: {
-                description: str,
-                industry: str,
-                website: str,
-                employee_count: int
-            },
-            financial_metrics: {
-                market_cap: float,
-                eps: float,
-                beta: float,
-                trailing_pe: float,
-                forward_pe: float,
-                profit_margin: float,
-                dividend_yield: float,
-                fifty_two_week_high: float,
-                fifty_two_week_low: float,
-                fifty_day_average: float,
-                two_hundred_day_average: float,
-                target_price: float,
-                analyst_count: int,
-                rating: str
-            },
-            insider_transactions: [{
-                transaction_date: str,
-                shares: float,
-                transaction_value: float,
-                transaction_text: str,
-                filer_name: str,
-                filer_relation: str
-            }],
-            historical_prices: [{
-                price_timestamp: int,
-                adjclose: float,
-                trade_volume: int
-            }],
-            news: [{
-                title: str,
-                link: str,
-                publisher: str,
-                thumbnail: str,
-                providerPublishTime: int
-            }]
-        }
+
+        to - GET ?ticker=str
+        from - All the below data from COMPANY.
+            In the background served via research update orchistrator.   
 
     COMPANY
         note - individual routes, each checks freshness for
-               its own table only
+               its own table only and update itself only
+               RESEARCH route will do a bulk update and serve everything.
+
         summary
             to   - GET ?ticker=str
             from - {
@@ -254,7 +233,7 @@ RESOURCES
         }]
 
     NEWS
-        to   - GET ?ticker=str (optional, returns all news if omitted)
+        to   - GET ?ticker=str (optional, returns all news by datetime newest if omitted)
         from - [{
             title: str,
             link: str,
@@ -294,5 +273,17 @@ RESOURCES
         from - [{
             ticker: str,
             name: str,
-            quote_type: str
+            quote_type: str,
+            type: "company"
+        },{
+            username: str,
+            grand_total: float,
+            rank: int
+            type: "user"
+        }, {
+            title: str,
+            desc: str,
+            related_to: list[str],
+            link: str,
+            type: "news"
         }]
