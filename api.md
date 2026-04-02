@@ -103,7 +103,7 @@ RESOURCES
             from - {success: bool}
 
     USER 
-        summary
+        summary - DONE 4/2 
             to   - GET ?username=str (optional, defaults to logged in user)
             from - {
                 username: str,
