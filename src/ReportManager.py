@@ -209,7 +209,7 @@ class ReportManager(CommonQueries):
                 SELECT *
                 FROM balance_snapshots
                 JOIN users ON users.id = balance_snapshots.user_id
-                WHERE snap_datetime IN (
+                WHERE snap_id IN (
                     SELECT MAX(snap_id)
                     FROM balance_snapshots
                     GROUP BY user_id
@@ -249,7 +249,7 @@ class ReportManager(CommonQueries):
                 SELECT *
                 FROM balance_snapshots
                 JOIN users ON users.id = balance_snapshots.user_id
-                WHERE snap_datetime IN (
+                WHERE snap_id IN (
                     SELECT MAX(snap_id)
                     FROM balance_snapshots
                     GROUP BY user_id
