@@ -295,13 +295,17 @@ def portfolio_view():
     rm = ReportManager()
     cc = CommonQueries()
   
-    user_id = 0
+    user_id = 0    
     try:
-        user_id = get_user_id_from_query_param_or_session(request, session, cc)
-    except UserNotFoundError as e:
-        return jsonify({"success": False, "message": str(e)}), 404
-    except NoUserProvidedError as e:
-        return jsonify({"success": False, "message": str(e)}), 400
+        user_id = helpers.get_user_id_from_query_param_or_session(request, session, cc)
+    except helpers.UserNotFoundError as e:
+        return jsonify({
+            "success": False, 
+            "message": str(e)}), 404
+    except helpers.NoUserProvidedError as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)}), 400
 
     # try get portfolio view from user ID
     try:
