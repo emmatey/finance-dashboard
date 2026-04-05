@@ -6,6 +6,12 @@ from functools import wraps
 
 logger = logging.getLogger(__name__)
 
+class UserNotFoundError(Exception):
+    pass
+
+class NoUserProvidedError(Exception):
+    pass
+
 def login_required(f):
     """
     Decorate routes to require login.
@@ -21,35 +27,32 @@ def login_required(f):
 
     return decorated_function
 
-def get_user_id_from_query_param_or_session(s: SessionMixin, r: flask.Request) -> tuple[bool, int]:
+def get_user_id_from_query_param_or_session(r: flask.Request, s: SessionMixin, cc: CommonQueries) -> int:
     """
-    Check query paramater for username.
-    If not found, check session for user id
-    If not found in either place, return 400
-    Prioratizes query parameter.
+    Resolve a user_id from a request query parameter or session.
+    Prioritizes query parameter over session.
 
     Args:
-        Flask session object 
-        Flask request object
-        Instance of CommonQueries class.
-    
+        r: Flask request object
+        s: Flask session object
+        cc: CommonQueries instance
+
     Returns:
-        (True, user_id),
-        (False, HTTP_status_code)
-        
+        user_id as int
+
+    Raises:
+        UserNotFoundError: Username in query parameter not found in database.
+        NoUserProvidedError: No username in query parameter or session.
     """
-    cc = CommonQueries()
     username = r.args.get("username", "")
     user_id = s.get("user_id", 0)
+    
     if username:
         user_id = cc.get_user_id_from_username(username=username)
         if user_id:
-            return (True, user_id)
-        else:
-            logger.warning(f"Username {username} not found.")
-            return (False, 404)
+            return user_id
+        raise UserNotFoundError(f"Username {username} not found.")
     elif user_id:
-        return (True, user_id)
+        return user_id
     else:
-        logger.error("No username provided. Query param and session empty.")
-        return (False, 400)
+        raise NoUserProvidedError("No username in query parameter or session.")

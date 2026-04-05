@@ -223,23 +223,19 @@ def user_summary():
     """
     cc = CommonQueries()
     rm = ReportManager()
-
-    # check for query paramaters
-    status, result = helpers.get_user_id_from_query_param_or_session(s=session, r= request)
-    user_id = 0
-    if status is False and result == 400:
+    
+    user_id = 0    
+    try:
+        user_id = helpers.get_user_id_from_query_param_or_session(request, session, cc)
+    except helpers.UserNotFoundError as e:
+        return jsonify({
+            "success": False, 
+            "message": str(e)}), 404
+    except helpers.NoUserProvidedError as e:
         return jsonify({
             "success": False,
-            "message": "Username is required, username not found in query parameter nor session :("
-            }), 400
-    if status is False and result == 404:
-        return jsonify({
-              "success": False,
-              "message": "Username not found."
-              }), 404
-    if status is True:
-        user_id = result
-    
+            "message": str(e)}), 400
+
     ret = rm.get_users_ranks(user_ids=[user_id])
     if isinstance(ret, list) and len(ret) < 1:
         return jsonify({
@@ -298,27 +294,14 @@ def portfolio_view():
     """
     rm = ReportManager()
     cc = CommonQueries()
+  
     user_id = 0
-    
-    # parse query parameter
-    param_username = request.args.get("username", "")
-    session_user_id = session.get("user_id", 0)
-    if param_username:
-        param_user_id = cc.get_user_id_from_username(username=param_username)
-        if param_user_id:
-            user_id = param_user_id
-        else:
-            return jsonify({
-            "success": False,
-            "message": f"Username {param_username} not found in db."
-        }), 404
-    elif session_user_id:
-        user_id = session_user_id
-    else:
-        return jsonify({
-            "success": False,
-            "message": "Username not found in session, nor in query parameter."
-        }), 400
+    try:
+        user_id = get_user_id_from_query_param_or_session(request, session, cc)
+    except UserNotFoundError as e:
+        return jsonify({"success": False, "message": str(e)}), 404
+    except NoUserProvidedError as e:
+        return jsonify({"success": False, "message": str(e)}), 400
 
     # try get portfolio view from user ID
     try:
