@@ -85,7 +85,7 @@ def register():
 
     # Check if username meets website requirements.
     # Username must be ascii and without spaces.
-    if not all(char.isascii() and char.isalnum() for char in username):
+    if not all(char.isascii() and char.isalnum() and char != " " for char in username):
         return jsonify({
             "success": False,
             "error": "Username must be alphanumeric (A-Z, 0-9) with no spaces."
@@ -179,24 +179,37 @@ def login():
     user_id = am.get_user_id_from_username(username=username)
     tm.record_balance_snapshot(user_id=user_id)
 
-    return jsonify({"success": True}), 200
+    return jsonify({f"success": True,
+                    "message": "User {username} logged in."}), 200
 
 # Logout
 @app.route("/auth/logout", methods=["POST"])
 def logout():
     """
     Logs out a user.
+
+    Request Body (JSON):
+        N/A
+    
+    Response Codes:
+        200: Logged out successfully, session clear.
+        500: Session unable to be cleared.
     """
-    session.clear()
-    return jsonify({"success": True}), 200
+    try:
+        session.clear()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.exception("Sesison unable to be cleared.")
+        return jsonify({"success": False,
+                        "message": f"Session unable to be cleared... {e}"})
 
 ## USER ##
 
 @app.route("/user/summary", methods=["GET"])
 def user_summary():
     """
-    Returns user summary
-    used to populate scoreboard and user summary card on homepage
+    Returns 'user summary' used to populate scoreboard and user summary card on homepage.
+    
     data required
         username
         cash balance
