@@ -76,7 +76,7 @@ def register():
     """
     # Checks for request body.
     if not request.is_json:
-        return jsonify({"success": False, "error": "Missing JSON in request"}), 400
+        return jsonify({"success": False, "message": "Missing JSON in request"}), 400
     
     am = AccountManager()
     request_body = dict(request.json)
@@ -88,12 +88,12 @@ def register():
     if not all(char.isascii() and char.isalnum() and char != " " for char in username):
         return jsonify({
             "success": False,
-            "error": "Username must be alphanumeric (A-Z, 0-9) with no spaces."
+            "message": "Username must be alphanumeric (A-Z, 0-9) with no spaces."
             }), 400
     if len(username) < 1:
         return jsonify({
             "success": False,
-            "error": "Username must be at least 1 char long."
+            "message": "Username must be at least 1 char long."
             }), 400
     
     # Check if pw meets website requirements
@@ -101,25 +101,25 @@ def register():
     if len(password) < 5:
         return jsonify({
             "success": False,
-            "error": "Password must be at least 5 chars long."
+            "message": "Password must be at least 5 chars long."
             }), 400
     if not all((char.isascii() for char in password)):
         # Checks for non-ascii
         return jsonify({
             "success": False,
-            "error": "Password must contain only ASCII chars."
+            "message": "Password must contain only ASCII chars."
             }), 400
     if not any((char.isupper() for char in password)):
         # Checks for uppercase
         return jsonify({
             "success": False,
-            "error": "Password must contain at least one uppercase letter."
+            "message": "Password must contain at least one uppercase letter."
             }), 400
     if not any((char.islower() for char in password)):
         # Checks for lowercase
         return jsonify({
             "success": False,
-            "error": "Password must contain at least one lowercase letter."
+            "message": "Password must contain at least one lowercase letter."
             }), 400
     if all((char.isalpha() for char in password)):
         # Checks for non-letters
@@ -133,7 +133,7 @@ def register():
     if ret == 0:
         return jsonify({
             "success": False,
-            "error": f"Username {username} already in use."
+            "message": f"Username {username} already in use."
             }), 409
     
     # Return good state 
@@ -171,7 +171,7 @@ def login():
     if ret is False:
         return jsonify({
             "success": False,
-            "error": f"Username or password is invalid :("
+            "message": f"Username or password is invalid :("
             }), 401
 
     # Update user balance/holdings value in db on login.
@@ -179,8 +179,8 @@ def login():
     user_id = am.get_user_id_from_username(username=username)
     tm.record_balance_snapshot(user_id=user_id)
 
-    return jsonify({f"success": True,
-                    "message": "User {username} logged in."}), 200
+    return jsonify({"success": True,
+                    "message": f"User {username} logged in."}), 200
 
 # Logout
 @app.route("/auth/logout", methods=["POST"])
@@ -198,7 +198,7 @@ def logout():
     except Exception as e:
         logger.exception("Sesison unable to be cleared.")
         return jsonify({"success": False,
-                        "message": f"Session unable to be cleared... {e}"})
+                        "message": f"Session unable to be cleared... {e}"}), 500
 
 ## USER ##
 
@@ -233,7 +233,7 @@ def user_summary():
     if not user_id_session and not username_query:
         return jsonify({
             "success": False,
-            "error": "Username is required, username not found in query parameter nor session :("
+            "message": "Username is required, username not found in query parameter nor session :("
             }), 400
 
     user_id = 0
@@ -242,7 +242,7 @@ def user_summary():
         if not user_id:
             return jsonify({
                 "success": False,
-                "error": f"Username {username_query} is invalid :("
+                "message": f"Username {username_query} is invalid :("
                 }), 400
     else:
         user_id = user_id_session
@@ -251,7 +251,7 @@ def user_summary():
     if isinstance(ret, list) and len(ret) < 1:
         return jsonify({
                 "success": False,
-                "error": f"Username {username_query} not found, or is invalid :("
+                "message": f"Username {username_query} not found, or is invalid :("
                 }), 400
     
     user_info = ret[0]
@@ -271,7 +271,7 @@ def user_summary():
     if missing:
         return jsonify({
                 "success": False,
-                "error": f"Data {missing} not found for user {user_id}"
+                "message": f"Data {missing} not found for user {user_id}"
                 }), 500
     else:
         out_data["success"] = True
