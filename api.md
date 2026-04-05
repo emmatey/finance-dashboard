@@ -82,11 +82,12 @@ RESPONSE CONVENTIONS
     errors
     {
         "success": False,
-        "error": str
+        "message": str
     }
     non errors
     {
-        "success": True
+        "success": True,
+        "message": str
     }
 
 RESOURCES 

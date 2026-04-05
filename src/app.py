@@ -195,10 +195,10 @@ def logout():
     try:
         session.clear()
         return jsonify({"success": True}), 200
-    except Exception as e:
+    except Exception:
         logger.exception("Sesison unable to be cleared.")
         return jsonify({"success": False,
-                        "message": f"Session unable to be cleared... {e}"}), 500
+                        "message": "Session unable to be cleared..."}), 500
 
 ## USER ##
 

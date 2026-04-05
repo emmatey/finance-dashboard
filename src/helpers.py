@@ -1,33 +1,10 @@
-import requests
-
-from datetime import datetime, timezone
-from flask import flash, redirect, render_template, session, url_for
+import flask
+import logging
+from CommonQueries import CommonQueries
+from flask.sessions import SessionMixin
 from functools import wraps
 
-
-def apology(message, code=400):
-    """Render message as an apology to user."""
-
-    def escape(s):
-        """
-        Escape special characters.
-
-        https://github.com/jacebrowning/memegen#special-characters
-        """
-        for old, new in [
-            ("-", "--"),
-            (" ", "-"),
-            ("_", "__"),
-            ("?", "~q"),
-            ("%", "~p"),
-            ("#", "~h"),
-            ("/", "~s"),
-            ('"', "''"),
-        ]:
-            s = s.replace(old, new)
-        return s
-
-    return render_template("apology.html", top=code, bottom=escape(message)), code
+logger = logging.getLogger(__name__)
 
 def login_required(f):
     """
@@ -38,12 +15,40 @@ def login_required(f):
 
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get("user_id") is None:
-            return redirect("/login")
+        if flask.session.get("user_id") is None:
+            return flask.redirect("/login")
         return f(*args, **kwargs)
 
     return decorated_function
 
-def usd(value):
-    """Format value as USD."""
-    return f"${value:,.2f}"
+def get_user_id_from_query_param_or_session(s: SessionMixin, r: flask.Request) -> tuple[bool, int]:
+    """
+    Check query paramater for username.
+    If not found, check session for user id
+    If not found in either place, return 400
+    Prioratizes query parameter.
+
+    Args:
+        Flask session object 
+        Flask request object
+    
+    Returns:
+        (true, user_id)
+        (false, HTTP_status_code)
+        
+    """
+    cc = CommonQueries()
+    username = r.args.get("username", "")
+    user_id = s.get("user_id", 0)
+    if username:
+        user_id = cc.get_user_id_from_username(username=username)
+        if user_id:
+            return (True, user_id)
+        else:
+            logging.warning(f"Username {username} not found.")
+            return (False, 404)
+    elif user_id:
+        return (True, user_id)
+    else:
+        logging.error("No username provided. Query param and session empty.")
+        return (False, 400)
