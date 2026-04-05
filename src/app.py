@@ -333,7 +333,7 @@ def portfolio_view():
     except Exception:
         return jsonify({
             "success": False,
-            "message": f"Database error...{Exception}"
+            "message": f"Database error..."
         }), 500
     if not portfolio_view:
         return jsonify({
