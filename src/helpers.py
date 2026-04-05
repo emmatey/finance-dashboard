@@ -31,10 +31,11 @@ def get_user_id_from_query_param_or_session(s: SessionMixin, r: flask.Request) -
     Args:
         Flask session object 
         Flask request object
+        Instance of CommonQueries class.
     
     Returns:
-        (true, user_id)
-        (false, HTTP_status_code)
+        (True, user_id),
+        (False, HTTP_status_code)
         
     """
     cc = CommonQueries()
@@ -45,10 +46,10 @@ def get_user_id_from_query_param_or_session(s: SessionMixin, r: flask.Request) -
         if user_id:
             return (True, user_id)
         else:
-            logging.warning(f"Username {username} not found.")
+            logger.warning(f"Username {username} not found.")
             return (False, 404)
     elif user_id:
         return (True, user_id)
     else:
-        logging.error("No username provided. Query param and session empty.")
+        logger.error("No username provided. Query param and session empty.")
         return (False, 400)

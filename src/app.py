@@ -30,9 +30,6 @@ logger.addHandler(sh)
 # Configure application
 app = Flask(__name__)
 
-# Custom filter
-app.jinja_env.filters["usd"] = helpers.usd
-
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -228,31 +225,27 @@ def user_summary():
     rm = ReportManager()
 
     # check for query paramaters
-    username_query = request.args.get('username', "")
-    user_id_session = session.get('user_id', 0)
-    if not user_id_session and not username_query:
+    status, result = helpers.get_user_id_from_query_param_or_session(s=session, r= request)
+    user_id = 0
+    if status is False and result == 400:
         return jsonify({
             "success": False,
             "message": "Username is required, username not found in query parameter nor session :("
             }), 400
-
-    user_id = 0
-    if username_query: # query paramater should override the logged in user's ID
-        user_id = cc.get_user_id_from_username(username=username_query)
-        if not user_id:
-            return jsonify({
-                "success": False,
-                "message": f"Username {username_query} is invalid :("
-                }), 400
-    else:
-        user_id = user_id_session
-
+    if status is False and result == 404:
+        return jsonify({
+              "success": False,
+              "message": "Username not found."
+              }), 404
+    if status is True:
+        user_id = result
+    
     ret = rm.get_users_ranks(user_ids=[user_id])
     if isinstance(ret, list) and len(ret) < 1:
         return jsonify({
                 "success": False,
-                "message": f"Username {username_query} not found, or is invalid :("
-                }), 400
+                "message": f"Unable to retrieve data for username {cc.get_username_from_user_id(user_id=user_id)}."
+                }), 500
     
     user_info = ret[0]
     out_data = {
