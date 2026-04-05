@@ -187,9 +187,6 @@ def login():
 def logout():
     """
     Logs out a user.
-
-    Request Body (JSON):
-        N/A
     
     Response Codes:
         200: Logged out successfully, session clear.
@@ -210,25 +207,22 @@ def user_summary():
     """
     Returns a summary of a user profile. Including username, value of
     cash balance, rank, value of holdings, and the datetime this data was caputured.
-
-    Request Body (JSON):
-        N/A
     
-    Query Paramater:
+    Query Parameter:
         ?username=<username>
     
     Returns:
         400 - Invalid username or no username provided.
         500 - Missing/partial data for username provided.
         200 -    out_data = {
-            "username": user_info.get("username"),
-            "user_id": user_info.get("user_id"),
-            "snap_datetime": user_info.get("snap_datetime"),
-            "portfolio_value": user_info.get("portfolio_value"),
-            "cash_balance": user_info.get("cash_balance"),
-            "grand_total": user_info.get("grand_total"),
-            "rank": user_info.get("rank")
-        }
+            "username": str,
+            "user_id": int,
+            "snap_datetime": datetime,
+            "portfolio_value": float,
+            "cash_balance": float,
+            "grand_total": float,
+            "rank": int
+        } | None
     """
     cc = CommonQueries()
     rm = ReportManager()
@@ -283,6 +277,73 @@ def user_summary():
         out_data["success"] = True
         return jsonify(out_data), 200
 
+@app.route("/user/portfolio", methods=["GET"])
+def portfolio_view():
+    """
+    Retreieves a summary of user holdings.
+    Returned as a list of objects which each represent one holding.
+    If no query parameter is provided, the logged in user will be used.
+
+    Query Parameter:
+        username?=<username>
+
+    Returns:
+        200 - return_data = [{
+                symbol: Ticker symbol,
+                name: Company name,
+                shares: Number of shares owned (split-adjusted),
+                unit_price: Current market price per share,
+                cost_basis: Average cost per share (FIFO),
+                current_value: Total current value (shares * unit_price),
+                total_cost: Total amount paid for shares,
+                gain_loss: Dollar gain/loss (current_value - total_cost),
+                gain_loss_pct: Percentage gain/loss
+            }]
+        400 - Username not found in session, nor query parameter.
+        404- Username not found in database.
+        500 - Database error.
+    """
+    rm = ReportManager()
+    cc = CommonQueries()
+    user_id = 0
+    
+    # parse query parameter
+    param_username = request.args.get("username", "")
+    session_user_id = session.get("user_id", 0)
+    if param_username:
+        param_user_id = cc.get_user_id_from_username(username=param_username)
+        if param_user_id:
+            user_id = param_user_id
+        else:
+            return jsonify({
+            "success": False,
+            "message": f"Username {param_username} not found in db."
+        }), 404
+    elif session_user_id:
+        user_id = session_user_id
+    else:
+        return jsonify({
+            "success": False,
+            "message": "Username not found in session, nor in query parameter."
+        }), 400
+
+    # try get portfolio view from user ID
+    try:
+        portfolio_view = rm.get_portfolio_view(user_id=user_id)
+    except Exception:
+        return jsonify({
+            "success": False,
+            "message": f"Database error...{Exception}"
+        }), 500
+    if not portfolio_view:
+        return jsonify({
+            "success": True,
+            "message": f"Portfolio for user {cc.get_username_from_user_id(user_id=user_id)} empty."
+        }), 200
+    
+    else:
+        return portfolio_view, 200
+    
 @app.route("/")
 def home():
     filler_page = """

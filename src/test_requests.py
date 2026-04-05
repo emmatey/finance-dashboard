@@ -1,15 +1,17 @@
 import requests
 
+url = "http://localhost:5000"
 s = requests.Session()
-#response = s.post('http://localhost:5000/register', 
+
+#response = s.post(f'{url}/register', 
 #    json={"username": "emma", "password": "123Pass"})
 
-response = s.post('http://localhost:5000/auth/login',
-                         json={"username": "emma", "password": "123Pass"})
+#response = s.post(f'{url}/auth/login', 
+#                  json={"username": "emma", "password": "123Pass"})
 
-response = s.get('http://localhost:5000/user/summary')
+#response = s.get(f'{url}/user/summary')
 
-
+response = s.get(f'{url}/user/portfolio?username=emmma')
 print(response)
 print(response.status_code)
 print(response.json())

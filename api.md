@@ -114,7 +114,7 @@ RESOURCES
                 grand_total: float,
                 rank: int
             }
-        portfolio_view
+        portfolio
             to   - GET ?username=str (optional, defaults to logged in user)
             # List of info about each owned company.
             from - [{

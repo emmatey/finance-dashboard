@@ -49,6 +49,10 @@ class CommonQueries(DbManager):
     def get_user_id_from_username(self, username: str) -> int:
         """
         Get user_id from username
+
+        Returns:
+            user_id on success.\n
+            0 on failure.
         """
         sql = """
         SELECT id

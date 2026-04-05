@@ -45,11 +45,10 @@ class ReportManager(CommonQueries):
         
         placeholders = ', '.join(['?' for _ in stock_ids])
         sql = f"SELECT id, ticker, company_name, last_price FROM symbols WHERE id IN ({placeholders})"
-        query_raw = self.select_query(sql, tuple(stock_ids))
-        
-        if not query_raw:
-            logger.error(f"get_portfolio_view: failed to fetch symbols for user_id={user_id}")
-            return []
+        try:
+            query_raw = self.select_query(sql, tuple(stock_ids))
+        except Exception:
+            raise
             
         query_formatted = {line.get('id'): line for line in query_raw}
 
