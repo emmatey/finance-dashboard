@@ -208,14 +208,27 @@ def logout():
 @app.route("/user/summary", methods=["GET"])
 def user_summary():
     """
-    Returns 'user summary' used to populate scoreboard and user summary card on homepage.
+    Returns a summary of a user profile. Including username, value of
+    cash balance, rank, value of holdings, and the datetime this data was caputured.
+
+    Request Body (JSON):
+        N/A
     
-    data required
-        username
-        cash balance
-        holdings value
-        grand total
-        rank among users
+    Query Paramater:
+        ?username=<username>
+    
+    Returns:
+        400 - Invalid username or no username provided.
+        500 - Missing/partial data for username provided.
+        200 -    out_data = {
+            "username": user_info.get("username"),
+            "user_id": user_info.get("user_id"),
+            "snap_datetime": user_info.get("snap_datetime"),
+            "portfolio_value": user_info.get("portfolio_value"),
+            "cash_balance": user_info.get("cash_balance"),
+            "grand_total": user_info.get("grand_total"),
+            "rank": user_info.get("rank")
+        }
     """
     cc = CommonQueries()
     rm = ReportManager()
@@ -244,7 +257,7 @@ def user_summary():
     if isinstance(ret, list) and len(ret) < 1:
         return jsonify({
                 "success": False,
-                "error": f"Username {username_query} is invalid :("
+                "error": f"Username {username_query} not found, or is invalid :("
                 }), 400
     
     user_info = ret[0]
@@ -265,10 +278,10 @@ def user_summary():
         return jsonify({
                 "success": False,
                 "error": f"Data {missing} not found for user {user_id}"
-                }), 400
+                }), 500
     else:
         out_data["success"] = True
-        return jsonify(out_data)
+        return jsonify(out_data), 200
 
 @app.route("/")
 def home():
