@@ -212,7 +212,7 @@ class CommonQueries(DbManager):
             ValueError: If all_users is False and user_id is 0
         """
         if user_id == 0 and all_users is False:
-            logger.error("get_transaction_history called without user_id and all_users=False")
+            logger.error("tx_history_company_grouped called without user_id and all_users=False")
             raise ValueError("If all_users is false, a user ID is required.")
 
         base_sql = """

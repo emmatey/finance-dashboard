@@ -46,6 +46,10 @@ class APIDataIO(DbManager):
         """
         symbols_tuples: list[tuple] = []
         for symbol, modules in modules_dict.items():
+            if not isinstance(modules, dict):
+                logger.error(f"Malformed module for {symbol}...skipping")
+                logger.error(modules)
+                continue
             price_module = modules.get('price')
             if price_module:
                 quote_type = price_module.get('quoteType', 'UNKNOWN')

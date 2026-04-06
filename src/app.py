@@ -462,6 +462,7 @@ def balance_snapshots():
 
 
 @app.route("/trade/buy", methods=["GET", "POST"])
+@helpers.login_required
 def trade_buy():
     """
     Returns data to populate the transaction preview screen on GET,
@@ -505,7 +506,7 @@ def trade_buy():
     if not ticker:
         return jsonify({
             "success": False,
-            "message": "No ticker paramater provided..."
+            "message": "No 'ticker' query paramater provided..."
         }), 400
     else:
         ticker = ticker.strip().upper()
@@ -514,7 +515,7 @@ def trade_buy():
         fresh_report = rdc.create_research_fresh_report(symbol=ticker)
         # Set all tables in the fresh report aside from the one we need to refresh to false.
         for table in list(fresh_report.keys()):
-            if table != "financial_metrics":
+            if table not in ["financial_metrics", "symbol"]:
                 fresh_report[table] = True
         # This method will upsert tickers that aren't in the DB yet.
         rdc.research_data_update_orchestrator(
@@ -523,6 +524,12 @@ def trade_buy():
             db_io_instance=io
             )
 
+        if not cc.symbol_exists_in_db(ticker):
+            return jsonify({
+                "success": False,
+                "message": f"Ticker {ticker} not found."
+            }), 404
+        
         ticker_info = cc.get_stock_basic_overview(symbol=ticker)
         holding_info = cc.get_holding_info_per_user(user_id=user_id, ticker=ticker)
         fin_metrics = io.get_financial_metrics(symbols=[ticker])
@@ -536,15 +543,15 @@ def trade_buy():
         if ticker_info is None or fin_metrics is None or holding_info is None:
             return jsonify({
                 "success": False,
-                "message": f"Missing data for {ticker}"
+                "message": f"Missing data for {ticker}. (ticker_info or fin_metrics or holding_info)"
             }), 500
 
-        last_price = fin_metrics.get("last_price")
+        last_price = ticker_info.get("last_price")
         prev_close = fin_metrics.get("prev_close")
         if last_price is None or prev_close is None:
             return jsonify({
                 "success": False,
-                "message": f"Missing data for {ticker}"
+                "message": f"Missing data for {ticker}. (last_price or prev_close)"
             }), 500
             
         return jsonify({
@@ -565,8 +572,8 @@ def trade_buy():
             "holding_value": holding_info.get("holding_value"),
         }), 200
     
-    elif request.method == "POST":
-        return "hi"
+    if request.method == "POST":
+        return jsonify({"hi": 200})
 
 
 

@@ -6,8 +6,8 @@ s = requests.Session()
 #response = s.post(f'{url}/auth/register', 
 #    json={"username": "emma", "password": "123Pass"})
 
-#response = s.post(f'{url}/auth/login', 
-#                  json={"username": "emma", "password": "123Pass"})
+response = s.post(f'{url}/auth/login', 
+                  json={"username": "emma", "password": "123Pass"})
 
 #response = s.get(f'{url}/user/summary?username=emma')
 
@@ -15,7 +15,9 @@ s = requests.Session()
 
 #response = s.get(f'{url}/user/transactions')
 
-response = s.get(f'{url}/user/balance_snapshots?username=emmma')
+#response = s.get(f'{url}/user/balance_snapshots?username=emmma')
+
+response = s.get(f'{url}/trade/buy?ticker=meta')
 
 print(response)
 print(response.status_code)

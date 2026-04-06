@@ -117,6 +117,11 @@ class YahooQueryService:
         if len(safe_modules) == 1:
             module_name = safe_modules[0]
             return {symbol: {module_name: data} for symbol, data in raw_modules.items()}
+        
+        for ticker in raw_modules:
+            if isinstance(raw_modules[ticker], str):
+                logger.error(f"Error retrieving modules for {ticker}")
+                logger.error(raw_modules[ticker])
 
         return raw_modules
 
