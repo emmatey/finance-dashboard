@@ -469,43 +469,22 @@ def balance_snapshots():
 @helpers.login_required
 def trade_buy():
     """
-    Returns data to populate the transaction preview screen on GET,
-    and submits the transaction on POST.
+    Trade buy endpoint. Handles both preview (GET) and execution (POST) of buy transactions.
 
-    Query Parameter:
-        GET:
-            ?ticker=<ticker>
-    
-    Request Body:
-        POST:{
-                ticker: str,
-                qty: int,
-                transaction_type: str
-            }
+    GET - Returns data to populate the order preview screen.
+        Query Parameter: ?ticker=<ticker>
+        Checks freshness of financial metrics and upserts symbol if new.
+        Returns 404 if ticker not found online.
+        Returns 500 if data is missing or corrupt.
 
-    Returns:
-        GET:
-            200- - {
-            ticker: str,
-            name: str,
-            current_price: float,
-            prev_close: float,
-            pct_change_since_close: float,
-            fifty_two_week_high: float,
-            fifty_two_week_low: float,
-            market_cap: float,
-            three_month_avg_volume,
-            analyst_count: int,
-            rating: str,
-            target_price: float,
-            cash_balance: float,
-            qty_owned: float,
-            holding_value: float,
-        }
-            404 - Symbol not found
-            500 - Data misisng i.e. db entry for symbol corrupt or incomplete. check finance.log
+    POST - Executes a buy transaction.
+        Request Body: { ticker: str, qty: float }
+        Refreshes price before executing.
+        Returns 400 if ticker missing, qty missing, or insufficient funds.
+        Returns 404 if ticker not found.
+        Returns 500 if transaction fails.
 
-        POST:
+    Requires login.
     """
     user_id = session.get("user_id")
     if user_id is None:
@@ -624,9 +603,12 @@ def trade_buy():
         
         can_afford = tm.check_can_afford(user_id=user_id, ticker=ticker, qty=qty)
         if not can_afford:
+            price = cc.get_current_price_from_db(symbol=ticker)
+            if not price:
+                price = 0
             return jsonify({
                 "success": False,
-                "message": f"Insufficient funds for transaction. Balance is {cc.get_balance(user_id=user_id)} But transaction requires {cc.get_current_price_from_db(symbol=ticker) * qty}"
+                "message": f"Insufficient funds for transaction. Balance is {cc.get_balance(user_id=user_id)} But transaction requires {price * qty}"
             }), 400
         else:
             tx_info = tm.record_buy(user_id=user_id, ticker=ticker, qty=qty)
@@ -638,6 +620,9 @@ def trade_buy():
                     "success": False,
                     "message": "Transaction unsucessful, see finance.log"
                 }), 500
+    
+    else:
+        return jsonify({"success": False, "message": "Method not allowed"}), 405
 
 @app.route("/")
 def home():

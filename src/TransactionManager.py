@@ -31,7 +31,8 @@ class TransactionManager(CommonQueries):
             qty: Number of shares to buy (positive integer)
 
         Returns:
-            True on success, False on failure
+            Dict of tx summary on success
+            None on failure
         """
         ticker = ticker.upper().strip()
 
@@ -90,7 +91,7 @@ class TransactionManager(CommonQueries):
             "new_balance": new_balance
         }
         
-    def record_sell(self, user_id: int, ticker: str, qty: float) -> bool:
+    def record_sell(self, user_id: int, ticker: str, qty: float) -> dict | None:
         """
         Record sell transaction, update cash balance.
 
@@ -105,7 +106,8 @@ class TransactionManager(CommonQueries):
             qty: Number of shares to sell (positive integer)
 
         Returns:
-            True on success, False on failure
+            Dict of tx summary on success
+            None on failure
         """
         ticker = ticker.upper().strip()
 
@@ -113,17 +115,17 @@ class TransactionManager(CommonQueries):
         balance = self.get_balance(user_id)
         if balance is None:
             logger.error(f"User {user_id} not found - cannot record sell")
-            return False
+            return None
 
         unit_price = self.get_current_price_from_db(ticker)
         if unit_price is None:
             logger.error(f"Price not available for {ticker} - cannot record sell")
-            return False
+            return None
 
         symbol_id = self.get_symbol_id(ticker)
         if symbol_id is None:
             logger.error(f"Symbol {ticker} not found in DB - cannot record sell")
-            return False
+            return None
 
         # Calculate new balance (selling adds cash)
         tx_value = unit_price * qty
@@ -147,14 +149,20 @@ class TransactionManager(CommonQueries):
                 con.execute(sql, (tx_value, user_id))
         except Exception as e:
             logger.exception(f"Failed to record sell for user {user_id}: {e}")
-            return False
+            return None
 
         logger.info(
                     f"SELL recorded: User {user_id} sold {qty} shares of {ticker} "
                     f"at ${unit_price:.2f} (total: ${tx_value:.2f}). "
                     f"Cash: ${balance:.2f} → ${new_balance:.2f}"
                 )
-        return True
+        return {
+            "ticker": ticker,
+            "qty": qty,
+            "unit_price": unit_price,
+            "tx_value": tx_value,
+            "new_balance": new_balance
+        }
 
     def record_balance_snapshot(self, user_id: int) -> bool:
         """
