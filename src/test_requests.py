@@ -17,7 +17,7 @@ response = s.post(f'{url}/auth/login',
 
 #response = s.get(f'{url}/user/balance_snapshots?username=emmma')
 
-response = s.get(f'{url}/trade/buy?ticker=meta')
+response = s.get(f'{url}/trade/buy?ticker=m')
 
 print(response)
 print(response.status_code)

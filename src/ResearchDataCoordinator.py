@@ -3,7 +3,6 @@ import logging
 from CommonQueries import CommonQueries
 from enum import Enum
 from time import time
-from typing import Dict
 
 
 logger = logging.getLogger(__name__)
@@ -166,6 +165,7 @@ class ResearchDataCoordinator(CommonQueries):
             return None
 
         symbol = fresh_report.get('symbol')
+        assert isinstance(symbol, str)
         if not symbol:
             logger.warning("fresh_report invalid, no company name found.")
             return None
@@ -221,3 +221,27 @@ class ResearchDataCoordinator(CommonQueries):
                 except Exception as e:
                     logger.error(f"Failed to update {table} for {symbol}: {e}")
                     continue
+
+    def update_table_subset(self, ticker:str, tables_to_update: list[str], yqs_instance=None, db_io_instance=None) -> None:
+        f"""
+        Requests to yahooquery for data in tables_to_update param assocaited with ticker param.
+
+        tables_to_update valid options: stock_splits, historical_prices, financial_metrics, 
+                                news, company_profile, insider_trades
+        """
+        if not yqs_instance or not db_io_instance:
+            raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
+
+        for table_name in tables_to_update:
+            if table_name not in TableLifetimes.__members__:
+                    raise ValueError(f"Invalid table '{table_name}'. Must be in TableLifetimes enum.")
+            
+        fresh_report = self.create_research_fresh_report(symbol=ticker)
+        for table in list(fresh_report.keys()):
+            if table not in ["symbol"] + tables_to_update:
+                fresh_report[table] = True
+        self.research_data_update_orchestrator(
+            fresh_report=fresh_report,
+            yqs_instance=yqs_instance,
+            db_io_instance=db_io_instance
+        )

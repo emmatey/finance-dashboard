@@ -500,7 +500,7 @@ def trade_buy():
     rdc = ResearchDataCoordinator()
     io = APIDataIO()
     yqs = YahooQueryService()
-
+    
     user_id = session.get("user_id", 0)
     ticker = request.args.get("ticker", None)
     if not ticker:
@@ -510,20 +510,14 @@ def trade_buy():
         }), 400
     else:
         ticker = ticker.strip().upper()
-
+    
     if request.method == "GET":
-        fresh_report = rdc.create_research_fresh_report(symbol=ticker)
-        # Set all tables in the fresh report aside from the one we need to refresh to false.
-        for table in list(fresh_report.keys()):
-            if table not in ["financial_metrics", "symbol"]:
-                fresh_report[table] = True
-        # This method will upsert tickers that aren't in the DB yet.
-        rdc.research_data_update_orchestrator(
-            fresh_report=fresh_report,
-            yqs_instance=yqs,
-            db_io_instance=io
-            )
-
+        rdc.update_table_subset(ticker=ticker,
+                                tables_to_update=["financial_metrics"],
+                                yqs_instance=yqs,
+                                db_io_instance=io)
+        # If symbol wasn't upserted, research_data_update_orchestrator 
+        # which is called within update_table_subset, it wasn't found online.
         if not cc.symbol_exists_in_db(ticker):
             return jsonify({
                 "success": False,
