@@ -274,10 +274,7 @@ class CommonQueries(DbManager):
         Returns:
             Dict with keys: user_id, ticker, ticker_id, current_price, qty_owned, holding_value
             Returns None if:
-                - User has no holdings
                 - Ticker not found in database
-                - User doesn't own this ticker
-                - Price not available
 
         Example:
             >>> rm = ReportManager()
@@ -290,11 +287,7 @@ class CommonQueries(DbManager):
 
         # Get this user's holdings (not all users!)
         _, holdings_per_user = self.calculate_holdings(user_id=user_id, all_users=False)
-
-        user_holdings = holdings_per_user.get(user_id)
-        if not user_holdings:
-            logger.debug(f"User {user_id} has no holdings")
-            return None
+        user_holdings = holdings_per_user.get(user_id, {})
 
         # Get ticker info from DB
         ticker_info = self.select_query("""
@@ -308,17 +301,7 @@ class CommonQueries(DbManager):
 
         ticker_id = ticker_info[0]['id']
         current_price = ticker_info[0]['last_price']
-
-        if current_price is None:
-            logger.warning(f"Price not available for {ticker}")
-            return None
-
-        # Check if user owns this ticker
         qty_owned = user_holdings.get(ticker_id, 0)
-
-        if qty_owned == 0:
-            logger.debug(f"User {user_id} does not own {ticker}")
-            return None
 
         return {
             'user_id': user_id,
