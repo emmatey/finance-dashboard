@@ -129,7 +129,7 @@ RESOURCES
                 gain_loss: float,
                 gain_loss_pct: float
             }]
-        transactions - login required
+        transactions - login required - DONE 4/5
             to   - GET ?username=str (optional, defaults to logged in user)
             from - [{
                 transaction_id: int,
@@ -138,7 +138,7 @@ RESOURCES
                 transaction_type: str,
                 qty: float,
                 unit_price: float,
-                tx_datetime: int,
+                datetime: int,
                 cash_after: float
             }]
         balance_snapshots

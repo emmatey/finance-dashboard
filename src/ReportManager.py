@@ -121,6 +121,35 @@ class ReportManager(CommonQueries):
         
         return dict(formatted)
 
+    def get_transaction_history(self, user_id: int) -> list[dict]:
+        """
+        Returns the transaction history of a given user.
+
+        Args:
+            user_id
+
+        Returns:
+            [{tx}, {tx}, ...]
+
+            tx = {
+            'transaction_id': int,
+            'user_id': int,
+            'symbol_id': int, 
+            'transaction_type': str,
+            'qty': int,
+            'unit_price': int,
+            'cash_after': float,
+            'transaction_datetime': datetime
+            }
+        """
+        sql = """
+        SELECT * 
+        FROM transactions
+        WHERE user_id = ?
+        ORDER BY transaction_datetime DESC
+        """
+        return self.select_query(sql, (user_id, ))
+
     def _get_cost_basis(
         self,
         split_adjusted_history: Dict[int, List[Dict[str, Any]]]

@@ -341,7 +341,7 @@ def transaction_history():
                 transaction_type: str,
                 qty: float,
                 unit_price: float,
-                date: int,
+                datetime: int,
                 cash_after: float
             }] | None
         400 - Username not provided
@@ -349,6 +349,7 @@ def transaction_history():
         500 - Database error
     """
     cc = CommonQueries()
+    rm = ReportManager()
   
     user_id = 0    
     try:
@@ -364,7 +365,7 @@ def transaction_history():
 
     tx_history = []
     try:
-        tx_history = cc.tx_history_company_grouped(user_id=user_id)[user_id]
+        tx_history = rm.get_transaction_history(user_id=user_id)
     except Exception:
         return jsonify({
             "success": False, 
@@ -375,19 +376,31 @@ def transaction_history():
             "message": f"User {cc.get_username_from_user_id(user_id=user_id)} has no recorded transactions."}), 200
     
     formatted_response = []
+    username = cc.get_username_from_user_id(tx_history[0].get("user_id", 0))
+    # Build map of symbol_ids to tickers to reduce db calls for translating symbol_id > human readable symbol
+    symbol_id_set = {tx.get("symbol_id") for tx in tx_history if tx.get("transaction_type") not in ['deposit', 'withdraw']}
+    placeholders = ", ".join("?" for _ in symbol_id_set)
+    sql = f"""
+    SELECT id, ticker
+    FROM symbols
+    WHERE id IN ({placeholders})
+    """
+    rows = cc.select_query(sql, tuple(symbol_id_set))
+    symbol_map = {r.get("id"): r.get("ticker") for r in rows}
+    
     for tx in tx_history:
         formatted_response.append({
             "transaction_id": tx.get("transaction_id"),
-            "username": cc.get_username_from_user_id(tx.get("user_id", 0)),
-            "ticker": cc.get_ticker_from_symbol_id(tx.get("symbol_id", 0)),
+            "username": username,
+            "ticker": symbol_map.get(tx.get("symbol_id"), "CASH"),
             "transaction_type": tx.get("transaction_type"),
             "qty": tx.get("qty"),
             "unit_price": tx.get("unit_price"),
-            "date": tx.get("transaction_datetime"),
+            "datetime": tx.get("transaction_datetime"),
             "cash_after": tx.get("cash_after") 
         })
     
-    return formatted_response
+    return jsonify(formatted_response), 200
 
 @app.route("/")
 def home():
