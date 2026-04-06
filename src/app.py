@@ -460,7 +460,7 @@ def balance_snapshots():
 
 ## TRADE ##
 
-@helpers.login_required
+
 @app.route("/trade/buy", methods=["GET", "POST"])
 def trade_buy():
     """
@@ -513,7 +513,7 @@ def trade_buy():
     if request.method == "GET":
         fresh_report = rdc.create_research_fresh_report(symbol=ticker)
         # Set all tables in the fresh report aside from the one we need to refresh to false.
-        for table in fresh_report:
+        for table in list(fresh_report.keys()):
             if table != "financial_metrics":
                 fresh_report[table] = True
         # This method will upsert tickers that aren't in the DB yet.
