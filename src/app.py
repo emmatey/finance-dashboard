@@ -442,7 +442,7 @@ def balance_snapshots():
         rows = rm.get_balance_snapshot_history(user_id=user_id)
     except Exception:
         return jsonify({
-            "succes": False,
+            "success": False,
             "message": "Database error... See finance.log for more info"
         }), 500
     

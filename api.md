@@ -89,6 +89,7 @@ RESPONSE CONVENTIONS
         "success": True,
         "message": str
     }
+    non errors with return values will forego this json and simply return what was requested
 
 RESOURCES 
 
