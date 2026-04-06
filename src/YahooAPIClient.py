@@ -1,8 +1,8 @@
 from DbManager import DbManager
 from functools import wraps
 from requests.exceptions import ConnectionError, Timeout, HTTPError
+from curl_cffi.requests.exceptions import Timeout as CurlTimeout, ConnectionError as CurlConnectionError, HTTPError as CurlHTTPError
 from time import sleep, time
-from typing import Tuple
 
 import logging
 
@@ -130,7 +130,7 @@ def yq_exception_handler(client_instance=yq_client):
                         client_instance.set_api_up()
                     return res
 
-                except (ConnectionError, Timeout) as e:
+                except (ConnectionError, Timeout, CurlTimeout, CurlConnectionError, CurlHTTPError) as e:
                     logger.warning(f"Network error (attempt {attempt}/{attempts}): {e}")
                     if attempt < attempts:
                         sleep(2 * attempt)

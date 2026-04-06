@@ -49,8 +49,14 @@ class APIDataIO(DbManager):
             if not isinstance(modules, dict):
                 logger.error(f"Malformed module for {symbol}...skipping")
                 logger.error(modules)
-                continue
+                break
+
             price_module = modules.get('price')
+            if not isinstance(price_module, dict):
+                logger.error(f"Malformed module for {symbol}...skipping")
+                logger.error(modules)
+                break
+            
             if price_module:
                 quote_type = price_module.get('quoteType', 'UNKNOWN')
                 if quote_type == 'UNKNOWN':

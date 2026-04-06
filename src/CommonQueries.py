@@ -30,7 +30,7 @@ class CommonQueries(DbManager):
         if not res:
             logger.warning(f"Balance inquiry failed for {user_id}")
             return None
-        return res[0]['cash']
+        return float(res[0]['cash'])
 
     def get_username_from_user_id(self, user_id: int) -> str:
         """

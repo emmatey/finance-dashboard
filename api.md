@@ -277,7 +277,6 @@ RESOURCES
         to   - POST {
             ticker: str,
             qty: int,
-            transaction_type: str
         }
         from - {success: bool}
 

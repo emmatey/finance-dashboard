@@ -55,6 +55,7 @@ def teardown_db(exception):
     if exception:
         logger.error(exception)
 
+
 ### AUTH ###
 
 # Register
@@ -200,6 +201,7 @@ def logout():
         return jsonify({"success": False,
                         "message": "Session unable to be cleared..."}), 500
 
+
 ## USER ##
 
 @app.route("/user/summary", methods=["GET"])
@@ -328,6 +330,7 @@ def portfolio_view():
         return portfolio_view, 200
 
 @app.route("/user/transactions", methods=["GET"])
+@helpers.login_required
 def transaction_history():
     """
     Gets the transaction history for the provided user.
@@ -406,6 +409,7 @@ def transaction_history():
     return jsonify(formatted_response), 200
 
 @app.route("/user/balance_snapshots", methods=["GET"])
+@helpers.login_required
 def balance_snapshots():
     """
     Returns the 'balance snapshot' history for the provided user.
@@ -469,7 +473,15 @@ def trade_buy():
     and submits the transaction on POST.
 
     Query Parameter:
-        ?ticker=<ticker>
+        GET:
+            ?ticker=<ticker>
+    
+    Request Body:
+        POST:{
+                ticker: str,
+                qty: int,
+                transaction_type: str
+            }
 
     Returns:
         GET:
@@ -490,28 +502,33 @@ def trade_buy():
             qty_owned: float,
             holding_value: float,
         }
-            500 - Data misisng
+            404 - Symbol not found
+            500 - Data misisng i.e. db entry for symbol corrupt or incomplete. check finance.log
 
         POST:
-    
-
     """
-    cc = CommonQueries()
-    rdc = ResearchDataCoordinator()
-    io = APIDataIO()
-    yqs = YahooQueryService()
-    
-    user_id = session.get("user_id", 0)
-    ticker = request.args.get("ticker", None)
-    if not ticker:
-        return jsonify({
-            "success": False,
-            "message": "No 'ticker' query paramater provided..."
-        }), 400
-    else:
-        ticker = ticker.strip().upper()
-    
+    user_id = session.get("user_id")
+    if user_id is None:
+       return jsonify({
+           "success": False,
+           "message": "Unable to find user_id in session"
+       }), 500
+
     if request.method == "GET":
+        cc = CommonQueries()
+        rdc = ResearchDataCoordinator()
+        io = APIDataIO()
+        yqs = YahooQueryService()
+        
+        ticker = request.args.get("ticker", None)
+        if not ticker:
+            return jsonify({
+                "success": False,
+                "message": "No 'ticker' query paramater provided..."
+            }), 400
+        else:
+            ticker = ticker.strip().upper()
+
         rdc.update_table_subset(ticker=ticker,
                                 tables_to_update=["financial_metrics"],
                                 yqs_instance=yqs,
@@ -567,10 +584,60 @@ def trade_buy():
         }), 200
     
     if request.method == "POST":
-        return jsonify({"hi": 200})
+        cc = CommonQueries()
+        yqs = YahooQueryService()
+        io = APIDataIO()
+        tm = TransactionManager()
 
+        # Checks for request body.
+        if not request.is_json:
+            return jsonify({
+                "success": False, 
+                "message": "Missing JSON in request"}), 400
+        request_body = dict(request.json)
 
+        ticker = request_body.get("ticker")
+        if not ticker:
+            return jsonify({
+                "success": False,
+                "message": "No 'ticker' value provided in request body..."
+            }), 400
+        qty = request_body.get('qty')
+        if not qty:
+            return jsonify({
+                "success": False,
+                "message": "No 'qty' value provided in request body..."
+            }), 400
+        else:
+            qty = float(qty)
 
+        # Attempt to upsert symbol to update price.
+        modules = yqs.yq_ticker_fetch_modules(symbols=ticker, modules="price")
+        io.upsert_symbols(modules_dict=modules)
+    
+        # Check symbol exists.
+        if not cc.symbol_exists_in_db(ticker):
+           return jsonify({
+               "success": False,
+               "message": f"Ticker {ticker} not found."
+           }), 404
+        
+        can_afford = tm.check_can_afford(user_id=user_id, ticker=ticker, qty=qty)
+        if not can_afford:
+            return jsonify({
+                "success": False,
+                "message": f"Insufficient funds for transaction. Balance is {cc.get_balance(user_id=user_id)} But transaction requires {cc.get_current_price_from_db(symbol=ticker) * qty}"
+            }), 400
+        else:
+            tx_info = tm.record_buy(user_id=user_id, ticker=ticker, qty=qty)
+            if tx_info is not None:
+                tm.record_balance_snapshot(user_id=user_id)
+                return jsonify(tx_info)
+            else:
+                return jsonify({
+                    "success": False,
+                    "message": "Transaction unsucessful, see finance.log"
+                }), 500
 
 @app.route("/")
 def home():
