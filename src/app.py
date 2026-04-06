@@ -364,7 +364,7 @@ def transaction_history():
 
     tx_history = []
     try:
-        tx_history = cc.get_transaction_history(user_id=user_id)[user_id]
+        tx_history = cc.tx_history_company_grouped(user_id=user_id)[user_id]
     except Exception:
         return jsonify({
             "success": False, 

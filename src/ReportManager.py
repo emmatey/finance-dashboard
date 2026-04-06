@@ -33,7 +33,7 @@ class ReportManager(CommonQueries):
                 - gain_loss_pct: Percentage gain/loss
             Sorted by current_value descending
         """
-        adjusted_history = self.get_transaction_history(user_id)
+        adjusted_history = self.tx_history_company_grouped(user_id)
         cost_basis_data = self._get_cost_basis(adjusted_history)
 
         # Query db for all stocks at once to avoid the so called 'N+1 queries' problem.

@@ -152,7 +152,7 @@ class CommonQueries(DbManager):
         Raises:
             ValueError: If all_users is False and user_id is 0
         """
-        tx_history_company_grouped = self.get_transaction_history(user_id=user_id, all_users=all_users)
+        tx_history_company_grouped = self.tx_history_company_grouped(user_id=user_id, all_users=all_users)
 
         # Query updated prices
         symbols = list(tx_history_company_grouped.keys())
@@ -192,7 +192,7 @@ class CommonQueries(DbManager):
 
         return holdings_value_per_user, holdings_per_user
     
-    def get_transaction_history(self, user_id: int = 0, all_users: bool = False) -> dict[int, list[dict]]:
+    def tx_history_company_grouped(self, user_id: int = 0, all_users: bool = False) -> dict[int, list[dict]]:
         """
         Query transaction history, grouped by symbol_id.
         Returns only active holdings, split-adjusted.
@@ -202,18 +202,11 @@ class CommonQueries(DbManager):
             all_users: If True, fetch transactions for all users.
     
         Returns:
-            {user_id:: [{tx}, {tx}, ...]}
-
-            tx = {
-            'transaction_id': int,
-            'user_id': int,
-            'symbol_id': int, 
-            'transaction_type': str,
-            'qty': int,
-            'unit_price': int,
-            'cash_after': float,
-            'transaction_datetime': datetime
-            }
+            Dict of {symbol_id: [transactions]} where each transaction contains:
+            transaction_id, user_id, symbol_id, transaction_type,
+            qty, unit_price, date (unix timestamp).
+            Zero-quantity holdings are excluded.
+            Quantities and prices are adjusted for stock splits.
     
         Raises:
             ValueError: If all_users is False and user_id is 0
@@ -223,7 +216,7 @@ class CommonQueries(DbManager):
             raise ValueError("If all_users is false, a user ID is required.")
 
         base_sql = """
-            SELECT *
+            SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
             FROM transactions
         """
         if all_users:
