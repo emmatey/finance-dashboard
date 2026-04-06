@@ -482,33 +482,36 @@ class APIDataIO(DbManager):
         return self.select_query(sql, symbols)
 
     @ResearchDataCoordinator.register_as_research('financial_metrics', o=True)
-    def get_financial_metrics(self, symbols):
+    def get_financial_metrics(self, symbols: list[str] | str) -> list[dict]:
         """
-        list of dicts
-        returns
-
+        Retrieve financial metrics for one or more symbols.
+        
+        Args:
+            symbols: Single ticker string or list of tickers
+        
+        Returns:
+            List of dicts.
+            Empty list if no symbols provided or none found.
         """
         if isinstance(symbols, str):
             symbols = [symbols]
         if not symbols:
             return []
-
-        symbols = tuple([symbol.upper() for symbol in symbols])
-        placeholders = ", ".join(['?' for _ in symbols])
-
+        
+        symbols_upper: list[str] = [symbol.upper() for symbol in symbols]
+        placeholders = ", ".join(['?' for _ in symbols_upper])
         sql = f"""
         SELECT s.ticker, fm.*
         FROM financial_metrics AS fm
         JOIN symbols AS s ON s.id = fm.symbol_id
         WHERE s.ticker IN ({placeholders})
         """
-
-        rows = self.select_query(sql, symbols)
-        rows_clean = []
-        for row in rows: # type: ignore
-            # remove primary key from select *
-            rows_clean.append({k: v for k, v in row.items() if k != "id" and k != "symbol_id"})
-
+        rows: list[dict] = self.select_query(sql, tuple(symbols_upper))
+        rows_clean: list[dict] = [
+            {k: v for k, v in row.items() if k != "id" and k != "symbol_id"}
+            for row in rows
+        ]
+    
         return rows_clean
 
     @ResearchDataCoordinator.register_as_research('news', o=True)

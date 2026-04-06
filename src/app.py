@@ -3,9 +3,12 @@ import logging
 import sys
 
 from AccountManager import AccountManager
+from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
 from ReportManager import ReportManager
+from ResearchDataCoordinator import ResearchDataCoordinator
 from TransactionManager import TransactionManager
+from YahooQueryService import YahooQueryService
 from flask import Flask, g, request, session, jsonify
 from flask_session import Session
 
@@ -457,6 +460,7 @@ def balance_snapshots():
 
 ## TRADE ##
 
+@helpers.login_required
 @app.route("/trade/buy", methods=["GET", "POST"])
 def trade_buy():
     """
@@ -468,12 +472,101 @@ def trade_buy():
 
     Returns:
         GET:
+            200- - {
+            ticker: str,
+            name: str,
+            current_price: float,
+            prev_close: float,
+            pct_change_since_close: float,
+            fifty_two_week_high: float,
+            fifty_two_week_low: float,
+            market_cap: float,
+            three_month_avg_volume,
+            analyst_count: int,
+            rating: str,
+            target_price: float,
+            cash_balance: float,
+            qty_owned: float,
+            holding_value: float,
+        }
+            500 - Data misisng
 
         POST:
     
 
     """
-    return "hi"
+    cc = CommonQueries()
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    user_id = session.get("user_id", 0)
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({
+            "success": False,
+            "message": "No ticker paramater provided..."
+        }), 400
+    else:
+        ticker = ticker.strip().upper()
+
+    if request.method == "GET":
+        fresh_report = rdc.create_research_fresh_report(symbol=ticker)
+        # Set all tables in the fresh report aside from the one we need to refresh to false.
+        for table in fresh_report:
+            if table != "financial_metrics":
+                fresh_report[table] = True
+        # This method will upsert tickers that aren't in the DB yet.
+        rdc.research_data_update_orchestrator(
+            fresh_report=fresh_report,
+            yqs_instance=yqs,
+            db_io_instance=io
+            )
+
+        ticker_info = cc.get_stock_basic_overview(symbol=ticker)
+        holding_info = cc.get_holding_info_per_user(user_id=user_id, ticker=ticker)
+        fin_metrics = io.get_financial_metrics(symbols=[ticker])
+        if not isinstance(fin_metrics, list):
+            fin_metrics = None
+        if fin_metrics and len(fin_metrics) == 1:
+            fin_metrics = fin_metrics[0]
+        else:
+            fin_metrics = None
+        
+        if ticker_info is None or fin_metrics is None or holding_info is None:
+            return jsonify({
+                "success": False,
+                "message": f"Missing data for {ticker}"
+            }), 500
+
+        last_price = fin_metrics.get("last_price")
+        prev_close = fin_metrics.get("prev_close")
+        if last_price is None or prev_close is None:
+            return jsonify({
+                "success": False,
+                "message": f"Missing data for {ticker}"
+            }), 500
+            
+        return jsonify({
+            "ticker": ticker,
+            "name": ticker_info.get("company_name"),
+            "current_price": last_price,
+            "prev_close": prev_close,
+            "pct_change_since_close": round(((last_price - prev_close) / prev_close) * 100, 2),
+            "fifty_two_week_high": fin_metrics.get("fifty_two_week_high"),
+            "fifty_two_week_low": fin_metrics.get("fifty_two_week_low"),
+            "market_cap": fin_metrics.get("market_cap"),
+            "three_month_avg_volume": fin_metrics.get("three_month_avg_volume"),
+            "analyst_count": fin_metrics.get("analyst_count"),
+            "rating": fin_metrics.get("rating"),
+            "target_price": fin_metrics.get("target_price"),
+            "cash_balance": cc.get_balance(user_id=user_id),
+            "qty_owned": holding_info.get("qty_owned"),
+            "holding_value": holding_info.get("holding_value"),
+        }), 200
+    
+    elif request.method == "POST":
+        return "hi"
 
 
 

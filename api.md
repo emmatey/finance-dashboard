@@ -260,8 +260,19 @@ RESOURCES
             ticker: str,
             name: str,
             current_price: float,
+            prev_close: float,
+            pct_change_since_close: float,
+            fifty_two_week_high: float,
+            fifty_two_week_low: float,
+            market_cap: float,
+            three_month_avg_volume: int,
+            analyst_count: int,
+            rating: str,
+            target_price: float,
             cash_balance: float,
-            qty_owned: float
+            qty_owned: float,
+            holding_value: float,
+
         }
         to   - POST {
             ticker: str,

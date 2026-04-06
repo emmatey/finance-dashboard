@@ -129,9 +129,9 @@ class ResearchDataCoordinator(CommonQueries):
 
         if not query:
             logger.error(f"Symbol {symbol} not found in database")
-            raise ValueError(f"Symbol {symbol} not found")
+            query = [{}]
 
-        res = query[0] # type: ignore
+        res = query[0]
         fresh_report: dict[str, bool | str] = {"symbol": symbol}
 
         for name, create_time in res.items():
@@ -185,10 +185,13 @@ class ResearchDataCoordinator(CommonQueries):
         # Call api once for all required modules.
         modules = {}
         if modules_set:
+            # Always get price if anything is stale so upsert_symbol can be called.
+            modules_set.add("price")
             logger.info(f"Fetching {len(modules_set)} modules for {symbol}")
             modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
             if not modules:
                 logger.error(f"Failed to fetch modules for {symbol}")
+                raise RuntimeError(f"API failed to fetch modules for {symbol}")
             else:
                 # Upsert symbol using already-fetched modules (no extra API call)
                 db_io_instance.upsert_symbols(modules)
