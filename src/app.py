@@ -454,6 +454,18 @@ def balance_snapshots():
     else:
         return jsonify(rows), 200
 
+
+## USER ##
+
+@app.route("/trade/buy", methods=["GET", "POST"])
+def trade_buy():
+    """
+    """
+    return "hi"
+
+
+
+
 @app.route("/")
 def home():
     filler_page = """

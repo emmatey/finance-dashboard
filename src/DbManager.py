@@ -65,6 +65,10 @@ class DbManager:
                 # Enable Row access and Foreign Keys
                 con.row_factory = dict_factory
                 con.execute("PRAGMA foreign_keys = ON;")
+                
+                # Enable "write-ahead logging" 
+                # https://sqlite.org/wal.html
+                con.execute("PRAGMA journal_mode=WAL;")
 
                 # Check if the 'insider_trades' table i.e final CREATE TABLE query in schema.sql exists
                 cur = con.cursor()
@@ -102,9 +106,10 @@ class DbManager:
         """
         Handles SELECT and WITH queries, returns results as a list of dicts.
 
-        args: 'query': SQL literal: str,
+        Arguments:'
+        query': SQL literal: str,
         placeholders: tuple of placeholders e.g in the query 'query("SELECT * FROM table WHERE id = ?", (1,))' '?' is the placeholder, and would be
-            populated by passing (value, ) to this function
+        populated by passing (value, ) to this function
 
         Returns [{}, {}] i.e. list of rows formatted as dicts {col: val}
         """
@@ -131,10 +136,12 @@ class DbManager:
         """
         Handles non-SELECT queries (INSERT, UPDATE, DELETE, etc.), returns number of rows affected.
 
-        args: 'query': SQL literal: str,
-        placeholders: tuple of placeholders
+        Arguments: 
+            'query': SQL literal: str,
+            placeholders: tuple of placeholders
 
-        Returns number of rows affected by the query
+        Returns:
+          number of rows affected by the query
         """
         query = query.lstrip()
         con = self.get_db()

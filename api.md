@@ -142,7 +142,7 @@ RESOURCES
                 datetime: int,
                 cash_after: float
             }]
-        balance_snapshots
+        balance_snapshots - DONE 4/6
             to   - GET ?username=str
             from - [{
                 username: str,
