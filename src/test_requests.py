@@ -11,7 +11,9 @@ s = requests.Session()
 
 #response = s.get(f'{url}/user/summary?username=emma')
 
-response = s.get(f'{url}/user/portfolio?username=emma')
+#response = s.get(f'{url}/user/portfolio?username=emma')
+
+response = s.get(f'{url}/user/transactions')
 
 print(response)
 print(response.status_code)

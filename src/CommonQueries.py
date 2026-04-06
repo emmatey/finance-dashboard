@@ -82,6 +82,21 @@ class CommonQueries(DbManager):
         else:
             return None
     
+    def get_ticker_from_symbol_id(self, symbol_id: int) -> str | None:
+        """
+        Get ticker from symbol database ID.
+        """
+        sql = """
+        SELECT ticker
+        FROM symbols
+        WHERE id = ?
+        """
+        result = self.select_query(sql, (symbol_id,))
+        if result:
+            return result[0]['ticker']
+        else:
+            return None
+    
     def get_stock_basic_overview(self, symbol: str):
         """
         Retrieve data from the symbols table about a given holding.
@@ -187,11 +202,18 @@ class CommonQueries(DbManager):
             all_users: If True, fetch transactions for all users.
     
         Returns:
-            Dict of {symbol_id: [transactions]} where each transaction contains:
-            transaction_id, user_id, symbol_id, transaction_type,
-            qty, unit_price, date (unix timestamp).
-            Zero-quantity holdings are excluded.
-            Quantities and prices are adjusted for stock splits.
+            {user_id:: [{tx}, {tx}, ...]}
+
+            tx = {
+            'transaction_id': int,
+            'user_id': int,
+            'symbol_id': int, 
+            'transaction_type': str,
+            'qty': int,
+            'unit_price': int,
+            'cash_after': float,
+            'transaction_datetime': datetime
+            }
     
         Raises:
             ValueError: If all_users is False and user_id is 0
@@ -201,7 +223,7 @@ class CommonQueries(DbManager):
             raise ValueError("If all_users is false, a user ID is required.")
 
         base_sql = """
-            SELECT transaction_id, user_id, symbol_id, transaction_type, qty, unit_price, unixepoch(transaction_datetime) AS date
+            SELECT *
             FROM transactions
         """
         if all_users:

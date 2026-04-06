@@ -138,7 +138,7 @@ RESOURCES
                 transaction_type: str,
                 qty: float,
                 unit_price: float,
-                date: int,
+                tx_datetime: int,
                 cash_after: float
             }]
         balance_snapshots

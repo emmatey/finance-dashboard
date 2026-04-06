@@ -323,7 +323,72 @@ def portfolio_view():
     
     else:
         return portfolio_view, 200
+
+@app.route("/user/transactions", methods=["GET"])
+def transaction_history():
+    """
+    Gets the transaction history for the provided user.
+    Defaults to logged in user if no query parameter is provided.
+
+    Query Parameter:
+        username?=<username>
+
+    Returns:
+        200 - [{
+                transaction_id: int,
+                username: str,
+                ticker: str,
+                transaction_type: str,
+                qty: float,
+                unit_price: float,
+                date: int,
+                cash_after: float
+            }] | None
+        400 - Username not provided
+        404 - User not found
+        500 - Database error
+    """
+    cc = CommonQueries()
+  
+    user_id = 0    
+    try:
+        user_id = helpers.get_user_id_from_query_param_or_session(request, session, cc)
+    except helpers.UserNotFoundError as e:
+        return jsonify({
+            "success": False, 
+            "message": str(e)}), 404
+    except helpers.NoUserProvidedError as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)}), 400
+
+    tx_history = []
+    try:
+        tx_history = cc.get_transaction_history(user_id=user_id)[user_id]
+    except Exception:
+        return jsonify({
+            "success": False, 
+            "message": "Database error, see finance.log for more information"}), 500
+    if len(tx_history) == 0:
+        return jsonify({
+            "success": True,
+            "message": f"User {cc.get_username_from_user_id(user_id=user_id)} has no recorded transactions."}), 200
     
+    formatted_response = []
+    for tx in tx_history:
+        formatted_response.append({
+            "transaction_id": tx.get("transaction_id"),
+            "username": cc.get_username_from_user_id(tx.get("user_id", 0)),
+            "ticker": cc.get_ticker_from_symbol_id(tx.get("symbol_id", 0)),
+            "transaction_type": tx.get("transaction_type"),
+            "qty": tx.get("qty"),
+            "unit_price": tx.get("unit_price"),
+            "date": tx.get("transaction_datetime"),
+            "cash_after": tx.get("cash_after") 
+        })
+    
+    return formatted_response
+
 @app.route("/")
 def home():
     filler_page = """
