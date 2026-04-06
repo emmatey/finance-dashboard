@@ -455,11 +455,23 @@ def balance_snapshots():
         return jsonify(rows), 200
 
 
-## USER ##
+## TRADE ##
 
 @app.route("/trade/buy", methods=["GET", "POST"])
 def trade_buy():
     """
+    Returns data to populate the transaction preview screen on GET,
+    and submits the transaction on POST.
+
+    Query Parameter:
+        ?ticker=<ticker>
+
+    Returns:
+        GET:
+
+        POST:
+    
+
     """
     return "hi"
 

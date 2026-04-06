@@ -1,7 +1,4 @@
 from CommonQueries import CommonQueries
-from YahooQueryService import YahooQueryService
-from datetime import datetime, timedelta
-import helpers
 import logging
 
 
@@ -70,10 +67,10 @@ class TransactionManager(CommonQueries):
                 # Update user's cash balance
                 sql = """
                 UPDATE users
-                SET cash = ?
+                SET cash = cash - ?
                 WHERE id = ?
                 """
-                con.execute(sql,(new_balance, user_id))
+                con.execute(sql,(tx_value, user_id))
         except Exception as e:
             logger.exception(f"Failed to record buy for user {user_id}: {e}")
             return False
@@ -136,10 +133,10 @@ class TransactionManager(CommonQueries):
                 # Update user's cash balance
                 sql = """
                     UPDATE users
-                    SET cash = ?
+                    SET cash = cash + ?
                     WHERE id = ?
                     """
-                con.execute(sql, (new_balance, user_id))
+                con.execute(sql, (tx_value, user_id))
         except Exception as e:
             logger.exception(f"Failed to record sell for user {user_id}: {e}")
             return False
