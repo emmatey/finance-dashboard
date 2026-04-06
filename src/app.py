@@ -402,6 +402,58 @@ def transaction_history():
     
     return jsonify(formatted_response), 200
 
+@app.route("/user/balance_snapshots", methods=["GET"])
+def balance_snapshots():
+    """
+    Returns the 'balance snapshot' history for the provided user.
+    Defaults to logged in user if no query parameter is provided.
+
+    Query Parameter:
+        username?=<username>
+
+    Returns:
+        200 - [{   
+            username: str
+            snap_datetime: datetime,
+            cash_balance: float,
+            portfolio_value: float,
+            grand_total: float
+        }, ...]
+        400 - Username not provided
+        404 - User not found
+        500 - Database error
+    """
+    cc = CommonQueries()
+    rm = ReportManager()
+  
+    user_id = 0    
+    try:
+        user_id = helpers.get_user_id_from_query_param_or_session(request, session, cc)
+    except helpers.UserNotFoundError as e:
+        return jsonify({
+            "success": False, 
+            "message": str(e)}), 404
+    except helpers.NoUserProvidedError as e:
+        return jsonify({
+            "success": False,
+            "message": str(e)}), 400
+    
+    try:
+        rows = rm.get_balance_snapshot_history(user_id=user_id)
+    except Exception:
+        return jsonify({
+            "succes": False,
+            "message": "Database error... See finance.log for more info"
+        }), 500
+    
+    if len(rows) < 1:
+        return jsonify({
+            "success": False, 
+            "message": f"No balance history for user {cc.get_username_from_user_id(user_id=user_id)} found..."
+            }), 200
+    else:
+        return jsonify(rows), 200
+
 @app.route("/")
 def home():
     filler_page = """

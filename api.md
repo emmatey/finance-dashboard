@@ -144,6 +144,7 @@ RESOURCES
         balance_snapshots
             to   - GET ?username=str
             from - [{
+                username: str,
                 snap_datetime: int,
                 cash_balance: float,
                 portfolio_value: float,

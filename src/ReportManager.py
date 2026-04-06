@@ -89,37 +89,34 @@ class ReportManager(CommonQueries):
         # https://stackoverflow.com/questions/72899/how-can-i-sort-a-list-of-dictionaries-by-a-value-of-the-dictionary-in-python
         return sorted(index_view, key=lambda x: x["current_value"], reverse=True)
 
-    def get_balance_snapshot_history(self, user_id: int) -> dict[str, list]:
+    def get_balance_snapshot_history(self, user_id: int) -> list[dict]:
         """
         Retrieves the balance snapshot data history for a given user.
         Used to power the account value history graph.
 
         Returns 
-        {
-            date: [],
-            cash: [],
-            holdings: [],
-            combined: []
+        {   
+            username: str
+            snap_datetime: datetime,
+            cash_balance: float,
+            portfolio_value: float,
+            grand_total: float
         }
         """
 
         sql = """
         SELECT 
-            snap_datetime AS date, 
-            cash_balance AS cash,
-            portfolio_value AS holdings,
-            grand_total as combined
-        FROM balance_snapshots
+            u.username,
+            ss.snap_datetime, 
+            ss.cash_balance,
+            ss.portfolio_value,
+            ss.grand_total
+        FROM balance_snapshots AS ss
+        JOIN users AS u
+        ON u.id = ss.user_id
         WHERE user_id = ?
         """
-        rows = self.select_query(sql, (user_id, ))
-
-        formatted = defaultdict(list)
-        for row in rows:
-            for key in row.keys():
-                formatted[key].append(row[key])
-        
-        return dict(formatted)
+        return self.select_query(sql, (user_id, ))
 
     def get_transaction_history(self, user_id: int) -> list[dict]:
         """
