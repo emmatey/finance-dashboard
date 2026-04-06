@@ -465,11 +465,11 @@ def balance_snapshots():
 ## TRADE ##
 
 
-@app.route("/trade/buy", methods=["GET", "POST"])
+@app.route("/trade", methods=["GET", "POST"])
 @helpers.login_required
-def trade_buy():
+def trade():
     """
-    Trade buy endpoint. Handles both preview (GET) and execution (POST) of buy transactions.
+    Trade endpoint. Handles both preview (GET) and execution (POST) of buy/sell transactions.
 
     GET - Returns data to populate the order preview screen.
         Query Parameter: ?ticker=<ticker>
@@ -477,10 +477,10 @@ def trade_buy():
         Returns 404 if ticker not found online.
         Returns 500 if data is missing or corrupt.
 
-    POST - Executes a buy transaction.
-        Request Body: { ticker: str, qty: float }
+    POST - Executes a buy or sell transaction.
+        Request Body: { ticker: str, qty: float, transaction_type: str ('buy' | 'sell') }
         Refreshes price before executing.
-        Returns 400 if ticker missing, qty missing, or insufficient funds.
+        Returns 400 if ticker missing, qty missing, transaction_type invalid, or insufficient funds/shares.
         Returns 404 if ticker not found.
         Returns 500 if transaction fails.
 
@@ -512,8 +512,6 @@ def trade_buy():
                                 tables_to_update=["financial_metrics"],
                                 yqs_instance=yqs,
                                 db_io_instance=io)
-        # If symbol wasn't upserted, research_data_update_orchestrator 
-        # which is called within update_table_subset, it wasn't found online.
         if not cc.symbol_exists_in_db(ticker):
             return jsonify({
                 "success": False,
@@ -568,7 +566,6 @@ def trade_buy():
         io = APIDataIO()
         tm = TransactionManager()
 
-        # Checks for request body.
         if not request.is_json:
             return jsonify({
                 "success": False, 
@@ -581,48 +578,62 @@ def trade_buy():
                 "success": False,
                 "message": "No 'ticker' value provided in request body..."
             }), 400
+        
         qty = request_body.get('qty')
         if not qty:
             return jsonify({
                 "success": False,
                 "message": "No 'qty' value provided in request body..."
             }), 400
-        else:
-            qty = float(qty)
+        qty = float(qty)
 
-        # Attempt to upsert symbol to update price.
+        transaction_type = request_body.get("transaction_type", "").lower().strip()
+        if transaction_type not in ["buy", "sell"]:
+            return jsonify({
+                "success": False,
+                "message": "Invalid 'transaction_type'. Must be 'buy' or 'sell'."
+            }), 400
+
+        # Refresh price before executing.
         modules = yqs.yq_ticker_fetch_modules(symbols=ticker, modules="price")
         io.upsert_symbols(modules_dict=modules)
     
-        # Check symbol exists.
         if not cc.symbol_exists_in_db(ticker):
            return jsonify({
                "success": False,
                "message": f"Ticker {ticker} not found."
            }), 404
         
-        can_afford = tm.check_can_afford(user_id=user_id, ticker=ticker, qty=qty)
-        if not can_afford:
-            price = cc.get_current_price_from_db(symbol=ticker)
-            if not price:
-                price = 0
-            return jsonify({
-                "success": False,
-                "message": f"Insufficient funds for transaction. Balance is {cc.get_balance(user_id=user_id)} But transaction requires {price * qty}"
-            }), 400
-        else:
-            tx_info = tm.record_buy(user_id=user_id, ticker=ticker, qty=qty)
-            if tx_info is not None:
-                tm.record_balance_snapshot(user_id=user_id)
-                return jsonify(tx_info)
-            else:
+        tx_info = None
+        if transaction_type == "buy":
+            can_afford = tm.check_can_afford(user_id=user_id, ticker=ticker, qty=qty)
+            if not can_afford:
+                price = cc.get_current_price_from_db(symbol=ticker) or 0
                 return jsonify({
                     "success": False,
-                    "message": "Transaction unsucessful, see finance.log"
-                }), 500
-    
-    else:
-        return jsonify({"success": False, "message": "Method not allowed"}), 405
+                    "message": f"Insufficient funds. Balance is {cc.get_balance(user_id=user_id)}, transaction requires {price * qty}."
+                }), 400
+            tx_info = tm.record_buy(user_id=user_id, ticker=ticker, qty=qty)
+
+        elif transaction_type == "sell":
+            can_sell = tm.check_can_sell(user_id=user_id, ticker=ticker, qty=qty)
+            if not can_sell:
+                return jsonify({
+                    "success": False,
+                    "message": f"Insufficient shares. Cannot sell {qty} shares of {ticker}."
+                }), 400
+            tx_info = tm.record_sell(user_id=user_id, ticker=ticker, qty=qty)
+
+        if tx_info is not None:
+            tm.record_balance_snapshot(user_id=user_id)
+            return jsonify(tx_info), 200
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Transaction unsuccessful, see finance.log"
+            }), 500
+
+    return jsonify({"success": False, "message": "Method not allowed"}), 405
 
 @app.route("/")
 def home():

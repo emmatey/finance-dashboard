@@ -254,7 +254,7 @@ RESOURCES
             pct_change: float
         }]
 
-    TRADE
+    TRADE - DONE 4/6
         to   - GET ?ticker=str
         from - {
             ticker: str,
@@ -277,6 +277,7 @@ RESOURCES
         to   - POST {
             ticker: str,
             qty: int,
+            transaction_type: str
         }
         from - {success: bool}
 

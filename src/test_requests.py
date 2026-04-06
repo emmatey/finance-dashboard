@@ -17,10 +17,10 @@ response = s.post(f'{url}/auth/login',
 
 #response = s.get(f'{url}/user/balance_snapshots?username=emmma')
 
-#response = s.get(f'{url}/trade/buy?ticker=m')
+#response = s.get(f'{url}/trade?ticker=m')
 
-response = s.post(f'{url}/trade/buy',
-                  json = {"ticker": "bbby", "qty": "300000000000"})
+response = s.post(f'{url}/trade',
+                  json = {"ticker": "bbdgdgfdby", "qty": "3", "transaction_type": "sell"})
 
 print(response)
 print(response.status_code)
