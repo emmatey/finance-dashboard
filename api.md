@@ -166,11 +166,6 @@ RESOURCES
         }]
 
     RESEARCH
-        to - GET ?ticker=str
-        from - All the below data from COMPANY.
-            In the background served via research update orchistrator.   
-
-    COMPANY
         note - individual routes, each checks freshness for
                its own table only and update itself only
                RESEARCH route will do a bulk update and serve everything.

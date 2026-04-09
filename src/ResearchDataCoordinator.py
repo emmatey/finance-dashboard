@@ -223,14 +223,14 @@ class ResearchDataCoordinator(CommonQueries):
                     continue
 
     def update_table_subset(self, ticker:str, tables_to_update: list[str], yqs_instance=None, db_io_instance=None) -> None:
-        f"""
+        """
         Requests to yahooquery for data in tables_to_update param assocaited with ticker param.
 
         tables_to_update valid options: stock_splits, historical_prices, financial_metrics, 
                                 news, company_profile, insider_trades
         """
         if not yqs_instance or not db_io_instance:
-            raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
+            raise ValueError("research_data_update_orchestrator function requires YahooQueryService and APIDataIO instances.")
 
         for table_name in tables_to_update:
             if table_name not in TableLifetimes.__members__:
@@ -245,3 +245,75 @@ class ResearchDataCoordinator(CommonQueries):
             yqs_instance=yqs_instance,
             db_io_instance=db_io_instance
         )
+    
+    def get_research_data(self, ticker: list[str] | str, tables_to_get: list[str], db_io_instance=None) -> list[dict]:
+        """
+        Pulls a subset of research data from the database. 
+        Will not trigger updates, assumes this has been done elsewhere.
+
+        Args:
+            - APIDataIO() instance
+            - "tables_to_get" valid options: stock_splits, historical_prices, financial_metrics, 
+                                    news, company_profile, insider_trades
+        
+        Returns:
+            {
+                table_name: str,
+                ...
+            }
+        """
+        if not db_io_instance:
+            raise ValueError("get_research_data function requires APIDataIO instance.")
+        VALID_OPTIONS = "stock_splits, historical_prices, financial_metrics, news, company_profile, and insider_trades."
+
+        # normalize input type
+        if not isinstance(tables_to_get, list):
+            raise ValueError(f"tables_to_get argument must be a list of strings is {type(tables_to_get)}... ")
+        if not all(isinstance(i, str) for i in tables_to_get):
+            raise ValueError(f"tables_to_get argument must be a list of strings...")
+        if not isinstance(ticker, str) or isinstance(ticker, list):
+            raise ValueError(f"Ticker argument must be a string or a list of strings. is {type(ticker)}...")
+        if isinstance(ticker, list):
+            if not all(isinstance(i, str) for i in ticker):
+                raise ValueError(f"Ticker argument must be a string or a list of strings...")
+            else:
+                ticker = [i.strip().upper() for i in ticker]
+        else:
+            ticker = ticker.strip().upper()
+
+        # fetch functions associated with param
+        tables = (i.lower() for i in tables_to_get)
+        functions = []
+        invalid_params = []
+        missing_out_func = []
+        for i in tables:
+            table_funcs = self.research_registry.get(i, None)
+            if not table_funcs: 
+                invalid_params.append(i)
+                continue
+                
+            out_func = table_funcs.get("o")
+            if not out_func:
+                missing_out_func.append(i)
+            
+            functions.append(out_func)
+
+        # log not found funcitons
+        if invalid_params:
+            logger.warning(f"Paramaters {str(invalid_params)} are invalid. Valid options are {VALID_OPTIONS}")
+
+        if missing_out_func:
+            logger.warning(f"Paramaters {str(missing_out_func)} have no registered 'out' function. Cannot retreive info from db.")
+
+        # call functions
+        results = []
+        try:
+            for func in functions:
+                res = func([ticker])
+                results.append(res)
+        except Exception:
+            raise
+
+        # return result 
+        return results
+  

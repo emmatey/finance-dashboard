@@ -635,14 +635,6 @@ def trade():
 
     return jsonify({"success": False, "message": "Method not allowed"}), 405
 
-@app.route("/")
-def home():
-    filler_page = """
-            <body style="background-color: black; color: green;">
-                hi mom. Welcome to app.py!
-            </body>
-        """
-    return filler_page
 
 
     ## RESEARCH ##
@@ -661,3 +653,12 @@ def research():
     """
     
     return "hi!"
+
+@app.route("/")
+def home():
+    filler_page = """
+            <body style="background-color: black; color: green;">
+                hi mom. Welcome to app.py!
+            </body>
+        """
+    return filler_page

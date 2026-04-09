@@ -58,8 +58,10 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    ret = rm.get_users_ranks([1, 2, 3])
-    print(ret)
+    
+    res = rdc.get_research_data(ticker=db_io_instance=db, tables_to_get=[])
+    print(res)
+
 
     filler_page = """
         <body style="background-color: black; color: green;">
