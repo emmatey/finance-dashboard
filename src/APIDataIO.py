@@ -525,25 +525,51 @@ class APIDataIO(DbManager):
         return rows_clean
 
     @ResearchDataCoordinator.register_as_research('news', o=True)
-    def get_news(self, symbol = None, limit = 10):
+    def get_news(self, symbols: list[str] | str | None = None, limit: int = 10) -> list[dict]:
         """
-        Retrieve news articles, optionally filtered by symbol.
-
-        Returns list of dicts with article info.
+        Retrieve news articles, optionally filtered by one or more symbols.
+        Returns all news ordered by publish date if no symbols provided.
+    
+        Args:
+            symbols: Single ticker string, list of tickers, or None for all news
+            limit: Maximum number of articles to return (default: 10)
+    
+        Returns:
+            List of dicts containing news article data:
+            [
+                {
+                    'uuid': str,
+                    'title': str,
+                    'publisher': str,
+                    'link': str,
+                    'providerPublishTime': int,
+                    'thumbnail': str
+                },
+                ...
+            ]
+            Returns empty list if no news found.
         """
-
-        if symbol:
-            sql = """
-            SELECT n.uuid, n.title, n.publisher, n.link,
+        if symbols is not None:
+            if isinstance(symbols, str):
+                symbols = [symbols]
+            if not symbols:
+                return []
+    
+            symbols_upper = tuple([s.upper() for s in symbols])
+            placeholders = ", ".join(['?' for _ in symbols_upper])
+    
+            sql = f"""
+            SELECT DISTINCT n.uuid, n.title, n.publisher, n.link,
                    n.providerPublishTime, n.thumbnail
             FROM news n
             JOIN news_symbols ns ON n.id = ns.news_id
             JOIN symbols s ON ns.symbol_id = s.id
-            WHERE s.ticker = ?
+            WHERE s.ticker IN ({placeholders})
             ORDER BY n.providerPublishTime DESC
             LIMIT ?
             """
-            return self.select_query(sql, (symbol.upper(), limit))
+            return self.select_query(sql, symbols_upper + (limit,))
+        
         else:
             sql = """
             SELECT uuid, title, publisher, link,

@@ -209,3 +209,5 @@ __marimo__/
 
 # Project database
 finance.db
+finance.db-shm
+finance.db-wal

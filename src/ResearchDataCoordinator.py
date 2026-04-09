@@ -315,7 +315,7 @@ class ResearchDataCoordinator(CommonQueries):
         try:
             for func in functions:
                 print(func)
-                res = func([ticker])
+                res = func(db_io_instance, [ticker])
                 results.append(res)
         except Exception:
             raise
