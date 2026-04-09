@@ -639,7 +639,6 @@ def trade():
 
     ## RESEARCH ##
 
-
 @app.route("/research")
 def research():
     """
