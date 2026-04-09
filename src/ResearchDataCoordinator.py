@@ -276,32 +276,40 @@ class ResearchDataCoordinator(CommonQueries):
             raise ValueError(f"tables_to_get argument must be a list of strings is {type(tables_to_get)}... ")
         if not all(isinstance(i, str) for i in tables_to_get):
             raise ValueError(f"tables_to_get argument must be a list of strings...")
-        if not isinstance(ticker, str) or isinstance(ticker, list):
-            raise ValueError(f"Ticker argument must be a string or a list of strings. is {type(ticker)}...")
-        if isinstance(ticker, list):
+        
+        if isinstance(ticker, str):
+            ticker = [ticker.strip().upper()]
+        elif isinstance(ticker, list):
             if not all(isinstance(i, str) for i in ticker):
                 raise ValueError(f"Ticker argument must be a string or a list of strings...")
             else:
                 ticker = [i.strip().upper() for i in ticker]
         else:
-            ticker = ticker.strip().upper()
-
+            raise ValueError(f"Ticker argument must be a string or a list of strings. is {type(ticker)}...")
+            
         # fetch functions associated with param
         tables = (i.lower() for i in tables_to_get)
-        functions = []
+        results = []
         invalid_params = []
         missing_out_func = []
-        for i in tables:
-            table_funcs = self.research_registry.get(i, None)
+        for table in tables:
+            table_funcs = self.research_registry.get(table, None)
             if not table_funcs: 
-                invalid_params.append(i)
+                invalid_params.append(table)
                 continue
                 
-            out_func = table_funcs.get("o")
-            if not out_func:
-                missing_out_func.append(i)
-            
-            functions.append(out_func)
+            out_func = table_funcs.get("o", None)
+            if out_func is None:
+                missing_out_func.append(table)
+            else:
+                try:
+                    res = out_func(db_io_instance, ticker)
+                except Exception:
+                    raise
+
+                for i in res:
+                    i["table_name"] = table
+                results.extend(res)
 
         # log not found funcitons
         if invalid_params:
@@ -309,16 +317,6 @@ class ResearchDataCoordinator(CommonQueries):
 
         if missing_out_func:
             logger.warning(f"Paramaters {str(missing_out_func)} have no registered 'out' function. Cannot retreive info from db.")
-
-        # call functions
-        results = []
-        try:
-            for func in functions:
-                print(func)
-                res = func(db_io_instance, [ticker])
-                results.append(res)
-        except Exception:
-            raise
 
         # return result 
         return results

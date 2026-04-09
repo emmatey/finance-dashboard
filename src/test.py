@@ -58,8 +58,8 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    #res = rdc.get_research_data(ticker="mmm", db_io_instance=db)
-    #print(res)
+    res = rdc.get_research_data(ticker="mmm", db_io_instance=db)
+    print(res)
 
 
     filler_page = """
