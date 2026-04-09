@@ -552,6 +552,11 @@ class APIDataIO(DbManager):
         if symbols is not None:
             if isinstance(symbols, str):
                 symbols = [symbols]
+            elif isinstance(symbols, list):
+                if not all(isinstance(i, str) for i in symbols):
+                    raise ValueError("Symbols paramater must be a string or a list of strings")
+            else:
+                raise ValueError("Symbols paramater must be a string or a list of strings")
 
             symbols_upper = [str(s).upper().strip() for s in symbols]
             placeholders = ", ".join(['?' for _ in symbols_upper])
