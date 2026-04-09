@@ -529,11 +529,11 @@ class APIDataIO(DbManager):
         """
         Retrieve news articles, optionally filtered by one or more symbols.
         Returns all news ordered by publish date if no symbols provided.
-    
+
         Args:
             symbols: Single ticker string, list of tickers, or None for all news
             limit: Maximum number of articles to return (default: 10)
-    
+
         Returns:
             List of dicts containing news article data:
             [
@@ -552,12 +552,10 @@ class APIDataIO(DbManager):
         if symbols is not None:
             if isinstance(symbols, str):
                 symbols = [symbols]
-            if not symbols:
-                return []
-    
-            symbols_upper = tuple([s.upper() for s in symbols])
+
+            symbols_upper = [str(s).upper().strip() for s in symbols]
             placeholders = ", ".join(['?' for _ in symbols_upper])
-    
+
             sql = f"""
             SELECT DISTINCT n.uuid, n.title, n.publisher, n.link,
                    n.providerPublishTime, n.thumbnail
@@ -568,8 +566,9 @@ class APIDataIO(DbManager):
             ORDER BY n.providerPublishTime DESC
             LIMIT ?
             """
-            return self.select_query(sql, symbols_upper + (limit,))
-        
+            symbols_upper.append(str(limit))
+            return self.select_query(sql, tuple(symbols_upper))
+
         else:
             sql = """
             SELECT uuid, title, publisher, link,
@@ -578,7 +577,7 @@ class APIDataIO(DbManager):
             ORDER BY providerPublishTime DESC
             LIMIT ?
             """
-            return self.select_query(sql, (limit,))
+            return self.select_query(sql, (limit, ))
 
     @ResearchDataCoordinator.register_as_research('company_profile', o=True)
     def get_company_profile(self, symbols):
