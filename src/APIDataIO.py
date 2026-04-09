@@ -653,6 +653,48 @@ class APIDataIO(DbManager):
 
         return self.select_query(sql, symbols + (limit,))
 
+    @ResearchDataCoordinator.register_as_research('stock_splits', o=True)
+    def get_stock_splits(self, symbols: list[str] | str) -> list[dict]:
+        """
+        Retrieve stock split history for one or more symbols.
+
+        Args:
+            symbols: Single ticker string or list of tickers
+
+        Returns:
+            List of dicts containing stock split data:
+            [
+                {
+                    'ticker': 'AAPL',
+                    'split_date': '2020-08-31',
+                    'split_ratio': 4.0,
+                    'last_updated': '2026-03-05 10:30:00'
+                },
+                ...
+            ]
+            Returns empty list if no splits found.
+
+        Note:
+            Results ordered by split_date (newest first)
+        """
+        if isinstance(symbols, str):
+            symbols = [symbols]
+        if not symbols:
+            return []
+
+        symbols_tuple = tuple([symbol.upper() for symbol in symbols])
+        placeholders = ", ".join(['?' for _ in symbols])
+
+        sql = f"""
+        SELECT s.ticker, ss.split_date, ss.split_ratio, ss.last_updated
+        FROM stock_splits AS ss
+        JOIN symbols AS s ON s.id = ss.symbol_id
+        WHERE s.ticker IN ({placeholders})
+        ORDER BY ss.split_date DESC
+        """
+
+        return self.select_query(sql, symbols_tuple)
+    
     def get_regional_overview(self, symbols) -> List[Dict[str, Union[str, float]]]:
         """
         Retrieve current regional market data from database.

@@ -246,15 +246,20 @@ class ResearchDataCoordinator(CommonQueries):
             db_io_instance=db_io_instance
         )
     
-    def get_research_data(self, ticker: list[str] | str, tables_to_get: list[str], db_io_instance=None) -> list[dict]:
+    def get_research_data(self,
+                          ticker: list[str] | str,
+                          tables_to_get: list[str]=["stock_splits", "historical_prices", "financial_metrics", "news", "company_profile", "insider_trades"],
+                          db_io_instance=None
+                          ) -> list[dict]:
         """
         Pulls a subset of research data from the database. 
         Will not trigger updates, assumes this has been done elsewhere.
 
         Args:
-            - APIDataIO() instance
+            - ticker: company or companies to fetch data for.
             - "tables_to_get" valid options: stock_splits, historical_prices, financial_metrics, 
                                     news, company_profile, insider_trades
+            -  db_io_instance: APIDataIO() class instance.
         
         Returns:
             {
@@ -264,7 +269,7 @@ class ResearchDataCoordinator(CommonQueries):
         """
         if not db_io_instance:
             raise ValueError("get_research_data function requires APIDataIO instance.")
-        VALID_OPTIONS = "stock_splits, historical_prices, financial_metrics, news, company_profile, and insider_trades."
+        VALID_OPTIONS = "stock_splits, historical_prices, financial_metrics, news, company_profile, insider_trades"
 
         # normalize input type
         if not isinstance(tables_to_get, list):
@@ -309,6 +314,7 @@ class ResearchDataCoordinator(CommonQueries):
         results = []
         try:
             for func in functions:
+                print(func)
                 res = func([ticker])
                 results.append(res)
         except Exception:

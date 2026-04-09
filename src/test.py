@@ -59,7 +59,7 @@ def home():
     cc = CommonQueries()
     
     
-    res = rdc.get_research_data(ticker=db_io_instance=db, tables_to_get=[])
+    res = rdc.get_research_data(ticker="mmm", db_io_instance=db)
     print(res)
 
 
