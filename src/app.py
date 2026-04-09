@@ -643,3 +643,21 @@ def home():
             </body>
         """
     return filler_page
+
+
+    ## RESEARCH ##
+
+
+@app.route("/research")
+def research():
+    """
+
+    Query Paramater
+
+    Returns:
+        200-
+        404-
+
+    """
+    
+    return "hi!"
