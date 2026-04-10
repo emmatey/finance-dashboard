@@ -170,19 +170,19 @@ RESOURCES
                its own table only and update itself only
                RESEARCH route will do a bulk update and serve everything.
 
-        research (without path param)
+        research (without path param) DONE - 4/9
             to - GET ?ticker=str
             from - {
                 table_name: [{}]
             }
-        summary
+        summary DONE - 4/10
             to   - GET ?ticker=str
             from - {
                 ticker: str,
                 name: str,
                 price: float
             }
-        company_profile
+        company_profile DONE - 4/10
             to   - GET ?ticker=str
             from - {
                 description: str,
@@ -190,7 +190,7 @@ RESOURCES
                 website: str,
                 employee_count: int
             }
-        insider_transactions
+        insider_transactions DONE - 4/10
             to   - GET ?ticker=str
             from - [{
                 transaction_date: str,
@@ -200,14 +200,14 @@ RESOURCES
                 filer_name: str,
                 filer_relation: str
             }]
-        historical_prices
+        historical_prices DONE - 4/10
             to   - GET ?ticker=str
             from - [{
                 price_timestamp: int,
                 adjclose: float,
                 trade_volume: int
             }]
-        financial_metrics
+        financial_metrics DONE - 4/10
             to   - GET ?ticker=str
             from - {
                 market_cap: float,
