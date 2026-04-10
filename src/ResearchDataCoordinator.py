@@ -2,6 +2,7 @@ import logging
 
 from CommonQueries import CommonQueries
 from enum import Enum
+from helpers import TickerNotFoundError
 from time import time
 
 
@@ -21,7 +22,6 @@ class TableLifetimes(Enum):
     news = 3600  # 1 hour
     company_profile = 604800  # 1 week
     insider_trades = 86400  # 24 hours
-
 
 class ResearchDataCoordinator(CommonQueries):
     """
@@ -164,8 +164,8 @@ class ResearchDataCoordinator(CommonQueries):
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
         if not symbol:
-            logger.warning("fresh_report invalid, no company name found.")
-            raise RuntimeError
+            logger.warning(f"fresh_report invalid, no company name found. {fresh_report}")
+            raise RuntimeError("Malformed fresh_report, no symbol found.")
 
         if not yqs_instance or not db_io_instance:
             raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
@@ -178,19 +178,19 @@ class ResearchDataCoordinator(CommonQueries):
                 if required_modules:
                     for m in required_modules:
                         modules_set.add(m)
-       
+
         # Always get price if anything is stale so upsert_symbol can be called.
-        modules = {}
         modules_set.add("price")
 
         # Call api once for all required modules.
+        modules = {}
         logger.info(f"Fetching {len(modules_set)} modules for {symbol}")
         modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
-        if "Quote not found" in modules[symbol]:
-            logger.warning(f"Ticker: {symbol} was not found on YahooFinance...Please try again.")
-            return None
+        if isinstance(modules.get(symbol), str) and "Quote not found" in modules[symbol]:
+            logger.error(f"Ticker {symbol} not found on Yahoo Finance.")
+            raise TickerNotFoundError(f"Ticker {symbol} not found on Yahoo Finance.")
         if not modules:
-            logger.error(f"Failed to fetch modules for {symbol}")
+            logger.error(f"API failed to fetch modules for {symbol}")
             raise RuntimeError(f"API failed to fetch modules for {symbol}")
         else:
             # Upsert symbol using already-fetched modules (no extra API call)
@@ -209,8 +209,8 @@ class ResearchDataCoordinator(CommonQueries):
                     modules_required = self.research_registry[table]['modules']
 
                     if not api_func or not in_func:
-                        logger.error(f"Incomplete registration for {table}: api={api_func}, in={in_func}")
-                        continue
+                        logger.error(f"Incomplete registry registration for table '{table}'")
+                        raise RuntimeError(f"Incomplete registry registration for table '{table}'")
                     if modules_required:
                         data = api_func(yqs_instance, modules)
                         in_func(db_io_instance, data)
@@ -220,7 +220,7 @@ class ResearchDataCoordinator(CommonQueries):
 
                 except Exception as e:
                     logger.error(f"Failed to update {table} for {symbol}: {e}")
-                    continue
+                    raise 
 
     def update_table_subset(self, ticker:str, tables_to_update: list[str], yqs_instance=None, db_io_instance=None) -> None:
         """

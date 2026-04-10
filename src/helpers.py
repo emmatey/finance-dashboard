@@ -12,6 +12,10 @@ class UserNotFoundError(Exception):
 class NoUserProvidedError(Exception):
     pass
 
+class TickerNotFoundError(Exception):
+    """Raised when a ticker symbol cannot be found on Yahoo Finance."""
+    pass
+
 def login_required(f):
     """
     Decorate routes to require login.

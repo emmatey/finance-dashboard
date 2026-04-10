@@ -59,7 +59,7 @@ def home():
     cc = CommonQueries()
     
 
-    fresh_report = rdc.create_research_fresh_report("appl")
+    fresh_report = rdc.create_research_fresh_report("AAPL")
     rdc.research_data_update_orchestrator(fresh_report=fresh_report, yqs_instance=yqs, db_io_instance=io)
 
 

@@ -639,6 +639,7 @@ def trade():
 
     ## RESEARCH ##
 
+
 @app.route("/research", methods=["GET"])
 def research():
     """
@@ -724,7 +725,11 @@ def research():
 
     Note: All numeric fields may be None if data is unavailable.
     """
+    # Call update_orchestrator
 
+    # Raise exceptions and return 5xx
+
+    # Call get research data
     
 
 @app.route("/")
