@@ -182,7 +182,7 @@ RESOURCES
                 name: str,
                 price: float
             }
-        description
+        company_profile
             to   - GET ?ticker=str
             from - {
                 description: str,
@@ -235,7 +235,8 @@ RESOURCES
         }]
 
     NEWS
-        to   - GET ?ticker=str (optional, returns all news by datetime newest if omitted)
+        to   - GET ?ticker=str (optional, returns all news by datetime newest if omitted) ?qty=int (optional, default is 10)
+        "add pagination metadata?"
         from - [{
             title: str,
             link: str,

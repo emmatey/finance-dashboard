@@ -756,6 +756,275 @@ def research():
 
     return jsonify(results), 200
 
+@app.route("/research/summary", methods=["GET"])
+def research_summary():
+    """
+    Returns basic company summary. Upserts symbol if new.
+
+    Query Parameter:
+        ?ticker=str
+
+    Returns:
+        200 - { ticker: str, name: str, price: float }
+        400 - No ticker provided
+        404 - Ticker not found
+        500 - Data missing
+    """
+    cc = CommonQueries()
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({"success": False, "message": "No 'ticker' query parameter provided."}), 400
+    ticker = ticker.strip().upper()
+
+    try:
+        rdc.update_table_subset(ticker=ticker, tables_to_update=["financial_metrics"], yqs_instance=yqs, db_io_instance=io)
+    except helpers.TickerNotFoundError:
+        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+    except Exception as e:
+        logger.exception(f"research_summary update failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+
+    ticker_info = cc.get_stock_basic_overview(symbol=ticker)
+    if not ticker_info:
+        return jsonify({"success": False, "message": f"Missing data for {ticker}"}), 500
+
+    return jsonify({
+        "ticker": ticker_info.get("ticker"),
+        "name": ticker_info.get("company_name"),
+        "price": ticker_info.get("last_price")
+    }), 200
+
+@app.route("/research/company_profile", methods=["GET"])
+def research_company_profile():
+    """
+    Returns company profile data.
+
+    Query Parameter:
+        ?ticker=str
+
+    Returns:
+        200 - { ticker: str, company_desc: str, industry: str, website: str, employee_count: int }
+        400 - No ticker provided
+        404 - Ticker not found
+        500 - Data missing or database error
+    """
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({"success": False, "message": "No 'ticker' query parameter provided."}), 400
+    ticker = ticker.strip().upper()
+
+    try:
+        rdc.update_table_subset(ticker=ticker, tables_to_update=["company_profile"], yqs_instance=yqs, db_io_instance=io)
+    except helpers.TickerNotFoundError:
+        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+    except Exception as e:
+        logger.exception(f"research_company_profile update failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+
+    results = io.get_company_profile(symbols=[ticker])
+    if not results:
+        return jsonify({"success": False, "message": f"No company profile found for {ticker}"}), 500
+
+    return jsonify(results[0]), 200
+
+@app.route("/research/financial_metrics", methods=["GET"])
+def research_financial_metrics():
+    """
+    Returns financial metrics for a company.
+
+    Query Parameter:
+        ?ticker=str
+
+    Returns:
+        200 - {
+            "ticker": str,
+            "last_updated": str,
+            "market_open": float,
+            "prev_close": float,
+            "market_cap": float,
+            "eps": float,
+            "beta": float,
+            "trailing_pe": float,
+            "forward_pe": float,
+            "profit_margin": float,
+            "shares_outstanding": float,
+            "book_value": float,
+            "price_to_book": float,
+            "dividend_yield": float,
+            "fifty_two_week_high": float,
+            "fifty_two_week_low": float,
+            "fifty_day_average": float,
+            "two_hundred_day_average": float,
+            "rating": str,
+            "analyst_count": int,
+            "target_price": float,
+            "current_ratio": float,
+            "debt_to_equity": float,
+            "todays_volume": float,
+            "ten_day_avg_volume": float,
+            "three_month_avg_volume": float
+        }
+        400 - No ticker provided
+        404 - Ticker not found
+        500 - Data missing or database error
+    """
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({"success": False, "message": "No 'ticker' query parameter provided."}), 400
+    ticker = ticker.strip().upper()
+
+    try:
+        rdc.update_table_subset(ticker=ticker, tables_to_update=["financial_metrics"], yqs_instance=yqs, db_io_instance=io)
+    except helpers.TickerNotFoundError:
+        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+    except Exception as e:
+        logger.exception(f"research_financial_metrics update failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+
+    results = io.get_financial_metrics(symbols=[ticker])
+    if not results:
+        return jsonify({"success": False, "message": f"No financial metrics found for {ticker}"}), 500
+
+    return jsonify(results[0]), 200
+
+@app.route("/research/insider_trades", methods=["GET"])
+def research_insider_trades():
+    """
+    Returns insider trading history for a company.
+
+    Query Parameters:
+        ?ticker=str
+        ?qty=int
+
+    Returns:
+        200 - [{ transaction_date, shares, transaction_value, transaction_text, filer_name, filer_relation }]
+        400 - No ticker provided
+        404 - Ticker not found
+        500 - Database error
+    """
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({"success": False, "message": "No 'ticker' query parameter provided."}), 400
+    ticker = ticker.strip().upper()
+    qty = request.args.get("qty", None)
+
+    try:
+        rdc.update_table_subset(ticker=ticker, tables_to_update=["insider_trades"], yqs_instance=yqs, db_io_instance=io)
+    except helpers.TickerNotFoundError:
+        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+    except Exception as e:
+        logger.exception(f"research_insider_trades update failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+
+    try:
+        if qty is not None:
+            results = io.get_insider_trades(symbols=[ticker], limit=int(qty))
+        else:
+            results = io.get_insider_trades(symbols=[ticker])
+    except Exception as e:
+        logger.exception(f"research_insider_trades db fetch failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
+
+    return jsonify(results), 200
+
+@app.route("/research/historical_prices", methods=["GET"])
+def research_historical_prices():
+    """
+    Returns historical price data for a company.
+
+    Query Parameter:
+        ?ticker=str
+
+    Returns:
+        200 - [{ ticker, price, timestamp, volume }]
+        400 - No ticker provided
+        404 - Ticker not found
+        500 - Database error
+    """
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({"success": False, "message": "No 'ticker' query parameter provided."}), 400
+    ticker = ticker.strip().upper()
+
+    try:
+        rdc.update_table_subset(ticker=ticker, tables_to_update=["historical_prices"], yqs_instance=yqs, db_io_instance=io)
+    except helpers.TickerNotFoundError:
+        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+    except Exception as e:
+        logger.exception(f"research_historical_prices update failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+
+    try:
+        results = io.get_historical_prices(symbols=[ticker])
+    except Exception as e:
+        logger.exception(f"research_historical_prices db fetch failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
+
+    return jsonify(results), 200
+
+@app.route("/research/stock_splits", methods=["GET"])
+def research_stock_splits():
+    """
+    Returns stock split history for a company.
+
+    Query Parameter:
+        ?ticker=str
+
+    Returns:
+        200 - [{ ticker, split_date, split_ratio, last_updated }]
+        400 - No ticker provided
+        404 - Ticker not found
+        500 - Database error
+    """
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({"success": False, "message": "No 'ticker' query parameter provided."}), 400
+    ticker = ticker.strip().upper()
+
+    try:
+        rdc.update_table_subset(ticker=ticker, tables_to_update=["stock_splits"], yqs_instance=yqs, db_io_instance=io)
+    except helpers.TickerNotFoundError:
+        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+    except Exception as e:
+        logger.exception(f"research_stock_splits update failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+
+    try:
+        results = io.get_stock_splits(symbols=[ticker])
+    except Exception as e:
+        logger.exception(f"research_stock_splits db fetch failed for {ticker}: {e}")
+        return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
+
+    return jsonify(results), 200
+
+@app.route("/research/news", methods=["GET"])
+def research_news():
+    # stub - 
+    pass
 
 @app.route("/")
 def home():
