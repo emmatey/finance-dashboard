@@ -1020,9 +1020,32 @@ def research_stock_splits():
 @app.route("/research/news", methods=["GET"])
 def research_news():
     """
-    Returns news 
+    Returns the latest news stories optially filtered by company.
+
+    Query Parameter:
+        ?ticker=str
+
+    Returns:
+        200 - [{uuid: str, 
+                title: str, 
+                thumbnail: str, 
+                link: str, 
+                publisher: str, 
+                providerPublishTime: int}, ...]
+        400 - 
+        404 -
+        500 -
+    
     """
-    pass
+    ticker = request.args.get("ticker", None)
+    if ticker:
+        ticker = ticker.strip().upper()
+    qty = request.args.get("qty", None)
+    if qty:
+        qty = int(qty)
+
+    
+    return "hi"
 
 
 @app.route("/")
