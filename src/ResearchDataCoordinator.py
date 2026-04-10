@@ -151,16 +151,30 @@ class ResearchDataCoordinator(CommonQueries):
 
     def research_data_update_orchestrator(self, fresh_report: dict[str, bool | str], yqs_instance=None, db_io_instance=None):
         """
-        This only works for one company at a time.
+        Parse a freshness report and update stale data for a single company.
 
-        Parse the freshness report, and use the methods in registry to update required data.
-        
-        Fresh Report:
-            fresh_report = {table_name: bool}
-            True = fresh, no update required.
-            False = not-fresh, update required.
+        Collects all required Yahoo Finance modules for stale tables, makes a single
+        API call, then dispatches to the appropriate setter functions via the registry.
+
+        Args:
+            fresh_report: Dict mapping table names to freshness status.
+                          Must contain a 'symbol' key with the ticker string.
+                          True = fresh (skip), False = stale (update).
+                          Format: {'symbol': <str>, 'financial_metrics': False, ...}
+            yqs_instance: YahooQueryService instance for API calls.
+            db_io_instance: APIDataIO instance for database writes.
+
+        Raises:
+            AssertionError: If 'symbol' key in fresh_report is not a string.
+            RuntimeError: If fresh_report contains no symbol, if the API fails to
+                          return modules, or if a table has incomplete registry
+                          registration (missing api or in function).
+            ValueError: If yqs_instance or db_io_instance are not provided.
+            TickerNotFoundError: If the ticker symbol is not found on Yahoo Finance.
+            Exception: Re-raises any exception that occurs during individual table
+                       updates after logging the error.
         """
-
+        
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
         if not symbol:
@@ -222,7 +236,12 @@ class ResearchDataCoordinator(CommonQueries):
                     logger.error(f"Failed to update {table} for {symbol}: {e}")
                     raise 
 
-    def update_table_subset(self, ticker:str, tables_to_update: list[str], yqs_instance=None, db_io_instance=None) -> None:
+    def update_table_subset(self,
+                            ticker:str,
+                            tables_to_update: list[str],
+                            yqs_instance=None,
+                            db_io_instance=None
+                            ) -> None:
         """
         Requests to yahooquery for data in tables_to_update param assocaited with ticker param.
 

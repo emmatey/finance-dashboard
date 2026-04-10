@@ -725,11 +725,34 @@ def research():
 
     Note: All numeric fields may be None if data is unavailable.
     """
-    # Call update_orchestrator
+    cc = CommonQueries()
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
 
-    # Raise exceptions and return 5xx
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({
+            "success": False,
+            "message": "No 'ticker' query paramater provided..."
+        }), 400
+    else:
+        ticker = ticker.strip().upper()
 
-    # Call get research data
+    try:
+        fresh_report = rdc.create_research_fresh_report(ticker)
+        rdc.research_data_update_orchestrator(fresh_report)
+    except helpers.TickerNotFoundError:
+        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+    except Exception:
+        return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+
+    try:
+        results = rdc.get_research_data(ticker=ticker, db_io_instance=io)
+    except Exception:
+        return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
+
+    return jsonify(results), 200
     
 
 @app.route("/")
