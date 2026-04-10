@@ -650,8 +650,9 @@ def research():
         ?ticker=str
 
     Returns:
-        200 -
-        404 -
+        200 
+        404 
+        500 
 
     Data Format:
             {
@@ -725,7 +726,7 @@ def research():
 
     Note: All numeric fields may be None if data is unavailable.
     """
-    cc = CommonQueries()
+    
     rdc = ResearchDataCoordinator()
     io = APIDataIO()
     yqs = YahooQueryService()
@@ -741,10 +742,11 @@ def research():
 
     try:
         fresh_report = rdc.create_research_fresh_report(ticker)
-        rdc.research_data_update_orchestrator(fresh_report)
+        rdc.research_data_update_orchestrator(fresh_report, yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
         return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
-    except Exception:
+    except Exception as e:
+        logger.exception(f"update_table_subset failed for {ticker}: {e}")
         return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
 
     try:
@@ -753,7 +755,7 @@ def research():
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
     return jsonify(results), 200
-    
+
 
 @app.route("/")
 def home():

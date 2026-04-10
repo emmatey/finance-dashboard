@@ -174,14 +174,15 @@ class ResearchDataCoordinator(CommonQueries):
             Exception: Re-raises any exception that occurs during individual table
                        updates after logging the error.
         """
-        
+
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
         if not symbol:
-            logger.warning(f"fresh_report invalid, no company name found. {fresh_report}")
+            logger.info(f"fresh_report invalid, no company name found. {fresh_report}")
             raise RuntimeError("Malformed fresh_report, no symbol found.")
 
         if not yqs_instance or not db_io_instance:
+            logger.info("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
             raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
 
         # Collect list of modules required by updater functions who are associated with 'stale' data.
