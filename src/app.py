@@ -55,10 +55,8 @@ def teardown_db(exception):
     if exception:
         logger.error(exception)
 
-
 ### AUTH ###
 
-# Register
 @app.route("/auth/register", methods=["POST"])
 def register():
     """
@@ -140,7 +138,6 @@ def register():
     # Return good state 
     return jsonify({"success": True}), 201
 
-# Login
 @app.route("/auth/login", methods=["POST"])
 def login():
     """
@@ -183,7 +180,6 @@ def login():
     return jsonify({"success": True,
                     "message": f"User {username} logged in."}), 200
 
-# Logout
 @app.route("/auth/logout", methods=["POST"])
 def logout():
     """
@@ -200,7 +196,6 @@ def logout():
         logger.exception("Sesison unable to be cleared.")
         return jsonify({"success": False,
                         "message": "Session unable to be cleared..."}), 500
-
 
 ## USER ##
 
@@ -461,9 +456,7 @@ def balance_snapshots():
     else:
         return jsonify(rows), 200
 
-
 ## TRADE ##
-
 
 @app.route("/trade", methods=["GET", "POST"])
 @helpers.login_required
@@ -639,6 +632,7 @@ def trade():
 
     ## RESEARCH ##
 
+## RESEARCH ##
 
 @app.route("/research", methods=["GET"])
 def research():
@@ -1021,10 +1015,15 @@ def research_stock_splits():
 
     return jsonify(results), 200
 
+## NEWS ##
+
 @app.route("/research/news", methods=["GET"])
 def research_news():
-    # stub - 
+    """
+    Returns news 
+    """
     pass
+
 
 @app.route("/")
 def home():
