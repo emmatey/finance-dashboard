@@ -639,19 +639,93 @@ def trade():
 
     ## RESEARCH ##
 
-@app.route("/research")
+@app.route("/research", methods=["GET"])
 def research():
     """
+    Returns all 'research' data for a given company.
+    Serves a flat list of dicts with a "table_name" k:v pair to differentiate. 
 
-    Query Paramater
+    Query Paramater:
+        ?ticker=str
 
     Returns:
-        200-
-        404-
+        200 -
+        404 -
 
+    Data Format:
+            {
+        "stock_splits": [{
+            "ticker": str,
+            "split_date": str,
+            "split_ratio": float,
+            "last_updated": str
+        }],
+        "historical_prices": [{
+            "ticker": str,
+            "price": float,
+            "timestamp": int,
+            "volume": int
+        }],
+        "financial_metrics": [{
+            "ticker": str,
+            "last_updated": str,
+            "market_open": float,
+            "prev_close": float,
+            "market_cap": float,
+            "eps": float,
+            "beta": float,
+            "trailing_pe": float,
+            "forward_pe": float,
+            "profit_margin": float,
+            "shares_outstanding": float,
+            "book_value": float,
+            "price_to_book": float,
+            "dividend_yield": float,
+            "fifty_two_week_high": float,
+            "fifty_two_week_low": float,
+            "fifty_day_average": float,
+            "two_hundred_day_average": float,
+            "rating": str,
+            "analyst_count": int,
+            "target_price": float,
+            "current_ratio": float,
+            "debt_to_equity": float,
+            "todays_volume": float,
+            "ten_day_avg_volume": float,
+            "three_month_avg_volume": float
+        }],
+        "news": [{
+            "uuid": str,
+            "title": str,
+            "publisher": str,
+            "link": str,
+            "providerPublishTime": int,
+            "thumbnail": str
+        }],
+        "company_profile": [{
+            "ticker": str,
+            "company_desc": str,
+            "employee_count": int,
+            "industry": str,
+            "website": str,
+            "last_updated": str
+        }],
+        "insider_trades": [{
+            "ticker": str,
+            "transaction_date": str,
+            "shares": float,
+            "transaction_value": float,
+            "filer_name": str,
+            "filer_relation": str,
+            "transaction_text": str,
+            "last_updated": str
+        }]
+    }
+
+    Note: All numeric fields may be None if data is unavailable.
     """
+
     
-    return "hi!"
 
 @app.route("/")
 def home():

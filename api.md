@@ -170,6 +170,11 @@ RESOURCES
                its own table only and update itself only
                RESEARCH route will do a bulk update and serve everything.
 
+        research (without path param)
+            to - GET ?ticker=str
+            from - {
+                table_name: [{}]
+            }
         summary
             to   - GET ?ticker=str
             from - {

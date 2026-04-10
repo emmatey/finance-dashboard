@@ -58,8 +58,11 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    res = rdc.get_research_data(ticker="mmm", db_io_instance=db)
-    print(res)
+
+    fresh_report = rdc.create_research_fresh_report("appl")
+    rdc.research_data_update_orchestrator(fresh_report=fresh_report, yqs_instance=yqs, db_io_instance=io)
+
+
 
 
     filler_page = """

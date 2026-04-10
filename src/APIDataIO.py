@@ -279,7 +279,7 @@ class APIDataIO(DbManager):
             related_uuids[story.get('uuid')] = story.get('relatedTickers')
         uuid_set = {i for i in related_uuids}
         uuid_placeholders = ", ".join(["?" for _ in uuid_set])
-        ticker_set = {ticker for v in related_uuids.values() for ticker in v}
+        ticker_set = {ticker for v in related_uuids.values() if v for ticker in v}
         ticker_placeholders = ", ".join(["?" for _ in ticker_set])
 
         # Find news id for associated uuid
@@ -407,8 +407,13 @@ class APIDataIO(DbManager):
             },
         """
         if not trade_data:
-            logger.warning(
-                "set_insider_trades aborted: empty trade_data dict")
+            logger.warning("set_insider_trades aborted: empty trade_data dict")
+            return None
+
+        # Filter out symbols with empty transaction lists
+        trade_data = {k: v for k, v in trade_data.items() if v}
+        if not trade_data:
+            logger.warning("set_insider_trades aborted: no transactions found for any symbol")
             return None
 
         table_cols = sorted({key for tx_list in trade_data.values()

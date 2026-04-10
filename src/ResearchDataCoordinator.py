@@ -160,15 +160,12 @@ class ResearchDataCoordinator(CommonQueries):
             True = fresh, no update required.
             False = not-fresh, update required.
         """
-        if not fresh_report:
-            logger.warning("fresh_report not provided.")
-            return None
 
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
         if not symbol:
             logger.warning("fresh_report invalid, no company name found.")
-            return None
+            raise RuntimeError
 
         if not yqs_instance or not db_io_instance:
             raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
@@ -181,20 +178,23 @@ class ResearchDataCoordinator(CommonQueries):
                 if required_modules:
                     for m in required_modules:
                         modules_set.add(m)
+       
+        # Always get price if anything is stale so upsert_symbol can be called.
+        modules = {}
+        modules_set.add("price")
 
         # Call api once for all required modules.
-        modules = {}
-        if modules_set:
-            # Always get price if anything is stale so upsert_symbol can be called.
-            modules_set.add("price")
-            logger.info(f"Fetching {len(modules_set)} modules for {symbol}")
-            modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
-            if not modules:
-                logger.error(f"Failed to fetch modules for {symbol}")
-                raise RuntimeError(f"API failed to fetch modules for {symbol}")
-            else:
-                # Upsert symbol using already-fetched modules (no extra API call)
-                db_io_instance.upsert_symbols(modules)
+        logger.info(f"Fetching {len(modules_set)} modules for {symbol}")
+        modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
+        if "Quote not found" in modules[symbol]:
+            logger.warning(f"Ticker: {symbol} was not found on YahooFinance...Please try again.")
+            return None
+        if not modules:
+            logger.error(f"Failed to fetch modules for {symbol}")
+            raise RuntimeError(f"API failed to fetch modules for {symbol}")
+        else:
+            # Upsert symbol using already-fetched modules (no extra API call)
+            db_io_instance.upsert_symbols(modules)
 
         # Call refresh functions for stale db tables
         for table, status in fresh_report.items():
@@ -250,7 +250,7 @@ class ResearchDataCoordinator(CommonQueries):
                           ticker: list[str] | str,
                           tables_to_get: list[str]=["stock_splits", "historical_prices", "financial_metrics", "news", "company_profile", "insider_trades"],
                           db_io_instance=None
-                          ) -> list[dict]:
+                          ) -> dict[str, list[dict]]:
         """
         Pulls a subset of research data from the database. 
         Will not trigger updates, assumes this has been done elsewhere.
@@ -259,11 +259,11 @@ class ResearchDataCoordinator(CommonQueries):
             - ticker: company or companies to fetch data for.
             - "tables_to_get" valid options: stock_splits, historical_prices, financial_metrics, 
                                     news, company_profile, insider_trades
-            -  db_io_instance: APIDataIO() class instance.
+            - db_io_instance: APIDataIO() class instance.
         
         Returns:
             {
-                table_name: str,
+                table_name: [{}, ...],
                 ...
             }
         """
@@ -289,7 +289,7 @@ class ResearchDataCoordinator(CommonQueries):
             
         # fetch functions associated with param
         tables = (i.lower() for i in tables_to_get)
-        results = []
+        results = {}
         invalid_params = []
         missing_out_func = []
         for table in tables:
@@ -297,7 +297,7 @@ class ResearchDataCoordinator(CommonQueries):
             if not table_funcs: 
                 invalid_params.append(table)
                 continue
-                
+            
             out_func = table_funcs.get("o", None)
             if out_func is None:
                 missing_out_func.append(table)
@@ -307,9 +307,7 @@ class ResearchDataCoordinator(CommonQueries):
                 except Exception:
                     raise
 
-                for i in res:
-                    i["table_name"] = table
-                results.extend(res)
+                results[table] = res
 
         # log not found funcitons
         if invalid_params:
