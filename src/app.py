@@ -1020,23 +1020,32 @@ def research_stock_splits():
 @app.route("/research/news", methods=["GET"])
 def research_news():
     """
-    Returns the latest news stories optially filtered by company i.e. "ticker".
+    Returns latest news stories, optionally filtered by ticker and/or quantity.
+    If a ticker is provided, triggers a freshness check and update for that
+    company's news before fetching. If no ticker is provided, returns global
+    news from the database without triggering an update.
 
-    Query Parameter:
-        ?ticker=str
-        ?qty=int 
+    Query Parameters:
+        ?ticker=str  (optional) - Company ticker to filter news by
+        ?qty=int     (optional) - Number of stories to return (default: 10)
 
     Returns:
-        200 - [{uuid: str, 
-                title: str, 
-                thumbnail: str, 
-                link: str, 
-                publisher: str, 
-                providerPublishTime: int}, ...]
-        400 - 
-        404 -
-        500 -
+        200 - [{
+            uuid: str,
+            title: str,
+            thumbnail: str,
+            link: str,
+            publisher: str,
+            providerPublishTime: int
+        }, ...]
+        200 - [] if no stories found
+        400 - qty parameter is not a valid integer
+        404 - ticker not found on Yahoo Finance
+        500 - server error updating or fetching news
     
+    Note:
+        Global news (no ticker) will not reflect live updates until
+        NewsAPIManager is implemented.
     """
     rdc = ResearchDataCoordinator()
     yqs = YahooQueryService()
@@ -1047,18 +1056,26 @@ def research_news():
         ticker = str(ticker).strip().upper()
     qty = request.args.get("qty", None)
     if qty:
-        qty = int(qty)
-
+        try:
+            qty = int(qty)
+        except (ValueError, TypeError) as e:
+            logger.exception(e)
+            return jsonify({
+                "success": False, 
+                "message": "qty must be an integer"}), 400
+        
     # Update stories for ticker provided
     if ticker is not None:
         try:
             rdc.update_table_subset(ticker=ticker, tables_to_update=["news"], yqs_instance=yqs, db_io_instance=io)
-        except helpers.TickerNotFoundError:
+        except helpers.TickerNotFoundError as e:
+            logger.exception(e)
             return jsonify({
                 "success": False,
                 "message": f"Ticker provided '{ticker}' not found."
             }), 404
-        except:
+        except Exception as e:
+            logger.exception(e)
             return jsonify({
                 "success": False,
                 "message": f"Server error, unable to update news data."
@@ -1066,12 +1083,7 @@ def research_news():
     else:
         # TODO (after NewsAPIManager implementation) update global news if no symbol provided.
         pass
-
-    # 4 scenarios
-      # ticker and qty
-      # ticker, no qty
-      # no ticker, qty
-      # no ticker, no qty
+    
     stories = []
     try:
         if ticker and qty:
@@ -1082,7 +1094,8 @@ def research_news():
             stories.extend(io.get_news(limit=qty))
         else:
             stories.extend(io.get_news())
-    except Exception:
+    except Exception as e:
+        logger.exception(e)
         return jsonify({
             "success": False,
             "message": "Server error, unable to fetch news stories from database."
