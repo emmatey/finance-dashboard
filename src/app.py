@@ -1020,10 +1020,11 @@ def research_stock_splits():
 @app.route("/research/news", methods=["GET"])
 def research_news():
     """
-    Returns the latest news stories optially filtered by company.
+    Returns the latest news stories optially filtered by company i.e. "ticker".
 
     Query Parameter:
         ?ticker=str
+        ?qty=int 
 
     Returns:
         200 - [{uuid: str, 
@@ -1037,15 +1038,57 @@ def research_news():
         500 -
     
     """
+    rdc = ResearchDataCoordinator()
+    yqs = YahooQueryService()
+    io = APIDataIO()
+
     ticker = request.args.get("ticker", None)
     if ticker:
-        ticker = ticker.strip().upper()
+        ticker = str(ticker).strip().upper()
     qty = request.args.get("qty", None)
     if qty:
         qty = int(qty)
 
+    # Update stories for ticker provided
+    if ticker is not None:
+        try:
+            rdc.update_table_subset(ticker=ticker, tables_to_update=["news"], yqs_instance=yqs, db_io_instance=io)
+        except helpers.TickerNotFoundError:
+            return jsonify({
+                "success": False,
+                "message": f"Ticker provided '{ticker}' not found."
+            }), 404
+        except:
+            return jsonify({
+                "success": False,
+                "message": f"Server error, unable to update news data."
+            }), 500
+    else:
+        # TODO (after NewsAPIManager implementation) update global news if no symbol provided.
+        pass
+
+    # 4 scenarios
+      # ticker and qty
+      # ticker, no qty
+      # no ticker, qty
+      # no ticker, no qty
+    stories = []
+    try:
+        if ticker and qty:
+            stories.extend(io.get_news(symbols=ticker, limit=qty))
+        elif ticker and not qty:
+            stories.extend(io.get_news(symbols=ticker))
+        elif not ticker and qty:
+            stories.extend(io.get_news(limit=qty))
+        else:
+            stories.extend(io.get_news())
+    except Exception:
+        return jsonify({
+            "success": False,
+            "message": "Server error, unable to fetch news stories from database."
+            }), 500
     
-    return "hi"
+    return jsonify(stories), 200
 
 
 @app.route("/")
