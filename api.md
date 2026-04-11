@@ -234,7 +234,7 @@ RESOURCES
             name: str
         }]
 
-    NEWS
+    NEWS - DONE 4/10
         to   - GET ?ticker=str (optional, returns all news by datetime newest if omitted) ?qty=int (optional, default is 10)
         "add pagination metadata?"
         from - [{
