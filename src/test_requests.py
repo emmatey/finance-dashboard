@@ -22,7 +22,9 @@ s = requests.Session()
 #response = s.post(f'{url}/trade',
 #                  json = {"ticker": "bbdgdgfdby", "qty": "3", "transaction_type": "sell"})
 
-response = s.get(f'{url}/research/stock_splits?ticker=mmm')
+#response = s.get(f'{url}/research/stock_splits?ticker=mmm')
+
+response = s.get(f'{url}/research/news?ticker=bw')
 
 print(response)
 print(response.status_code)

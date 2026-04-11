@@ -199,7 +199,7 @@ class ResearchDataCoordinator(CommonQueries):
 
         # Call api once for all required modules.
         modules = {}
-        logger.info(f"Fetching {len(modules_set)} modules for {symbol}")
+        logger.info(f"Fetching {len(modules_set)} modules for {symbol}... {modules_set}")
         modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
         if isinstance(modules.get(symbol), str) and "Quote not found" in modules[symbol]:
             logger.error(f"Ticker {symbol} not found on Yahoo Finance.")
