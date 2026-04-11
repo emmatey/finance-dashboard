@@ -255,7 +255,8 @@ class ResearchDataCoordinator(CommonQueries):
         for table_name in tables_to_update:
             if table_name not in TableLifetimes.__members__:
                     raise ValueError(f"Invalid table '{table_name}'. Must be in TableLifetimes enum.")
-            
+        
+        # Fresh report is called to check the status of the relevant talbes, all others are forced to "True/Fresh" to skip fetching & upserting.
         fresh_report = self.create_research_fresh_report(symbol=ticker)
         for table in list(fresh_report.keys()):
             if table not in ["symbol"] + tables_to_update:
