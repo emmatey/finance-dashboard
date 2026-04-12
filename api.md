@@ -226,7 +226,7 @@ RESOURCES
                 rating: str
             }
 
-    SCREENERS
+    SCREENERS - DONE 4/12
         to   - GET ?name=str 
             If no query parameter is given, all screeners are returned.
         from - [{
