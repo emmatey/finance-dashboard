@@ -1,6 +1,4 @@
-import datetime as dt
 import logging
-import time
 from APIDataIO import APIDataIO as io
 from CommonQueries import CommonQueries
 from YahooQueryService import YahooQueryService as yqs
@@ -41,7 +39,7 @@ class MarketOverviewCoordinator(CommonQueries):
     Handles updating and retrieving data for the home page market overview.
     """
 
-    def initialize_regional_etfs(self, symbols: dict=SYMBOLS, yqs_instance=yqs(), dbio_instance=io()):
+    def initialize_regional_etfs(self, symbols: dict=SYMBOLS, yqs_instance=None, dbio_instance=None):
         """
         Initialize or refresh regional ETF data for homepage market overview display.
         
@@ -60,6 +58,11 @@ class MarketOverviewCoordinator(CommonQueries):
             >>> # Returns: {'USA': {'ticker': 'VOO', 'current_price': 614.16,
             >>> #                    'prev_close': 622.03, 'pct_change': -1.27}, ...}
         """
+        if yqs_instance is None:
+            yqs_instance = yqs()
+        if dbio_instance is None:
+            dbio_instance = io()
+
         logger.info(f"Initializing regional ETF data for {len(symbols)} regions")
         
         # Fetch comprehensive module data from Yahoo Finance
