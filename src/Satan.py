@@ -20,13 +20,10 @@ class TableLifetimes(Enum):
     price = 60 # symbols table
     balance_snapshot = 86400  # 24 hours
 
-
 column_map = {
     # associates enum name to db schema col names.
     'price': 'last_price_update',
-    'balance_snapshot': 'last_snapshot_update',
-    'regional_markets': 'last_regional_etfs_update',
-    'screeners': 'last_screener_data_update'
+    'balance_snapshot': 'last_snapshot_update'
 }
 
 class Satan(CommonQueries):
@@ -177,49 +174,4 @@ if __name__ == "__main__":
     with app.app_context():
         satan = Satan()
         moc = MarketOverviewCoordinator()
-        updaters = {
-            'price': satan.price_updater,
-            'balance_snapshot': satan.balance_snapshot_all_users,
-            'regional_markets': moc.initialize_regional_etfs,
-            'screeners': moc.screener_data_update_orchestrator
-        }
-        fresh_sql = """
-        SELECT
-            unixepoch(last_price_update) AS price,             
-            unixepoch(last_snapshot_update) AS balance_snapshot,
-            unixepoch(last_regional_etfs_update) AS regional_markets,
-            unixepoch(last_screener_data_update) AS screeners
-        FROM global_events
-        WHERE id = 1
-        """
-        row = satan.select_query(fresh_sql, ())
-        res = {}
-        if row:
-            res = row[0]
-
-        updated = []
-        now = time()
-        for dataset in res:
-            last_updated = res.get(dataset) or 0
-            try:
-                fresh_age = TableLifetimes[dataset].value
-                if (now - int(last_updated)) > fresh_age:
-                    updaters[dataset]()
-                    logger.info(f"Updating {dataset}, was {now - int(last_updated)} seconds old...")
-                    updated.append(dataset)
-                else:
-                    logger.info(f"{dataset} up to date, skipping...") 
-            except KeyError:
-                logger.error(f"{dataset} not found in TableLifetimes enum, please review Satan.py")
         
-        updated_remove_alias = [column_map[i] for i in updated]
-        cols = ", ".join([f"{i} = CURRENT_TIMESTAMP" for i in updated_remove_alias])
-        update_sql = f"""
-        UPDATE global_events
-        SET {cols}
-        WHERE id = 1
-        """
-        if updated:
-            satan.modify_query(update_sql, ())
-        else:
-            logger.info("All datasets fresh, skipping Satan.py!")
