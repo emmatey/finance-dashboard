@@ -823,7 +823,7 @@ class APIDataIO(DbManager):
         logger.debug(f"Retrieved market data for {len(result)} regions")
         return result
     
-    def get_screener_results(self, screener_names: list[str] | str, limit: int = 10) -> List[Dict[str, Union[int, str, float]]]:
+    def get_screener_results(self, screener_names: list[str] | str | None=None, limit: int = 10) -> List[Dict[str, Union[int, str, float]]]:
         """
         Retrieve top N stocks from a screener with current market data.
 
@@ -863,7 +863,9 @@ class APIDataIO(DbManager):
         """
         from MarketOverviewCoordinator import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
         valid_screeners = YQ_SCREENER_NAMES + CUSTOM_SCREENERS
-        
+        if screener_names is None:
+            screener_names = valid_screeners
+
         safe_screener_names: list[str] = []
         if isinstance(screener_names, list):
             try:

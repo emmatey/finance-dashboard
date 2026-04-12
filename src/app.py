@@ -5,6 +5,7 @@ import sys
 from AccountManager import AccountManager
 from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
+from MarketOverviewCoordinator import MarketOverviewCoordinator
 from ReportManager import ReportManager
 from ResearchDataCoordinator import ResearchDataCoordinator
 from TransactionManager import TransactionManager
@@ -1108,13 +1109,76 @@ def research_news():
 @app.route("/screeners")
 def screeners():
     """
-    
+    Updates (if stale, defined in MarketOverviewCoordinator class) screener data
+    and returns information about screened companies organized by screener. 
 
+    Query Parameters:
+        None
+
+    Returns:
+        200 - {
+            screener_name:[{company_data}, ...]
+        }
+        Company Data Format:
+            {
+                'screener_name': str,
+                'rank': int,
+                'ticker': str,
+                'company_name': str,
+                'current_price': float,
+                'prev_close': float,
+                'price_change_pct': float,
+                'market_cap': float,
+                'todays_volume': int,
+                'three_month_avg_volume': int,
+                'volume_change_pct': float
+            }
+        500 - Server error
     """
-    return "hi"
+    io = APIDataIO()
+    moc = MarketOverviewCoordinator()
 
+    # Update screeners
+    try:
+        moc.screener_data_update_orchestrator(dbio_instance=io)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Server error, unable to update screeners. See finance.log for details..."
+        }), 500
+    
+    # Get screeners
+    screener_data = []
+    try:
+        screener_data = io.get_screener_results()
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Database error, unable to retrieve screener data. See finance.log for details..."
+        }), 500
 
-
+    # Return
+    grouped = {}
+    broken = []
+    for screener in screener_data:
+        screener_name = screener.get("screener_name")
+        if not screener_name:
+            broken.append(screener)
+            logger.warning(f"Screener {screener} is malformed, doesn't contain screener_name field.")
+            continue
+        else:
+            try:
+                grouped[screener_name].append(screener)
+            except KeyError:
+                grouped[screener_name] = [screener]
+    
+    if broken:
+        grouped['broken'] = broken
+        return jsonify(grouped), 200
+    else:
+        return jsonify(grouped), 200
 
 @app.route("/")
 def home():

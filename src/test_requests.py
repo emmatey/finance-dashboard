@@ -24,7 +24,9 @@ s = requests.Session()
 
 #response = s.get(f'{url}/research/stock_splits?ticker=mmm')
 
-response = s.get(f'{url}/research/news?ticker=bw')
+#response = s.get(f'{url}/research/news?ticker=bw')
+
+response = s.get(f'{url}/screeners')
 
 print(response)
 print(response.status_code)

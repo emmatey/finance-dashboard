@@ -49,7 +49,7 @@ class MarketOverviewCoordinator(CommonQueries):
         """
         Initialize or refresh regional ETF data for homepage market overview display.
         Checks freshness before updating — skips if data is newer than REGION_ETFS_UPDATE_FREQUENCY.
-        
+
         Example:
             >>> coordinator = MarketOverviewCoordinator()
             >>> coordinator.initialize_regional_etfs()
@@ -59,7 +59,7 @@ class MarketOverviewCoordinator(CommonQueries):
             yqs_instance = yqs()
         if dbio_instance is None:
             dbio_instance = io()
-    
+
         # Check freshness using MIN(last_updated) on regional ETF tickers
         tickers = list(symbols.values())
         placeholders = ", ".join("?" for _ in tickers)
@@ -73,32 +73,37 @@ class MarketOverviewCoordinator(CommonQueries):
         last_updated = 0
         if rows and isinstance(rows, list) and len(rows) >= 1:
             last_updated = rows[0].get("last_updated") or 0
-    
+
         age = time.time() - last_updated
         if age < TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value:
             logger.info(f"Regional ETFs up to date! age = {age}. Update frequency = {TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value}")
             return None
-    
+
         logger.info(f"Initializing regional ETF data for {len(symbols)} regions")
-        
+
         modules = yqs_instance.yq_ticker_fetch_modules(
             symbols=tickers,
             modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData']
         )
-        
+
         dbio_instance.upsert_symbols(modules)
         metrics = yqs_instance.extract_financial_metrics(modules)
         dbio_instance.set_financial_metrics(metrics)
-        
+
         logger.info(f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}")
 
-    def screener_data_update_orchestrator(self, screener_names=YQ_SCREENER_NAMES, screener_count=100, yqs_instance=yqs(), dbio_instance=io()):
+    def screener_data_update_orchestrator(self, screener_names=YQ_SCREENER_NAMES, screener_count=100, yqs_instance=None, dbio_instance=None):
         """
         Checks the age of screener data and updates if stale.
         Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
 
         Note: All screeners will have the same age as the screener metadata table is cleared on each update.
         """
+        if yqs_instance is None:
+            yqs_instance = yqs()
+        if dbio_instance is None:
+            dbio_instance = io()
+            
         age_sql = """
         SELECT UNIXEPOCH(MIN(last_updated)) AS last_updated
         FROM screener_results
