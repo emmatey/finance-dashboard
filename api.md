@@ -227,12 +227,21 @@ RESOURCES
             }
 
     SCREENERS
-        to   - GET ?name=str
+        to   - GET ?name=str 
+            If no query parameter is given, all screeners are returned.
         from - [{
+            screener_name: str,
             rank: int,
             ticker: str,
-            name: str
-        }]
+            company_name: str,
+            current_price: float,
+            prev_close: float,
+            price_change_pct: float,
+            market_cap: float,
+            todays_volume: float,
+            three_month_avg_volume: float,
+            volume_change_pct: float
+            }]
 
     NEWS - DONE 4/10
         to   - GET ?ticker=str (optional, returns all news by datetime newest if omitted) ?qty=int (optional, default is 10)

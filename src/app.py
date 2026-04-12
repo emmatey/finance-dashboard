@@ -1103,6 +1103,18 @@ def research_news():
     
     return jsonify(stories), 200
 
+## SCREENERS ##
+
+@app.route("/screeners")
+def screeners():
+    """
+    Gets 
+
+    """
+    return "hi"
+
+
+
 
 @app.route("/")
 def home():

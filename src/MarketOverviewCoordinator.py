@@ -7,40 +7,39 @@ from YahooQueryService import YahooQueryService as yqs
 
 logger = logging.getLogger(__name__)
 
+# ETF tickers representing each region for global market overview
+SYMBOLS = {
+    'USA': 'VOO',
+    'EU': 'IEUR',
+    'LATAM': 'ILF',
+    'Africa': 'AFK',
+    'Australia': 'EWA',
+    'India': 'INDA',
+    'Japan': 'EWJ',
+    'China': 'MCHI',
+    'Gold': 'GLD',
+    'Copper': 'CPER',
+    'Oil': 'USO'
+}
+# Screeners fetched from yahoo query.
+YQ_SCREENER_NAMES = [
+        'day_gainers', 
+        'day_losers', 
+        'most_actives', 
+        'most_watched_tickers', 
+        'fifty_two_wk_gainers', 
+        'fifty_two_wk_losers'
+    ]
+# Screeners derived from YQ data
+CUSTOM_SCREENERS = [
+    'volume_spike_bullish',
+    'volume_spike_bearish'
+]
 
 class MarketOverviewCoordinator(CommonQueries):
     """
     Handles updating and retrieving data for the home page market overview.
     """
-
-    # ETF tickers representing each region for global market overview
-    SYMBOLS = {
-        'USA': 'VOO',
-        'EU': 'IEUR',
-        'LATAM': 'ILF',
-        'Africa': 'AFK',
-        'Australia': 'EWA',
-        'India': 'INDA',
-        'Japan': 'EWJ',
-        'China': 'MCHI',
-        'Gold': 'GLD',
-        'Copper': 'CPER',
-        'Oil': 'USO'
-    }
-    # Screeners fetched from yahoo query.
-    YQ_SCREENER_NAMES = [
-            'day_gainers', 
-            'day_losers', 
-            'most_actives', 
-            'most_watched_tickers', 
-            'fifty_two_wk_gainers', 
-            'fifty_two_wk_losers'
-        ]
-    # Screeners derived from YQ data
-    CUSTOM_SCREENERS = [
-        'volume_spike_bullish',
-        'volume_spike_bearish'
-    ]
 
     def initialize_regional_etfs(self, symbols: dict=SYMBOLS, yqs_instance=yqs(), dbio_instance=io()):
         """

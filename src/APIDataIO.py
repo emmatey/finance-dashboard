@@ -823,7 +823,7 @@ class APIDataIO(DbManager):
         logger.debug(f"Retrieved market data for {len(result)} regions")
         return result
     
-    def get_screener_results(self, screener_name: str, limit: int = 10) -> List[Dict[str, Union[int, str, float]]]:
+    def get_screener_results(self, screener_names: list[str] | str, limit: int = 10) -> List[Dict[str, Union[int, str, float]]]:
         """
         Retrieve top N stocks from a screener with current market data.
 
@@ -861,7 +861,36 @@ class APIDataIO(DbManager):
         Note:
             - Requires fresh data from set_screeners_metadata() and set_financial_metrics()
         """
-        sql = """
+        from MarketOverviewCoordinator import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
+        valid_screeners = YQ_SCREENER_NAMES + CUSTOM_SCREENERS
+        
+        safe_screener_names: list[str] = []
+        if isinstance(screener_names, list):
+            try:
+                for n in screener_names:
+                    safe_screener_names.append(str(n))
+            except Exception as e:
+                logger.exception(e)
+                ValueError("'screener_names' must be a str or list of strs.")
+        elif not isinstance(screener_names, str):
+            try:
+                safe_screener_names.append(str(n))
+            except Exception as e:
+                logger.exception(e)
+                ValueError("'screener_names' must be a str or list of strs.")
+        else:
+            safe_screener_names.append(screener_names)
+        
+        invalid_screeners = []
+        for idx, screener in enumerate(safe_screener_names):
+            if screener not in valid_screeners:
+                invalid_screeners.append(screener)
+                safe_screener_names.pop(idx)
+        logger.warning(f"Screener parameters {invalid_screeners} are invalid...skipping")
+
+        placeholders = ", ".join("?" for _ in safe_screener_names)
+        query_params = safe_screener_names.extend(str(limit)) 
+        sql = f"""
             SELECT 
                 sr.rank,
                 s.ticker,
@@ -876,15 +905,14 @@ class APIDataIO(DbManager):
             FROM screener_results AS sr
             JOIN symbols AS s ON sr.symbol_id = s.id
             JOIN financial_metrics AS fm ON s.id = fm.symbol_id
-            WHERE sr.screener_name = ?
+            WHERE sr.screener_name in ({placeholders})
             ORDER BY sr.rank
             LIMIT ?
         """
-
-        rows = self.select_query(sql, (screener_name, limit))
+        rows = self.select_query(sql, tuple(query_params))
 
         if not rows:
-            logger.warning(f"get_screener_results: no results found for screener '{screener_name}'")
+            logger.warning(f"get_screener_results: no results found for screeners '{screener_names}'")
             return []
 
         rankings = []
