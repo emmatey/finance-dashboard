@@ -1,6 +1,8 @@
 import logging
+import time
 from APIDataIO import APIDataIO as io
 from CommonQueries import CommonQueries
+from enum import Enum
 from YahooQueryService import YahooQueryService as yqs
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,10 @@ CUSTOM_SCREENERS = [
     'volume_spike_bullish',
     'volume_spike_bearish'
 ]
+
+class TableLifetimes(Enum):
+    REGION_ETFS_UPDATE_FREQUENCY = 3600 # 1 hour
+    SCREENER_UPDATE_FREQUENCY = 3600 # 1 hour
 
 class MarketOverviewCoordinator(CommonQueries):
     """
@@ -85,7 +91,23 @@ class MarketOverviewCoordinator(CommonQueries):
         """
         Checks the age of screener data and updates if stale.
         Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
+
+        Note: All screeners will have the same age as the screener metadata table is cleared on each update.
         """
+        age_sql = """
+        SELECT UNIXEPOCH(MIN(last_updated)) AS last_updated
+        FROM screener_results
+        """
+        rows = self.select_query(age_sql, ())
+        last_updated = 0
+        if rows and isinstance(rows, list) and len(rows) >= 1:
+            last_updated = rows[0].get("last_updated", 0)
+        
+        age = time.time() - last_updated
+        if age < TableLifetimes.SCREENER_UPDATE_FREQUENCY.value:
+            logger.info(f"Screeners up to date! age = {age}. Update frequency = {TableLifetimes.SCREENER_UPDATE_FREQUENCY.value}")
+            return None
+
         screeners = yqs_instance.yq_screener_fetch_screeners(screeners=screener_names, count=screener_count)
         filtered_screeners = yqs_instance._filter_screener_data(screeners)
 
@@ -109,3 +131,5 @@ class MarketOverviewCoordinator(CommonQueries):
         dbio_instance.set_financial_metrics(financial_metrics, from_screeners=True)
 
         logger.info(f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers")
+        
+        return None

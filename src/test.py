@@ -61,7 +61,7 @@ def home():
     from MarketOverviewCoordinator import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
     valid_screeners = YQ_SCREENER_NAMES + CUSTOM_SCREENERS
 
-    ret = io.get_screener_results(screener_names=valid_screeners)
+    ret = moc.screener_data_update_orchestrator(screener_count=10)
     print(ret)
 
     filler_page = """

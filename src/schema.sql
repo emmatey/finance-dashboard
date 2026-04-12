@@ -20,8 +20,6 @@ CREATE TABLE 'global_events' (
     id INTEGER PRIMARY KEY,
     last_price_update DATETIME,
     last_snapshot_update DATETIME,
-    last_regional_etfs_update DATETIME,
-    last_screener_data_update DATETIME,
     yq_api_status TEXT DEFAULT 'UP',
     yq_api_down_at DATETIME,
     yq_api_retries INTEGER,

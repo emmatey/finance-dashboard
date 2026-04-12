@@ -1108,7 +1108,7 @@ def research_news():
 @app.route("/screeners")
 def screeners():
     """
-    Gets 
+    
 
     """
     return "hi"

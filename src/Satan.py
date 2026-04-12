@@ -19,8 +19,7 @@ class TableLifetimes(Enum):
     """
     price = 60 # symbols table
     balance_snapshot = 86400  # 24 hours
-    regional_markets = 3600 # 1 hour
-    screeners = 3600 # 1 hour
+
 
 column_map = {
     # associates enum name to db schema col names.
