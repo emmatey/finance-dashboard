@@ -48,40 +48,45 @@ class MarketOverviewCoordinator(CommonQueries):
     def initialize_regional_etfs(self, symbols: dict=SYMBOLS, yqs_instance=None, dbio_instance=None):
         """
         Initialize or refresh regional ETF data for homepage market overview display.
+        Checks freshness before updating — skips if data is newer than REGION_ETFS_UPDATE_FREQUENCY.
         
-        Fetches and stores comprehensive data for regional market ETFs (VOO, IEUR, etc.)
-        that represent major global markets. This method ensures all necessary data
-        exists in the database for get_regional_overview() to display current market
-        performance.
-    
         Example:
             >>> coordinator = MarketOverviewCoordinator()
-            >>> # Initialize/refresh ETF data
             >>> coordinator.initialize_regional_etfs()
-            >>> 
-            >>> # Later, homepage can retrieve formatted data
             >>> regional_data = dbio.get_regional_overview(coordinator.SYMBOLS)
-            >>> # Returns: {'USA': {'ticker': 'VOO', 'current_price': 614.16,
-            >>> #                    'prev_close': 622.03, 'pct_change': -1.27}, ...}
         """
         if yqs_instance is None:
             yqs_instance = yqs()
         if dbio_instance is None:
             dbio_instance = io()
-
+    
+        # Check freshness using MIN(last_updated) on regional ETF tickers
+        tickers = list(symbols.values())
+        placeholders = ", ".join("?" for _ in tickers)
+        age_sql = f"""
+        SELECT UNIXEPOCH(MIN(fm.last_updated)) AS last_updated
+        FROM financial_metrics fm
+        JOIN symbols s ON s.id = fm.symbol_id
+        WHERE s.ticker IN ({placeholders})
+        """
+        rows = self.select_query(age_sql, tuple(tickers))
+        last_updated = 0
+        if rows and isinstance(rows, list) and len(rows) >= 1:
+            last_updated = rows[0].get("last_updated") or 0
+    
+        age = time.time() - last_updated
+        if age < TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value:
+            logger.info(f"Regional ETFs up to date! age = {age}. Update frequency = {TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value}")
+            return None
+    
         logger.info(f"Initializing regional ETF data for {len(symbols)} regions")
         
-        # Fetch comprehensive module data from Yahoo Finance
-        tickers = list(symbols.values())
         modules = yqs_instance.yq_ticker_fetch_modules(
             symbols=tickers,
             modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData']
         )
         
-        # Upsert symbols (ticker, company_name, last_price)
         dbio_instance.upsert_symbols(modules)
-        
-        # Extract and store financial metrics (includes prev_close for pct_change calculation)
         metrics = yqs_instance.extract_financial_metrics(modules)
         dbio_instance.set_financial_metrics(metrics)
         
@@ -101,7 +106,7 @@ class MarketOverviewCoordinator(CommonQueries):
         rows = self.select_query(age_sql, ())
         last_updated = 0
         if rows and isinstance(rows, list) and len(rows) >= 1:
-            last_updated = rows[0].get("last_updated", 0)
+            last_updated = rows[0].get("last_updated") or 0
         
         age = time.time() - last_updated
         if age < TableLifetimes.SCREENER_UPDATE_FREQUENCY.value:
