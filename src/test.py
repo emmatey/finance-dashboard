@@ -58,12 +58,11 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
+    from MarketOverviewCoordinator import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
+    valid_screeners = YQ_SCREENER_NAMES + CUSTOM_SCREENERS
 
-    fresh_report = rdc.create_research_fresh_report("AAPL")
-    rdc.research_data_update_orchestrator(fresh_report=fresh_report, yqs_instance=yqs, db_io_instance=io)
-
-
-
+    ret = io.get_screener_results(screener_names=valid_screeners)
+    print(ret)
 
     filler_page = """
         <body style="background-color: black; color: green;">

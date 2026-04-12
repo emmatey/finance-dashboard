@@ -886,22 +886,24 @@ class APIDataIO(DbManager):
             if screener not in valid_screeners:
                 invalid_screeners.append(screener)
                 safe_screener_names.pop(idx)
-        logger.warning(f"Screener parameters {invalid_screeners} are invalid...skipping")
+        if invalid_screeners:
+            logger.warning(f"Screener parameters {invalid_screeners} are invalid...skipping")
 
         placeholders = ", ".join("?" for _ in safe_screener_names)
-        query_params = safe_screener_names.extend(str(limit)) 
+        safe_screener_names.append(str(limit)) 
         sql = f"""
             SELECT 
-                sr.rank,
-                s.ticker,
-                s.company_name,
-                s.last_price as current_price,
-                fm.prev_close,
-                (((s.last_price - fm.prev_close) / fm.prev_close) * 100.00) as price_change_pct,
-                fm.market_cap,
-                fm.todays_volume,
-                fm.three_month_avg_volume,
-                (((CAST(fm.todays_volume AS REAL) - fm.three_month_avg_volume) / fm.three_month_avg_volume) * 100.00) as volume_change_pct
+                sr.screener_name AS screener_name,
+                sr.rank AS rank,
+                s.ticker AS ticker,
+                s.company_name AS company_name,
+                s.last_price AS current_price,
+                fm.prev_close AS prev_close,
+                (((s.last_price - fm.prev_close) / fm.prev_close) * 100.00) AS price_change_pct,
+                fm.market_cap AS market_cap,
+                fm.todays_volume AS todays_volume,
+                fm.three_month_avg_volume AS three_month_avg_volume,
+                (((CAST(fm.todays_volume AS REAL) - fm.three_month_avg_volume) / fm.three_month_avg_volume) * 100.00) AS volume_change_pct
             FROM screener_results AS sr
             JOIN symbols AS s ON sr.symbol_id = s.id
             JOIN financial_metrics AS fm ON s.id = fm.symbol_id
@@ -909,8 +911,8 @@ class APIDataIO(DbManager):
             ORDER BY sr.rank
             LIMIT ?
         """
-        rows = self.select_query(sql, tuple(query_params))
-
+        rows = self.select_query(sql, tuple(safe_screener_names))
+    
         if not rows:
             logger.warning(f"get_screener_results: no results found for screeners '{screener_names}'")
             return []
@@ -918,7 +920,7 @@ class APIDataIO(DbManager):
         rankings = []
         for row in rows:
             data = {
-                'screener_name': screener_name,
+                'screener_name': row['screener_name'],
                 'rank': row['rank'],
                 'ticker': row['ticker'],
                 'company_name': row['company_name'],
