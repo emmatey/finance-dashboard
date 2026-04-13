@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 class SearchManager(CommonQueries):
     """
     Handle the search bar.
-    Should show a union of db results and yq.search results in a search results page unless user types an exact match.
-    In which case user should be directed right to the page in question.
+    Should show a union of db results and yq.search results.
     """
     def search_companies_local(self, query: str, limit=15):
         """

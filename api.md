@@ -295,18 +295,20 @@ RESOURCES
         to   - GET ?q=str
         from - [{
             ticker: str,
-            name: str,
+            company_name: str,
             quote_type: str,
-            type: "company"
+            last_price: float,
+            prev_close: float,
+            search_type: "company"
         },{
             username: str,
             grand_total: float,
             rank: int
-            type: "user"
+            search_type: "user"
         }, {
             title: str,
             desc: str,
             related_to: list[str],
             link: str,
-            type: "news"
+            search_type: "news"
         }]

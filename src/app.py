@@ -1180,6 +1180,26 @@ def screeners():
     else:
         return jsonify(grouped), 200
 
+
+@app.route("/search")
+def search():
+    """
+    Search for users, stocks, and news stories.
+    Will be separated into three catagoies. 
+
+    Query Paramater:
+        ?q=<str>
+    
+    Returns:
+        200 - {
+        news: {},
+        users: {},
+        companies: {}
+        }
+    """
+    pass
+
+
 @app.route("/")
 def home():
     filler_page = """
