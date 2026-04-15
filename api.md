@@ -304,7 +304,7 @@ RESOURCES
         },{
             username: str,
             cash: float,
-            holdings_value: float,
+            portfolio_value: float,
             grand_total: float,
             rank: int
             search_type: "user"

@@ -1,4 +1,5 @@
 from CommonQueries import CommonQueries
+from ReportManager import ReportManager
 from YahooQueryService import YahooQueryService
 from datetime import datetime, timedelta
 import helpers
@@ -8,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 class SearchManager(CommonQueries):
     """
-    Handle the search bar.
-    Should show a union of db results and yq.search results.
+    Handles searching.
+    Can find users, companies, and news stories.
     """
     def search_companies_local(self, query: str, limit=15):
         """
@@ -115,19 +116,43 @@ class SearchManager(CommonQueries):
         # Return as list of dicts.
         return out
 
-    def online_offline_union(self, offline_results, online_results):
+    def search_users(self, query: str, report_manager_instance=None):
         """
-        Compares online and offline results from user query. Meaning API and DB.
-        Returns a dataset which eliminates duplicate results.
-        """
-        results = offline_results + online_results
-        
-        seen = set()
-        unique_results = []
-        for res in results:
-            ticker = res.get('ticker')
-            if ticker and ticker not in seen:
-                seen.add(ticker)
-                unique_results.append(res)
+        Finds users in database.
 
-        return unique_results
+        Args:
+            query: username to search
+
+        Returns:
+            [{
+                user_id: int,
+                username: str,
+                snap_datetime: datetime,
+                cash_balance: float,
+                portfolio_value: float,
+                grand_total: float,
+                rank: int
+            }]
+        """
+        if report_manager_instance is None:
+            report_manager_instance = ReportManager()
+
+        safe_query = f"%{str(query)}%"
+        sql = """
+        SELECT id, username
+        FROM users
+        WHERE username LIKE ?
+        """
+        rows = self.select_query(sql, tuple([safe_query]))
+        if not rows:
+            logger.info(f"No results found for {query}")
+            return []
+        
+        user_ids = [row['id'] for row in rows if row.get('id') is not None]
+
+        return report_manager_instance.get_users_ranks(user_ids=user_ids)
+
+    def search_news(self, querty: str):
+        """
+        """
+        pass
