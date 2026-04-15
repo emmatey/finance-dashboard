@@ -343,12 +343,14 @@ class APIDataIO(DbManager):
                                      'company_desc': 'Apple Inc. designs, manufactures...',
                                      'employee_count': 164000,
                                      'industry': 'Consumer Electronics',
+                                     'sector': 'Industrials',
                                      'website': 'https://www.apple.com'
                                  },
                                  'MSFT': {
                                      'company_desc': 'Microsoft Corporation develops...',
                                      'employee_count': 221000,
                                      'industry': 'Software—Infrastructure',
+                                     'sector': 'Industrials",
                                      'website': 'https://www.microsoft.com'
                                  }
                              }
@@ -605,6 +607,7 @@ class APIDataIO(DbManager):
                     'company_desc': 'Apple Inc. designs...',
                     'employee_count': 164000,
                     'industry': 'Consumer Electronics',
+                    'sector': 'Industrials',
                     'website': 'https://www.apple.com',
                     'last_updated': '2026-03-05 10:30:00'
                 },
@@ -626,7 +629,7 @@ class APIDataIO(DbManager):
 
         sql = f"""
         SELECT s.ticker, cp.company_desc, cp.employee_count,
-               cp.industry, cp.website, cp.last_updated
+               cp.industry, cp.sector, cp.website, cp.last_updated
         FROM company_profile AS cp
         JOIN symbols AS s ON s.id = cp.symbol_id
         WHERE s.ticker IN ({placeholders})

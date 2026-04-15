@@ -58,7 +58,13 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    
+    res = yqs.yq_search(query="mmm")
+    print(res)
+    q = res.get("quotes")
+    for i in q:
+        print(i)
+        print(i.keys())
+        print()
 
     filler_page = """
         <body style="background-color: black; color: green;">

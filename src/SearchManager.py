@@ -35,7 +35,21 @@ class SearchManager(CommonQueries):
 
     def search_companies_online(self, query: str):
         """
-        Check if symbol exists online using YahooQueryService.
+        Search yahooquery for data related to search term.
+        
+        Args:
+            Company Name | 'ticker' : str
+
+        Returns:
+        [{
+            ticker: str,
+            company_name: str,
+            quote_type: str,
+            exchange: str,
+            sector: str,
+            industry: str,
+        }, ...  ]
+
         """
         yqs = YahooQueryService()
 
@@ -43,7 +57,7 @@ class SearchManager(CommonQueries):
         safe_query: str = str(query).strip()
 
         # Search with yahoo query search() method.
-        res_raw = yqs.yq_search(safe_query, quotes_count=10, news_count=0)
+        res_raw = yqs.yq_search(safe_query, quotes_count=20, news_count=0)
         
         # Handle API failure
         if not res_raw:  # None from circuit breaker
@@ -56,21 +70,32 @@ class SearchManager(CommonQueries):
             # checks res is a list of dicts.
         if isinstance(res, list) and all(isinstance(i, dict) for i in res):
             for row in res:
-                quote_type = row.get("quoteType")
-                if quote_type in ['FUTURE', 'CURRENCY', 'OPTION', 'INDEX']:
-                    continue
-                
                 ticker = row.get('symbol')
-                name = row.get('longname')
-                if not name:
-                    name = row.get('shortname')
+                company_name = row.get('longcompany_name')
+                if not company_name:
+                    company_name = row.get('shortname')
+                quote_type = row.get("quoteType")
+                if quote_type in ['FUTURE', 'CURRENCY', 'OPTION']:
+                    continue
+                exchange = row.get('exchange')
+                if exchange in ['PNK', 'OTC']:
+                    continue
+                sector = row.get('sectorDisp')
+                if not sector:
+                    sector = row.get('sector', "N/A")
+                industry = row.get("industryDisp")
+                if not industry:
+                    industry = row.get('industry', "N/A")
+                
+                out.append({
+                    ticker: ticker,
+                    company_name: company_name,
+                    quote_type: quote_type,
+                    exchange: exchange,
+                    sector: sector,
+                    industry: industry,
+                })
 
-                if ticker and name:
-                    out.append({
-                        'quote_type': quote_type,
-                        'ticker': ticker,
-                        'company_name': name
-                    })
         else:
             logger.info(f"No data found for {query} in yahoofinance.")
 

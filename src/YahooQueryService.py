@@ -468,6 +468,7 @@ class YahooQueryService:
                 company_desc: Long-form business description
                 employee_count: Number of full-time employees (int or "N/A")
                 industry: Industry classification
+                sector: Sector classification
                 website: Company website URL
             }}
 
@@ -495,6 +496,7 @@ class YahooQueryService:
                 "company_desc": summaryProfile.get("longBusinessSummary", "No description available."),
                 "employee_count": summaryProfile.get("fullTimeEmployees", "Unknown"),
                 "industry": summaryProfile.get("industry", "Unknown"),
+                "sector": summaryProfile.get("sector", "Unknown"),
                 "website": summaryProfile.get("website", "Unknown")
             }
 

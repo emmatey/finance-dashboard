@@ -151,6 +151,7 @@ CREATE TABLE 'company_profile' (
     symbol_id INTEGER NOT NULL,
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     company_desc TEXT,
+    sector TEXT,
     industry TEXT,
     website TEXT,
     employee_count INTEGER,

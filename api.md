@@ -297,9 +297,9 @@ RESOURCES
             ticker: str,
             company_name: str,
             quote_type: str,
-            last_price: float,
-            prev_close: float,
-            pct_change_since_close: float,
+            exchange: str,
+            sector: str,
+            industry: str,
             search_type: "company"
         },{
             username: str,
