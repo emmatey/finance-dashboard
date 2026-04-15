@@ -310,7 +310,6 @@ RESOURCES
             search_type: "user"
         }, {
             title: str,
-            desc: str,
             related_to: list[str],
             link: str,
             thumbnail_link: str,

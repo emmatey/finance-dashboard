@@ -61,6 +61,8 @@ def home():
     res = yqs.yq_search("mmm")
     print(res)
     print(res.keys())
+    news = res.get("news")
+    print(news[0].keys())
 
     filler_page = """
         <body style="background-color: black; color: green;">
