@@ -299,9 +299,12 @@ RESOURCES
             quote_type: str,
             last_price: float,
             prev_close: float,
+            pct_change_since_close: float,
             search_type: "company"
         },{
             username: str,
+            cash: float,
+            holdings_value: float,
             grand_total: float,
             rank: int
             search_type: "user"
@@ -310,5 +313,6 @@ RESOURCES
             desc: str,
             related_to: list[str],
             link: str,
+            thumbnail_link: str,
             search_type: "news"
         }]

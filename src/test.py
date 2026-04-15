@@ -58,11 +58,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    from MarketOverviewCoordinator import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
-    valid_screeners = YQ_SCREENER_NAMES + CUSTOM_SCREENERS
-
-    ret = moc.screener_data_update_orchestrator(screener_count=10)
-    print(ret)
+    
 
     filler_page = """
         <body style="background-color: black; color: green;">

@@ -23,9 +23,9 @@ class SearchManager(CommonQueries):
         FROM symbols 
         WHERE ticker LIKE ?
         OR company_name LIKE ?
-        LIMIT {limit}
+        LIMIT ?
         """
-        rows = self.select_query(sql, tuple([safe_query, safe_query]))
+        rows = self.select_query(sql, tuple([safe_query, safe_query, limit]))
 
         if rows:
             return rows
