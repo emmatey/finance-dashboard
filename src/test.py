@@ -58,8 +58,9 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    res = sm.search_companies_online("mmm")
+    res = yqs.yq_search("mmm")
     print(res)
+    print(res.keys())
 
     filler_page = """
         <body style="background-color: black; color: green;">

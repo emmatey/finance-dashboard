@@ -14,6 +14,8 @@ class SearchManager(CommonQueries):
     def search_companies_local(self, query: str, limit=15):
         """
         Return the companies that are close to or the same as what the user is typing.
+        Used for "datalist" to give suggestions when user is searching.
+        Cards in search page will be filled by yq.search()
         """
         # Convert user input to string and add 'LIKE' wildcards.
         safe_query = f"%{str(query)}%"
@@ -87,8 +89,9 @@ class SearchManager(CommonQueries):
                 quote_type = row.get("quoteType")
                 if quote_type in ['FUTURE', 'CURRENCY', 'OPTION']:
                     continue
-                exchange = row.get('exchange')
-                if exchange in ['PNK', 'OTC']:
+                exchange = row.get('exchDisp')
+                exchange_short = row.get('exchange')
+                if exchange_short in ['PNK', 'OTC']:
                     continue
                 sector = row.get('sectorDisp')
                 if not sector:
@@ -101,7 +104,7 @@ class SearchManager(CommonQueries):
                     "ticker": ticker,
                     "company_name": company_name,
                     "quote_type": quote_type,
-                    "exchange": exchange,
+                    "exchange": exchange or exchange_short,
                     "sector": sector,
                     "industry": industry,
                 })

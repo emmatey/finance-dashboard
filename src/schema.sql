@@ -9,6 +9,7 @@ CREATE TABLE 'users' (
 CREATE TABLE 'symbols' (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     quote_type TEXT NOT NULL,
+    exchange TEXT,
     ticker TEXT UNIQUE NOT NULL,
     company_name TEXT NOT NULL,
     last_price NUMERIC,

@@ -36,10 +36,11 @@ class APIDataIO(DbManager):
                 }
         """
         sql = """
-        INSERT INTO symbols (quote_type, ticker, company_name, last_price, last_updated)
-        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO symbols (quote_type, exchange, ticker, company_name, last_price, last_updated)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(ticker) DO UPDATE SET
             quote_type = excluded.quote_type,
+            exchange = excluded.exchange,
             company_name = excluded.company_name,
             last_price = excluded.last_price,
             last_updated = CURRENT_TIMESTAMP
@@ -49,18 +50,21 @@ class APIDataIO(DbManager):
             if not isinstance(modules, dict):
                 logger.error(f"Malformed module for {symbol}...skipping")
                 logger.error(modules)
-                break
+                continue
 
             price_module = modules.get('price')
             if not isinstance(price_module, dict):
                 logger.error(f"Malformed module for {symbol}...skipping")
                 logger.error(modules)
-                break
+                continue
             
             if price_module:
                 quote_type = price_module.get('quoteType', 'UNKNOWN')
                 if quote_type == 'UNKNOWN':
                     logger.debug(f"Missing quoteType for {symbol}, price_module keys: {list(price_module.keys())}")
+                exchange = price_module.get('exchangeName')
+                if not exchange:
+                    exchange = price_module.get("exchange", "UNKNOWN")
                 company_name = (
                     price_module.get('longName') or 
                     price_module.get('shortName') or 
@@ -69,7 +73,7 @@ class APIDataIO(DbManager):
                 last_price = price_module.get('regularMarketPrice')
                 if not last_price:
                     continue
-                symbols_tuples.append(tuple([quote_type, symbol, company_name, last_price]))
+                symbols_tuples.append(tuple([quote_type, exchange, symbol, company_name, last_price]))
 
             else:
                 logger.warning(f"'price' module not found for {symbol}.")
