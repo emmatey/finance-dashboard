@@ -66,12 +66,22 @@ class SearchManager(CommonQueries):
         
         # Extract relevant data.
         out = []
+        # Used to filter out tickers listed on multiple exchanges e.g. mmm.de vs mmm
+        ticker_bases = set()
         res = res_raw.get('quotes')
             # checks res is a list of dicts.
         if isinstance(res, list) and all(isinstance(i, dict) for i in res):
             for row in res:
                 ticker = row.get('symbol')
-                company_name = row.get('longcompany_name')
+                if ticker:
+                    split = ticker.split(".")
+                    base = split[0]
+                    if base in ticker_bases and len(split) > 1:
+                        logger.info(f"Company variant detected: {base}. Skipping {ticker}")
+                        continue
+                    else:
+                        ticker_bases.add(base)
+                company_name = row.get('longname')
                 if not company_name:
                     company_name = row.get('shortname')
                 quote_type = row.get("quoteType")
@@ -88,12 +98,12 @@ class SearchManager(CommonQueries):
                     industry = row.get('industry', "N/A")
                 
                 out.append({
-                    ticker: ticker,
-                    company_name: company_name,
-                    quote_type: quote_type,
-                    exchange: exchange,
-                    sector: sector,
-                    industry: industry,
+                    "ticker": ticker,
+                    "company_name": company_name,
+                    "quote_type": quote_type,
+                    "exchange": exchange,
+                    "sector": sector,
+                    "industry": industry,
                 })
 
         else:
