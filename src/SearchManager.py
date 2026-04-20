@@ -12,20 +12,22 @@ class SearchManager(CommonQueries):
     Handles searching.
     Can find users, companies, and news stories.
     """
-    def search_companies_local(self, query: str, limit=15):
+    def search_companies_local(self, query: str, limit=20):
         """
         Return the companies that are close to or the same as what the user is typing.
         Used for "datalist" to give suggestions when user is searching.
         Cards in search page will be filled by yq.search()
         """
         # Convert user input to string and add 'LIKE' wildcards.
-        safe_query = f"%{str(query)}%"
+        safe_query = f"%{str(query).strip()}%"
 
         sql = f"""
-        SELECT *
-        FROM symbols 
-        WHERE ticker LIKE ?
-        OR company_name LIKE ?
+        SELECT s.ticker, s.company_name, s.quote_type, s.exchange, cp.sector, cp.industry
+        FROM symbols AS s
+        LEFT JOIN company_profile AS cp
+        ON s.id = cp.symbol_id
+        WHERE s.ticker LIKE ?
+        OR s.company_name LIKE ?
         LIMIT ?
         """
         rows = self.select_query(sql, tuple([safe_query, safe_query, limit]))
@@ -36,7 +38,7 @@ class SearchManager(CommonQueries):
             logger.info(f"No data found for {query}")
             return None
 
-    def search_companies_online(self, query: str):
+    def search_companies_online(self, query: str, limit:int=20):
         """
         Search yahooquery for data related to search term.
         
@@ -60,7 +62,7 @@ class SearchManager(CommonQueries):
         safe_query: str = str(query).strip()
 
         # Search with yahoo query search() method.
-        res_raw = yqs.yq_search(safe_query, quotes_count=20, news_count=0)
+        res_raw = yqs.yq_search(safe_query, quotes_count=limit, news_count=0)
         
         # Handle API failure
         if not res_raw:  # None from circuit breaker
@@ -72,7 +74,6 @@ class SearchManager(CommonQueries):
         # Used to filter out tickers listed on multiple exchanges e.g. mmm.de vs mmm
         ticker_bases = set()
         res = res_raw.get('quotes')
-            # checks res is a list of dicts.
         if isinstance(res, list) and all(isinstance(i, dict) for i in res):
             for row in res:
                 ticker = row.get('symbol')

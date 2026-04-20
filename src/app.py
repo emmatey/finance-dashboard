@@ -8,6 +8,7 @@ from CommonQueries import CommonQueries
 from MarketOverviewCoordinator import MarketOverviewCoordinator
 from ReportManager import ReportManager
 from ResearchDataCoordinator import ResearchDataCoordinator
+from SearchManager import SearchManager
 from TransactionManager import TransactionManager
 from YahooQueryService import YahooQueryService
 from flask import Flask, g, request, session, jsonify
@@ -1230,6 +1231,7 @@ def search_companies():
 
     Query Parameters:
         ?q=str          - Search term (required)
+        ?limit=int      - Qty of results.
         ?local=bool     - If true, search local DB only (default: false)
 
     Returns:
@@ -1245,8 +1247,34 @@ def search_companies():
         400 - No search term provided
         500 - Server error
     """
-    pass
+    sm = SearchManager()
 
+    query = request.args.get("q", None)
+    limit = request.args.get("limit", 20)
+    
+    try:
+        limit = int(limit)
+    except ValueError as e:
+        logger.exception(f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT")
+        return jsonify({
+            "success": False,
+            "message": f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT"
+        }), 400
+    
+    if query is None:
+        return jsonify({
+            "success": False,
+            "message": "Query paramater 'q' i.e. your search term, is required."
+        }), 400
+    else:
+        query = query.strip()
+
+    local = request.args.get("local", None)
+    if local and local.lower() == "true":
+        return jsonify(sm.search_companies_local(query=query, limit=limit)), 200
+    else:
+        return jsonify(sm.search_companies_online(query=query, limit=limit)), 200
+    
 
 @app.route("/search/users", methods=["GET"])
 def search_users():
