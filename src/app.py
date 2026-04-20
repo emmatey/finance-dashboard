@@ -630,9 +630,6 @@ def trade():
     return jsonify({"success": False, "message": "Method not allowed"}), 405
 
 
-
-    ## RESEARCH ##
-
 ## RESEARCH ##
 
 @app.route("/research", methods=["GET"])
@@ -1181,21 +1178,120 @@ def screeners():
         return jsonify(grouped), 200
 
 
-@app.route("/search")
+@app.route("/search", methods=["GET"])
 def search():
     """
-    Search for users, stocks, and news stories.
-    Will be separated into three catagoies. 
+    Returns combined search results across companies, users, and news.
 
-    Query Paramater:
-        ?q=<str>
-    
+    Query Parameters:
+        ?q=str - Search term (required)
+
     Returns:
         200 - {
-        news: {},
-        users: {},
-        companies: {}
+            "companies": [{
+                ticker: str,
+                company_name: str,
+                quote_type: str,
+                exchange: str,
+                sector: str,
+                industry: str,
+                search_type: "company"
+            }],
+            "users": [{
+                username: str,
+                portfolio_value: float,
+                cash_balance: float,
+                grand_total: float,
+                rank: int,
+                search_type: "user"
+            }],
+            "news": [{
+                uuid: str,
+                title: str,
+                publisher: str,
+                link: str,
+                providerPublishTime: int,
+                relatedTickers: list[str],
+                search_type: "news"
+            }]
         }
+        400 - No search term provided
+        500 - Server error
+    """
+    pass
+
+
+@app.route("/search/companies", methods=["GET"])
+def search_companies():
+    """
+    Search for companies by ticker symbol or company name.
+    Supports a local-only mode for fast datalist population on each keystroke,
+    bypassing the Yahoo Finance API and querying only the local database.
+
+    Query Parameters:
+        ?q=str          - Search term (required)
+        ?local=bool     - If true, search local DB only (default: false)
+
+    Returns:
+        200 - [{
+            ticker: str,
+            company_name: str,
+            quote_type: str,
+            exchange: str,
+            sector: str,
+            industry: str,
+            search_type: "company"
+        }]
+        400 - No search term provided
+        500 - Server error
+    """
+    pass
+
+
+@app.route("/search/users", methods=["GET"])
+def search_users():
+    """
+    Search for users by username.
+
+    Query Parameters:
+        ?q=str - Search term (required)
+
+    Returns:
+        200 - [{
+            username: str,
+            portfolio_value: float,
+            cash_balance: float,
+            grand_total: float,
+            rank: int,
+            search_type: "user"
+        }]
+        400 - No search term provided
+        500 - Server error
+    """
+    pass
+
+
+@app.route("/search/news", methods=["GET"])
+def search_news():
+    """
+    Search for news articles by headline text or related ticker symbols.
+
+    Query Parameters:
+        ?q=str - Search term (required), matched against article titles
+                 and related ticker symbols
+
+    Returns:
+        200 - [{
+            uuid: str,
+            title: str,
+            publisher: str,
+            link: str,
+            providerPublishTime: int,
+            relatedTickers: list[str],
+            search_type: "news"
+        }]
+        400 - No search term provided
+        500 - Server error
     """
     pass
 
