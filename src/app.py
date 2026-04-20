@@ -1178,7 +1178,6 @@ def screeners():
     else:
         return jsonify(grouped), 200
 
-
 @app.route("/search", methods=["GET"])
 def search():
     """
@@ -1221,7 +1220,6 @@ def search():
     """
     pass
 
-
 @app.route("/search/companies", methods=["GET"])
 def search_companies():
     """
@@ -1248,13 +1246,13 @@ def search_companies():
         500 - Server error
     """
     sm = SearchManager()
-
     query = request.args.get("q", None)
     limit = request.args.get("limit", 20)
-    
+    local = False
+
     try:
         limit = int(limit)
-    except ValueError as e:
+    except ValueError:
         logger.exception(f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT")
         return jsonify({
             "success": False,
@@ -1266,15 +1264,19 @@ def search_companies():
             "success": False,
             "message": "Query paramater 'q' i.e. your search term, is required."
         }), 400
-    else:
-        query = query.strip()
-
-    local = request.args.get("local", None)
-    if local and local.lower() == "true":
-        return jsonify(sm.search_companies_local(query=query, limit=limit)), 200
-    else:
-        return jsonify(sm.search_companies_online(query=query, limit=limit)), 200
     
+    local = request.args.get("local")
+    if local and local == "true":
+        local = True
+    else:
+        local = False
+    
+    res = sm.search_companies(query=query, limit=limit, local=local)
+    for i in res:
+        if isinstance(i, dict):
+            i["search_type"] = 'company'
+    
+    return jsonify(res), 200
 
 @app.route("/search/users", methods=["GET"])
 def search_users():
@@ -1297,7 +1299,6 @@ def search_users():
         500 - Server error
     """
     pass
-
 
 @app.route("/search/news", methods=["GET"])
 def search_news():
@@ -1322,7 +1323,6 @@ def search_news():
         500 - Server error
     """
     pass
-
 
 @app.route("/")
 def home():

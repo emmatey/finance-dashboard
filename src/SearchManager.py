@@ -36,7 +36,7 @@ class SearchManager(CommonQueries):
             return rows
         else:
             logger.info(f"No data found for {query}")
-            return None
+            return []
 
     def search_companies_online(self, query: str, limit:int=20):
         """
@@ -116,7 +116,24 @@ class SearchManager(CommonQueries):
 
         # Return as list of dicts.
         return out
+    
+    def search_companies(self, query:str, limit:int, local:bool):
+        """
+        Search for companies in the DB or online depending on the "local" flag.
+        """
+        res = None
+        query = query.strip()
 
+        if local is True:
+            res = self.search_companies_local(query=query, limit=limit)
+        else:
+            res = self.search_companies_online(query=query, limit=limit)
+
+        if res is None:
+            return []
+        else:
+            return res
+        
     def search_users(self, query: str, report_manager_instance=None):
         """
         Finds users in database.
@@ -153,7 +170,7 @@ class SearchManager(CommonQueries):
 
         return report_manager_instance.get_users_ranks(user_ids=user_ids)
 
-    def search_news(self, querty: str):
+    def search_news(self, query: str):
         """
         """
         pass
