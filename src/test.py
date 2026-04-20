@@ -58,7 +58,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     
-    res = sm.search_companies_local("voasasdadso")
+    res = sm.search_companies_online("mmm")
     print(res)
     
     filler_page = """

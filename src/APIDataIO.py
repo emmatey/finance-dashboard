@@ -224,7 +224,7 @@ class APIDataIO(DbManager):
         Stories are associated only with symbols that exist in the database.
 
         Args:
-            news_data: List of news article dictionaries from yq_search_get_news()
+            news_data: List of news article dictionaries from yq_search_fetch_news()
                       Format: [
                           {
                               'uuid': 'abc-123-def',

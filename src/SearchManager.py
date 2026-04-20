@@ -1,3 +1,4 @@
+from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
 from ReportManager import ReportManager
 from YahooQueryService import YahooQueryService
@@ -69,6 +70,23 @@ class SearchManager(CommonQueries):
             logger.warning(f"Yahoo search failed for '{safe_query}' - API may be down")
             return []
         
+        # Insert news data which is also pulled from this same API call.
+        # Sort of weird but it's already here so why not.
+        news = res_raw.get("news")
+        if news:
+            # Filter to only relevant keys
+            desired_keys = [
+                'uuid', 'title', 'publisher', 'link',
+                'providerPublishTime', 'thumbnail', 'relatedTickers'
+            ]
+            for story in news:
+                for key in list(story.keys()):
+                    if key not in desired_keys:
+                        del story[key]
+
+            io = APIDataIO()
+            io.set_news(news)
+
         # Extract relevant data.
         out = []
         # Used to filter out tickers listed on multiple exchanges e.g. mmm.de vs mmm
