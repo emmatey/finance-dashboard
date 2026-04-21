@@ -277,86 +277,69 @@ class YahooQueryService:
 
     @ResearchDataCoordinator.register_as_research('news', api=True)
     @yq_exception_handler()
-    def yq_search_fetch_news(
-        self,
-        symbol: str,
-        qty: int = 10
-    ) -> List[Dict[str, Any]]:
+    def yq_search_fetch_news(self, symbol: str, qty: int = 10) -> List[Dict[str, Any]]:
         """
-        Fetch recent news articles related to a stock symbol.
-
-        Retrieves and filters the latest news stories, sorted by publish date.
-        Extracts thumbnail URLs from nested response structure.
-
+        Fetch and process news articles for a stock symbol.
+        Wraps yq.search() with circuit breaker, returns processed news ready for set_news().
+        
         Args:
             symbol: Stock ticker symbol (e.g., 'AAPL')
-            qty: Maximum number of news items to return (default: 10)
-
+            qty: Maximum number of articles to return (default: 10)
+    
         Returns:
-            List of dictionaries, each containing:
-                - uuid: Unique identifier for the article
-                - title: Article headline
-                - publisher: News source name
-                - link: URL to full article
-                - providerPublishTime: Unix timestamp (seconds since epoch)
-                - thumbnail: URL of thumbnail image or "N/A"
-                - relatedTickers: List of related stock symbols
-            Returns empty list if no news found
-
-        Note:
-            News items are sorted by publish time (newest first) before
-            being limited to qty items.
+            List of processed news dicts ready for set_news().
+            Returns empty list if no news found.
         """
         if not isinstance(symbol, str):
-            raise ValueError(
-                "'Symbol' paramater must be a string which represents a stock ticker. E.G APPL")
-
-        response = self.search_factory(symbol.upper())
-
-        # Extract news array from response
+            raise ValueError("'symbol' must be a string ticker e.g. 'AAPL'")
+        
+        raw = self.search_factory(symbol.upper())
+        if not raw:
+            return []
+        
+        return self.extract_news(raw, qty=qty)
+    
+    def extract_news(self, response: dict, qty: int = 10) -> List[Dict[str, Any]]:
+        """
+        Extract and normalize news articles from a raw yq.search() response.
+        Can be called directly with a raw search response to avoid a second API call.
+    
+        Args:
+            response: Raw dict from yq.search() or yq_search_fetch_news()
+            qty: Maximum number of articles to return (default: 10)
+    
+        Returns:
+            List of dicts with keys: uuid, title, publisher, link,
+            providerPublishTime, thumbnail, relatedTickers.
+            Returns empty list if no news found.
+        """
         data: List[Dict[str, Any]] = response.get('news', [])
         if not data:
             return []
-
-        # Sort by publish date to extract the newest stories
-        # Sorting by providerPublishTime in descending order (newest first)
-        news_all = sorted(
-            data,
-            key=lambda item: item.get('providerPublishTime', 0),
-            reverse=True
-        )
-
-        # Truncate to requested quantity
-        news = news_all[:qty]
-
-        # Filter to only relevant keys
-        desired_keys = [
-            'uuid', 'title', 'publisher', 'link',
-            'providerPublishTime', 'thumbnail', 'relatedTickers'
-        ]
+    
+        # Sort newest first, truncate to qty
+        news = sorted(data, key=lambda item: item.get('providerPublishTime', 0), reverse=True)[:qty]
+    
+        desired_keys = ['uuid', 'title', 'publisher', 'link', 'providerPublishTime', 'thumbnail', 'relatedTickers']
+    
         for story in news:
+            # Filter to desired keys
             for key in list(story.keys()):
                 if key not in desired_keys:
                     del story[key]
-
-        # Extract thumbnail URL from nested structure
-        # Original structure: thumbnail: {resolutions: [{url, width, height, tag}, ...]}
-        # Index 0 = full size, Index 1 = thumbnail size (120x120)
-        for story in news:
+    
+            # Extract thumbnail URL from nested structure
             thumbnail_url = "N/A"
-
             resolutions = story.get("thumbnail", {})
-            if resolutions:
+            if isinstance(resolutions, dict):
                 images = resolutions.get("resolutions", [])
-                if images and len(images) > 1:
+                if len(images) > 1:
                     try:
-                        # Prefer thumbnail-sized image at index 1
                         thumbnail_url = images[1].get("url", "N/A")
                     except (IndexError, AttributeError):
-                        thumbnail_url = "N/A"
-
+                        pass
             story["thumbnail"] = thumbnail_url
-
+    
         return news
 
     @ResearchDataCoordinator.register_as_research('financial_metrics', api=True, modules=['price', 'defaultKeyStatistics', 'summaryDetail', 'financialData'])

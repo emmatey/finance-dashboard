@@ -73,6 +73,7 @@ class SearchManager(CommonQueries):
         # Insert news data which is also pulled from this same API call.
         # Sort of weird but it's already here so why not.
         news = res_raw.get("news")
+        return news
         if news:
             # Filter to only relevant keys
             desired_keys = [
