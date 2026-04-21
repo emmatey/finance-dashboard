@@ -2,219 +2,226 @@ from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
 from ReportManager import ReportManager
 from YahooQueryService import YahooQueryService
-from datetime import datetime, timedelta
-import helpers
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 class SearchManager(CommonQueries):
     """
-    Handles searching.
-    Can find users, companies, and news stories.
+    Handles searching across companies, users, and news stories.
     """
-    def search_companies_local(self, query: str, limit=20):
-        """
-        Return the companies that are close to or the same as what the user is typing.
-        Used for "datalist" to give suggestions when user is searching.
-        Cards in search page will be filled by yq.search()
-        """
-        # Convert user input to string and add 'LIKE' wildcards.
-        safe_query = f"%{str(query).strip()}%"
 
-        sql = f"""
+    def search_companies_local(self, query: str, limit: int = 20) -> list[dict]:
+        """
+        Search the local database for companies matching the query.
+        Used for datalist suggestions on each keystroke — fast, no API call.
+
+        Args:
+            query: Partial ticker or company name to search for
+            limit: Maximum number of results to return (default: 20)
+
+        Returns:
+            List of dicts with keys: ticker, company_name, quote_type, exchange, sector, industry
+            Returns empty list if no results found.
+        """
+        safe_query = f"%{str(query).strip()}%"
+        sql = """
         SELECT s.ticker, s.company_name, s.quote_type, s.exchange, cp.sector, cp.industry
         FROM symbols AS s
-        LEFT JOIN company_profile AS cp
-        ON s.id = cp.symbol_id
+        LEFT JOIN company_profile AS cp ON s.id = cp.symbol_id
         WHERE s.ticker LIKE ?
         OR s.company_name LIKE ?
         LIMIT ?
         """
-        rows = self.select_query(sql, tuple([safe_query, safe_query, limit]))
-
+        rows = self.select_query(sql, (safe_query, safe_query, limit))
         if rows:
             return rows
-        else:
-            logger.info(f"No data found for {query}")
-            return []
-
-    def search_companies_online(self, query: str="", limit:int=20, yq_search_payload: dict={}):
-        """
-        Search yahooquery for data related to search term.
-        
-        Args:
-            Company Name | 'ticker' : str
-            limit: qty of items to return
-            yq_search_payload: raw result of calling YahooQuery.Search()
-                this paramater exists to allow "search_companies_online" and "search_news" to both extract data
-                from the same API call, improving speed and reducing API strain/rate limiting.
-
-        Returns:
-        [{
-            ticker: str,
-            company_name: str,
-            quote_type: str,
-            exchange: str,
-            sector: str,
-            industry: str,
-        }, ...  ]
-
-        """
-        yqs = YahooQueryService()
-
-        # Convert query to string.
-        safe_query: str = str(query).strip()
-
-        # Search with yahoo query search() method.
-        res_raw = {}
-        if not yq_search_payload:
-            res_raw = yqs.yq_search(safe_query, quotes_count=limit, news_count=0)
-        else:
-            res_raw = yq_search_payload
-        
-        # Handle API failure
-        if not res_raw:  # None from circuit breaker
-            logger.warning(f"Yahoo search failed for '{safe_query}' - API may be down")
-            return []
-        
-        # Insert news data which is also pulled from this same API call.
-        # Sort of weird but it's already here so why not. A product of yahooquery's design.
-        news = res_raw.get("news")
-        if news:
-            io = APIDataIO()
-            processed_news = yqs.extract_news(res_raw)
-            io.set_news(processed_news)
-
-        # Extract relevant data.
-        out = []
-        # Used to filter out tickers listed on multiple exchanges e.g. mmm.de vs mmm
-        ticker_bases = set()
-        res = res_raw.get('quotes')
-        if isinstance(res, list) and all(isinstance(i, dict) for i in res):
-            for row in res:
-                ticker = row.get('symbol')
-                if ticker:
-                    split = ticker.split(".")
-                    base = split[0]
-                    if base in ticker_bases and len(split) > 1:
-                        logger.info(f"Company variant detected: {base}. Skipping {ticker}")
-                        continue
-                    else:
-                        ticker_bases.add(base)
-                company_name = row.get('longname')
-                if not company_name:
-                    company_name = row.get('shortname')
-                quote_type = row.get("quoteType")
-                if quote_type in ['FUTURE', 'CURRENCY', 'OPTION']:
-                    continue
-                exchange = row.get('exchDisp')
-                exchange_short = row.get('exchange')
-                if exchange_short in ['PNK', 'OTC']:
-                    continue
-                sector = row.get('sectorDisp')
-                if not sector:
-                    sector = row.get('sector', "N/A")
-                industry = row.get("industryDisp")
-                if not industry:
-                    industry = row.get('industry', "N/A")
-                
-                out.append({
-                    "ticker": ticker,
-                    "company_name": company_name,
-                    "quote_type": quote_type,
-                    "exchange": exchange or exchange_short,
-                    "sector": sector,
-                    "industry": industry,
-                })
-
-        else:
-            logger.info(f"No data found for {query} in yahoofinance.")
-
-        # Return as list of dicts.
-        return out
-    
-    def search_companies(self, query:str="", limit:int=20, local:bool=False, yq_search_payload: dict={}):
-        """
-        Search for companies in the DB or online depending on the "local" flag.
-        """
-        res = None
-        query = query.strip()
-
-        if local is True:
-            res = self.search_companies_local(query=query, limit=limit)
-        else:
-            res = self.search_companies_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
-
-        if res is None:
-            return []
-        else:
-            return res
-        
-    def search_news(self, query: str="", limit: int = 10, yq_search_payload: dict={}) -> list:
-        """
-        Extract from db the most recent news stories associated with search term up to limit stories.
-        Because of limited metadata, this will just be based on article title.
-        """
-        io = APIDataIO()
-        yqs = YahooQueryService()
-
-        # Update the news in DB based on search term
-        safe_query = str(query).strip()
-        search_result_raw = yqs.yq_search(query=safe_query)
-
-        # Check for yqs_search() payload parameter. Call API if not provided.
-        search_result_raw = {}
-        if not yq_search_payload:
-            search_result_raw = yqs.yq_search(safe_query, quotes_count=limit, news_count=0)
-        else:
-            search_result_raw = yq_search_payload
-        
-        # Check if news stories exist, extract and insert them if so
-        count = 0
-        if isinstance(search_result_raw, dict):
-            count = int(search_result_raw.get('count', 0))
-            # count shows total items between companies(i.e. 'quotes') and news stories in search() payload
-            count = count - len(search_result_raw.get('quotes', 0))
-            if count > 0:
-                filtered_news = yqs.extract_news(search_result_raw)
-                io.set_news(filtered_news)
-                return filtered_news
-        
+        logger.info(f"No local results found for '{query}'")
         return []
 
-    def search_users(self, query: str, report_manager_instance=None):
+    def search_companies_online(
+        self,
+        query: str = "",
+        limit: int = 20,
+        yq_search_payload: dict | None = None
+    ) -> list[dict]:
         """
-        Finds users in database.
+        Search Yahoo Finance for companies matching the query.
+        
+        If yq_search_payload is provided, extracts company data from it directly
+        instead of making a new API call. This allows the /search route to reuse
+        a single yq.search() response for both companies and news.
+
+        Note:
+            If the payload contains news stories, they are extracted and inserted
+            into the local database as a side effect.
 
         Args:
-            query: username to search
+            query: Company name or ticker to search for
+            limit: Maximum number of results to return (default: 20)
+            yq_search_payload: Optional raw yq.search() response to extract from.
+                               If not provided, a new API call will be made.
 
         Returns:
-            [{
-                user_id: int,
-                username: str,
-                snap_datetime: datetime,
-                cash_balance: float,
-                portfolio_value: float,
-                grand_total: float,
-                rank: int
-            }]
+            List of dicts with keys: ticker, company_name, quote_type, exchange, sector, industry
+            Returns empty list on API failure or no results.
+        """
+        yqs = YahooQueryService()
+
+        if yq_search_payload is None:
+            safe_query = str(query).strip()
+            yq_search_payload = yqs.yq_search(safe_query, quotes_count=limit, news_count=10)
+
+        if not yq_search_payload:
+            logger.warning(f"Yahoo search failed for '{query}' - API may be down")
+            return []
+
+        # News comes free from the same API call — extract and cache it
+        if yq_search_payload.get("news"):
+            io = APIDataIO()
+            processed_news = yqs.extract_news(yq_search_payload)
+            io.set_news(processed_news)
+
+        # Extract company quotes
+        out = []
+        ticker_bases = set()  # tracks base tickers to filter exchange variants e.g. MMM.DE
+        quotes = yq_search_payload.get('quotes', [])
+
+        if not isinstance(quotes, list) or not all(isinstance(i, dict) for i in quotes):
+            logger.info(f"No company results found for '{query}' in Yahoo Finance.")
+            return []
+
+        for row in quotes:
+            ticker = row.get('symbol')
+            if not ticker:
+                continue
+
+            # Skip exchange variants of already-seen tickers
+            parts = ticker.split(".")
+            base = parts[0]
+            if base in ticker_bases and len(parts) > 1:
+                logger.info(f"Skipping exchange variant: {ticker}")
+                continue
+            ticker_bases.add(base)
+
+            # Filter unwanted quote types
+            quote_type = row.get("quoteType")
+            if quote_type in ['FUTURE', 'CURRENCY', 'OPTION']:
+                continue
+
+            # Filter OTC/Pink Sheet exchanges
+            exchange_short = row.get('exchange')
+            if exchange_short in ['PNK', 'OTC']:
+                continue
+
+            company_name = row.get('longname') or row.get('shortname')
+            exchange = row.get('exchDisp') or exchange_short
+            sector = row.get('sectorDisp') or row.get('sector', "N/A")
+            industry = row.get('industryDisp') or row.get('industry', "N/A")
+
+            out.append({
+                "ticker": ticker,
+                "company_name": company_name,
+                "quote_type": quote_type,
+                "exchange": exchange,
+                "sector": sector,
+                "industry": industry,
+            })
+
+        return out
+
+    def search_companies(
+        self,
+        query: str = "",
+        limit: int = 20,
+        local: bool = False,
+        yq_search_payload: dict | None = None
+    ) -> list[dict]:
+        """
+        Search for companies either locally or online based on the local flag.
+
+        Args:
+            query: Company name or ticker to search for
+            limit: Maximum number of results to return (default: 20)
+            local: If True, search local DB only — fast, no API call (default: False)
+            yq_search_payload: Optional raw yq.search() response, passed through
+                               to search_companies_online if provided.
+
+        Returns:
+            List of company dicts. Returns empty list if no results found.
+        """
+        query = query.strip()
+        if local:
+            return self.search_companies_local(query=query, limit=limit)
+        return self.search_companies_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
+
+    def search_news(
+        self,
+        query: str = "",
+        limit: int = 10,
+        yq_search_payload: dict | None = None
+    ) -> list[dict]:
+        """
+        Search for news stories related to the query.
+
+        If yq_search_payload is provided, extracts news from it directly
+        instead of making a new API call. This allows the /search route to reuse
+        a single yq.search() response for both companies and news.
+
+        Args:
+            query: Search term matched against article titles and related tickers
+            limit: Maximum number of stories to return (default: 10)
+            yq_search_payload: Optional raw yq.search() response to extract from.
+                               If not provided, a new API call will be made.
+
+        Returns:
+            List of dicts with keys: uuid, title, publisher, link,
+            providerPublishTime, thumbnail, relatedTickers.
+            Returns empty list if no stories found or API is down.
+        """
+        yqs = YahooQueryService()
+        io = APIDataIO()
+
+        if yq_search_payload is None:
+            safe_query = str(query).strip()
+            yq_search_payload = yqs.yq_search(safe_query, quotes_count=0, news_count=limit)
+
+        if not yq_search_payload:
+            logger.warning(f"Yahoo search failed for '{query}' - API may be down")
+            return []
+
+        news = yqs.extract_news(yq_search_payload, qty=limit)
+        if news:
+            io.set_news(news)
+
+        return news
+
+    def search_users(self, query: str, report_manager_instance=None) -> list[dict]:
+        """
+        Search for users by username.
+
+        Args:
+            query: Partial or full username to search for
+            report_manager_instance: Optional ReportManager instance.
+                                     Instantiated internally if not provided.
+
+        Returns:
+            List of dicts with keys: user_id, username, snap_datetime,
+            cash_balance, portfolio_value, grand_total, rank.
+            Returns empty list if no users found.
         """
         if report_manager_instance is None:
             report_manager_instance = ReportManager()
 
-        safe_query = f"%{str(query)}%"
-        sql = """
-        SELECT id, username
-        FROM users
-        WHERE username LIKE ?
-        """
-        rows = self.select_query(sql, tuple([safe_query]))
+        safe_query = f"%{str(query).strip()}%"
+        rows = self.select_query(
+            "SELECT id, username FROM users WHERE username LIKE ?",
+            (safe_query,)
+        )
         if not rows:
-            logger.info(f"No results found for {query}")
+            logger.info(f"No users found matching '{query}'")
             return []
-        
-        user_ids = [row['id'] for row in rows if row.get('id') is not None]
 
+        user_ids = [row['id'] for row in rows if row.get('id') is not None]
         return report_manager_instance.get_users_ranks(user_ids=user_ids)
