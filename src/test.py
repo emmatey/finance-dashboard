@@ -58,15 +58,9 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    with open("fetch.txt", mode='a') as f:
-        f.write(str(yqs.yq_search_fetch_news(symbol="mmm")))
-    
-    with open("apppy.txt", mode='a') as f:
-        f.write(str(sm.search_companies_online("mmm")))
-    
     res = sm.search_companies_online("mmm")
     print(res)
-    
+
     filler_page = """
         <body style="background-color: black; color: green;">
             hi mom.
