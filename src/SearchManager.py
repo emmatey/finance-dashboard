@@ -39,12 +39,16 @@ class SearchManager(CommonQueries):
             logger.info(f"No data found for {query}")
             return []
 
-    def search_companies_online(self, query: str, limit:int=20):
+    def search_companies_online(self, query: str="", limit:int=20, yq_search_payload: dict={}):
         """
         Search yahooquery for data related to search term.
         
         Args:
             Company Name | 'ticker' : str
+            limit: qty of items to return
+            yq_search_payload: raw result of calling YahooQuery.Search()
+                this paramater exists to allow "search_companies_online" and "search_news" to both extract data
+                from the same API call, improving speed and reducing API strain/rate limiting.
 
         Returns:
         [{
@@ -63,7 +67,11 @@ class SearchManager(CommonQueries):
         safe_query: str = str(query).strip()
 
         # Search with yahoo query search() method.
-        res_raw = yqs.yq_search(safe_query, quotes_count=limit, news_count=0)
+        res_raw = {}
+        if not yq_search_payload:
+            res_raw = yqs.yq_search(safe_query, quotes_count=limit, news_count=0)
+        else:
+            res_raw = yq_search_payload
         
         # Handle API failure
         if not res_raw:  # None from circuit breaker
@@ -71,7 +79,7 @@ class SearchManager(CommonQueries):
             return []
         
         # Insert news data which is also pulled from this same API call.
-        # Sort of weird but it's already here so why not.
+        # Sort of weird but it's already here so why not. A product of yahooquery's design.
         news = res_raw.get("news")
         if news:
             io = APIDataIO()
@@ -126,7 +134,7 @@ class SearchManager(CommonQueries):
         # Return as list of dicts.
         return out
     
-    def search_companies(self, query:str, limit:int, local:bool):
+    def search_companies(self, query:str="", limit:int=20, local:bool=False, yq_search_payload: dict={}):
         """
         Search for companies in the DB or online depending on the "local" flag.
         """
@@ -136,13 +144,45 @@ class SearchManager(CommonQueries):
         if local is True:
             res = self.search_companies_local(query=query, limit=limit)
         else:
-            res = self.search_companies_online(query=query, limit=limit)
+            res = self.search_companies_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
 
         if res is None:
             return []
         else:
             return res
         
+    def search_news(self, query: str="", limit: int = 10, yq_search_payload: dict={}) -> list:
+        """
+        Extract from db the most recent news stories associated with search term up to limit stories.
+        Because of limited metadata, this will just be based on article title.
+        """
+        io = APIDataIO()
+        yqs = YahooQueryService()
+
+        # Update the news in DB based on search term
+        safe_query = str(query).strip()
+        search_result_raw = yqs.yq_search(query=safe_query)
+
+        # Check for yqs_search() payload parameter. Call API if not provided.
+        search_result_raw = {}
+        if not yq_search_payload:
+            search_result_raw = yqs.yq_search(safe_query, quotes_count=limit, news_count=0)
+        else:
+            search_result_raw = yq_search_payload
+        
+        # Check if news stories exist, extract and insert them if so
+        count = 0
+        if isinstance(search_result_raw, dict):
+            count = int(search_result_raw.get('count', 0))
+            # count shows total items between companies(i.e. 'quotes') and news stories in search() payload
+            count = count - len(search_result_raw.get('quotes', 0))
+            if count > 0:
+                filtered_news = yqs.extract_news(search_result_raw)
+                io.set_news(filtered_news)
+                return filtered_news
+        
+        return []
+
     def search_users(self, query: str, report_manager_instance=None):
         """
         Finds users in database.
@@ -178,8 +218,3 @@ class SearchManager(CommonQueries):
         user_ids = [row['id'] for row in rows if row.get('id') is not None]
 
         return report_manager_instance.get_users_ranks(user_ids=user_ids)
-
-    def search_news(self, query: str):
-        """
-        """
-        pass

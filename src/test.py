@@ -58,7 +58,11 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    res = sm.search_companies_online("mmm")
+    search_payload = yqs.yq_search("robots")
+    res = sm.search_companies(yq_search_payload=search_payload)
+    print(res)
+    res = sm.search_news(yq_search_payload=search_payload)
+    print()
     print(res)
 
     filler_page = """

@@ -1266,6 +1266,8 @@ def search_companies():
         }), 400
     
     local = request.args.get("local")
+    if isinstance(local, str):
+        local = local.lower().strip()
     if local and local == "true":
         local = True
     else:
@@ -1308,6 +1310,7 @@ def search_news():
     Query Parameters:
         ?q=str - Search term (required), matched against article titles
                  and related ticker symbols
+        ?limit=int      - Qty of results.
 
     Returns:
         200 - [{
@@ -1322,7 +1325,28 @@ def search_news():
         400 - No search term provided
         500 - Server error
     """
-    pass
+    sm = SearchManager()
+
+    query = request.args.get("q", None)
+    limit = request.args.get("limit", 20)
+
+    try:
+        limit = int(limit)
+    except ValueError:
+        logger.exception(f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT")
+        return jsonify({
+            "success": False,
+            "message": f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT"
+        }), 400
+    
+    if query is None:
+        return jsonify({
+            "success": False,
+            "message": "Query paramater 'q' i.e. your search term, is required."
+        }), 400
+    
+    
+
 
 @app.route("/")
 def home():
