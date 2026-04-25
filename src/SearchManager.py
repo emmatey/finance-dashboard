@@ -176,7 +176,7 @@ class SearchManager(CommonQueries):
                                If not provided, a new API call will be made.
 
         Returns:
-            List of dicts with keys: uuid, title, publisher, link,
+            List of dicts with keys: search_type, uuid, title, publisher, link,
             providerPublishTime, thumbnail, relatedTickers.
             Returns empty list if no stories found or API is down.
         """
@@ -195,6 +195,9 @@ class SearchManager(CommonQueries):
         if news:
             io.set_news(news)
 
+            for n in news:
+                n["search_type"] = "news"
+
         return news
 
     def search_users(self, query: str, report_manager_instance=None) -> list[dict]:
@@ -207,7 +210,7 @@ class SearchManager(CommonQueries):
                                      Instantiated internally if not provided.
 
         Returns:
-            List of dicts with keys: user_id, username, snap_datetime,
+            List of dicts with keys: search_type, username, snap_datetime,
             cash_balance, portfolio_value, grand_total, rank.
             Returns empty list if no users found.
         """
@@ -224,4 +227,12 @@ class SearchManager(CommonQueries):
             return []
 
         user_ids = [row['id'] for row in rows if row.get('id') is not None]
-        return report_manager_instance.get_users_ranks(user_ids=user_ids)
+        user_data = report_manager_instance.get_users_ranks(user_ids=user_ids)
+
+        if user_data:
+            for user in user_data:
+                user["search_type"] = "users"
+                if user.get("user_id") is not None:
+                    del user["user_id"]
+        
+        return user_data

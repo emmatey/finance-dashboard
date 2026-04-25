@@ -58,12 +58,10 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    search_payload = yqs.yq_search("robots")
-    res = sm.search_companies(yq_search_payload=search_payload)
+
+    res = sm.search_news(query="butts")
     print(res)
-    res = sm.search_news(yq_search_payload=search_payload)
-    print()
-    print(res)
+
 
     filler_page = """
         <body style="background-color: black; color: green;">

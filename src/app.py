@@ -1218,7 +1218,20 @@ def search():
         400 - No search term provided
         500 - Server error
     """
-    pass
+    
+    # Search Companies
+
+    # Search Users 
+
+    # Search News
+
+
+
+
+
+
+
+
 
 @app.route("/search/companies", methods=["GET"])
 def search_companies():
@@ -1268,7 +1281,7 @@ def search_companies():
     local = request.args.get("local")
     if isinstance(local, str):
         local = local.lower().strip()
-    if local and local == "true":
+    if local and local.lower() == "true":
         local = True
     else:
         local = False
@@ -1301,6 +1314,9 @@ def search_users():
         500 - Server error
     """
     pass
+
+
+
 
 @app.route("/search/news", methods=["GET"])
 def search_news():
