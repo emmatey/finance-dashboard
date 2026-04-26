@@ -1320,10 +1320,10 @@ def search_users():
             "message": "Query paramater 'q' i.e. your search term, is required."
         }), 400
 
-    
 
 
 
+# TODO remove search type form all methods in route
 
 @app.route("/search/news", methods=["GET"])
 def search_news():
