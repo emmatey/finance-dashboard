@@ -1218,20 +1218,51 @@ def search():
         400 - No search term provided
         500 - Server error
     """
-    
-    # Search Companies
+    sm = SearchManager()
+    yqs = YahooQueryService()
 
-    # Search Users 
+    query = request.args.get("q", None)
+    if query is None:
+        return jsonify({
+            "success": False,
+            "message": "Query paramater 'q' i.e. your search term, is required."
+        }), 400
+    
+    results = {}
+
+    # Get shared search payload
+    yq_search_payload = yqs.yq_search(query=query)
 
     # Search News
+    try:
+        results["news"] = sm.search_news(query=query, yq_search_payload=yq_search_payload)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify ({
+            "success": False
+            "Message": "Server error during news pipeline. (/search)"
+        }), 500
+    # Search Companies
+    try:
+        results["companies"] = sm.search_companies(query=query, yq_search_payload=yq_search_payload)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Server error in company pipeline. (/search)"
+        }), 500
 
+    # Search Users
+    try:
+        results["users"] = sm.search_users(query=query)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Server error in users pipeline. (/search)"
+        }), 500
 
-
-
-
-
-
-
+    return jsonify(results), 200
 
 @app.route("/search/companies", methods=["GET"])
 def search_companies():
