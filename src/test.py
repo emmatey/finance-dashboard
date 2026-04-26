@@ -59,8 +59,7 @@ def home():
     cc = CommonQueries()
 
 
-    dae.price_updater()
-
+    print(yqs.yq_search("hi"))
 
     filler_page = """
         <body style="background-color: black; color: green;">

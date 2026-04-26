@@ -77,12 +77,6 @@ class SearchManager(CommonQueries):
             logger.warning(f"Yahoo search failed for '{query}' - API may be down")
             return []
 
-        # News comes free from the same API call — extract and cache it
-        if yq_search_payload.get("news"):
-            io = APIDataIO()
-            processed_news = yqs.extract_news(yq_search_payload)
-            io.set_news(processed_news)
-
         # Extract company quotes
         out = []
         ticker_bases = set()  # tracks base tickers to filter exchange variants e.g. MMM.DE

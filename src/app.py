@@ -1239,7 +1239,7 @@ def search():
     except Exception as e:
         logger.exception(e)
         return jsonify ({
-            "success": False
+            "success": False,
             "Message": "Server error during news pipeline. (/search)"
         }), 500
     # Search Companies
