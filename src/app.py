@@ -327,7 +327,7 @@ def portfolio_view():
         }), 200
     
     else:
-        return portfolio_view, 200
+        return jsonify(portfolio_view), 200
 
 @app.route("/user/transactions", methods=["GET"])
 @helpers.login_required
@@ -1242,7 +1242,7 @@ def search():
         logger.exception(e)
         return jsonify ({
             "success": False,
-            "Message": "Server error during news pipeline. (/search)"
+            "message": "Server error during news pipeline. (/search)"
         }), 500
     # Search Companies
     try:
@@ -1314,7 +1314,7 @@ def search_companies():
     local = request.args.get("local")
     if isinstance(local, str):
         local = local.lower().strip()
-    if local and local == True:
+    if local and local == 'true':
         local = True
     else:
         local = False
