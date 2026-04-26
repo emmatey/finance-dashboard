@@ -153,9 +153,14 @@ class SearchManager(CommonQueries):
         """
         query = query.strip()
         if local:
-            return self.search_companies_local(query=query, limit=limit)
-        return self.search_companies_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
+            res = self.search_companies_local(query=query, limit=limit)
+        res = self.search_companies_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
 
+        if res:
+            for i in res:
+                i["search_type"] = "company"
+        return res
+    
     def search_news(
         self,
         query: str = "",
@@ -231,7 +236,7 @@ class SearchManager(CommonQueries):
 
         if user_data:
             for user in user_data:
-                user["search_type"] = "users"
+                user["search_type"] = "user"
                 if user.get("user_id") is not None:
                     del user["user_id"]
         

@@ -1313,7 +1313,14 @@ def search_users():
         400 - No search term provided
         500 - Server error
     """
-    pass
+    query = request.args.get("q", None)
+    if query is None:
+        return jsonify({
+            "success": False,
+            "message": "Query paramater 'q' i.e. your search term, is required."
+        }), 400
+
+    
 
 
 
