@@ -9,7 +9,7 @@ s = requests.Session()
 #response = s.post(f'{url}/auth/login', 
 #                  json={"username": "emma", "password": "123Pass"})
 
-#response = s.get(f'{url}/search/companies')
+response = s.get(f'{url}/search/news')
 
 print(response)
 print(response.status_code)

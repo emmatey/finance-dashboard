@@ -154,7 +154,8 @@ class SearchManager(CommonQueries):
         query = query.strip()
         if local:
             res = self.search_companies_local(query=query, limit=limit)
-        res = self.search_companies_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
+        else:
+            res = self.search_companies_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
 
         if res:
             for i in res:

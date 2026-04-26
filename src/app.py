@@ -1281,17 +1281,12 @@ def search_companies():
     local = request.args.get("local")
     if isinstance(local, str):
         local = local.lower().strip()
-    if local and local.lower() == "true":
+    if local and local == True:
         local = True
     else:
         local = False
-    
-    res = sm.search_companies(query=query, limit=limit, local=local)
-    for i in res:
-        if isinstance(i, dict):
-            i["search_type"] = 'company'
-    
-    return jsonify(res), 200
+
+    return jsonify(sm.search_companies(query=query, limit=limit, local=local)), 200
 
 @app.route("/search/users", methods=["GET"])
 def search_users():
@@ -1313,6 +1308,8 @@ def search_users():
         400 - No search term provided
         500 - Server error
     """
+    sm = SearchManager()
+
     query = request.args.get("q", None)
     if query is None:
         return jsonify({
@@ -1320,10 +1317,23 @@ def search_users():
             "message": "Query paramater 'q' i.e. your search term, is required."
         }), 400
 
-
-
-
-# TODO remove search type form all methods in route
+    res = None
+    try:
+        res = sm.search_users(query=query)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Server error..."
+        }), 500
+    
+    if not res:
+        return jsonify({
+            "success": True,
+            "message": f"User {query} not found."
+        }), 200
+    
+    return jsonify(res), 200
 
 @app.route("/search/news", methods=["GET"])
 def search_news():
@@ -1368,8 +1378,23 @@ def search_news():
             "message": "Query paramater 'q' i.e. your search term, is required."
         }), 400
     
+    res = None
+    try:
+        res = sm.search_news(query=query, limit=limit)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Server error..."
+        }), 500
     
+    if res is None or not res:
+        return jsonify({
+            "success": True,
+            "message": f"News related to {query} not found."
+        }), 200
 
+    return jsonify(res), 200
 
 @app.route("/")
 def home():
