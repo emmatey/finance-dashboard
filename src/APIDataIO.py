@@ -293,7 +293,7 @@ class APIDataIO(DbManager):
         WHERE uuid IN ({uuid_placeholders})
         """
         uuid_rows = self.select_query(uuid_sql, tuple(uuid_set))
-        uuid_cipher = {i.get('uuid'): i.get('news_id') for i in uuid_rows} # type: ignore
+        uuid_cipher = {i.get('uuid'): i.get('news_id') for i in uuid_rows}
 
         # Find symbol id for associated ticker
         ticker_sql = f"""
@@ -302,12 +302,28 @@ class APIDataIO(DbManager):
         WHERE ticker in ({ticker_placeholders})
         """
         ticker_rows = self.select_query(ticker_sql, tuple(ticker_set))
-        ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows} # type: ignore
+        ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows}
+
+        # Add basic info about a ticker into the db if it doesn't already exist to allow stories to be linked to it.
+        known_tickers = set(ticker_cipher.keys())
+        unknown_tickers = ticker_set - known_tickers
+        if unknown_tickers:
+            minimal_sql = """
+            INSERT INTO symbols (quote_type, ticker, company_name)
+            VALUES ('UNKNOWN', ?, ?)
+            ON CONFLICT(ticker) DO NOTHING
+            """
+            self.bulk_query(minimal_sql, [(t, t) for t in unknown_tickers])
+            # re-run ticker query to get new ids
+            ticker_rows = self.select_query(ticker_sql, tuple(ticker_set))
+            ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows}
 
         # go from {uuid: [ticker]} to {news_id: [ticker_id]}
         translated_related_uuids = {}
         for uuid, tickers in related_uuids.items():
             buffer = []
+            if not tickers:
+                continue
             for ticker in tickers:
                 translated = ticker_cipher.get(ticker)
                 if translated:

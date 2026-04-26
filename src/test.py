@@ -59,8 +59,7 @@ def home():
     cc = CommonQueries()
 
 
-    res = sm.search_news(query="butts")
-    print(res)
+    dae.price_updater()
 
 
     filler_page = """
