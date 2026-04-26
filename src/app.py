@@ -2,17 +2,20 @@ import helpers
 import logging
 import sys
 
+# External Libraries
+from flask import Flask, g, jsonify, request, session
+from flask_session import Session
+
+# Local Application Modules
 from AccountManager import AccountManager
 from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
-from MarketOverviewCoordinator import MarketOverviewCoordinator
-from ReportManager import ReportManager
+from MarketOverviewCoordinator import MarketOverviewCoordinator, SYMBOLS
+from ReportManager import ReportManager  # Fixed space in filename
 from ResearchDataCoordinator import ResearchDataCoordinator
 from SearchManager import SearchManager
 from TransactionManager import TransactionManager
 from YahooQueryService import YahooQueryService
-from flask import Flask, g, request, session, jsonify
-from flask_session import Session
 
 
 # Configure Logging
@@ -629,7 +632,6 @@ def trade():
             }), 500
 
     return jsonify({"success": False, "message": "Method not allowed"}), 405
-
 
 ## RESEARCH ##
 
@@ -1426,6 +1428,77 @@ def search_news():
         }), 200
 
     return jsonify(res), 200
+
+## MARKET OVERVIEW ##
+
+@app.route("/market_overview", methods=["GET"])
+def market_overview():
+    """
+    Returns regional market overview data for the homepage.
+    Checks freshness and updates if stale before returning.
+
+    Returns:
+        200 - [{
+            region: str,
+            ticker: str,
+            current_price: float,
+            prev_close: float,
+            pct_change: float
+        }]
+        500 - Server error
+    """
+    io = APIDataIO()
+    moc = MarketOverviewCoordinator()
+
+    try:
+        moc.initialize_regional_etfs(dbio_instance=io)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Server error updating regional ETF data. See finance.log for details..."
+        }), 500
+
+    try:
+        results = io.get_regional_overview(symbols=SYMBOLS)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Database error fetching regional overview. See finance.log for details..."
+        }), 500
+
+    return jsonify(results), 200
+
+## SCOREBOARD ##
+
+@app.route("/scoreboard", methods=["GET"])
+def scoreboard():
+    """
+    Returns rankings for all users.
+
+    Returns:
+        200 - [{
+            username: str,
+            portfolio_value: float,
+            cash_balance: float,
+            grand_total: float,
+            rank: int
+        }]
+        500 - Server error
+    """
+    rm = ReportManager()
+
+    try:
+        results = rm.get_all_users_ranks()
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Database error fetching scoreboard. See finance.log for details..."
+        }), 500
+
+    return jsonify(results), 200
 
 @app.route("/")
 def home():
