@@ -53,10 +53,6 @@ class SearchManager(CommonQueries):
         instead of making a new API call. This allows the /search route to reuse
         a single yq.search() response for both companies and news.
 
-        Note:
-            If the payload contains news stories, they are extracted and inserted
-            into the local database as a side effect.
-
         Args:
             query: Company name or ticker to search for
             limit: Maximum number of results to return (default: 20)
