@@ -367,7 +367,7 @@ class ReportManager(CommonQueries):
         VALUES (?, ?)
         ON CONFLICT (symbol_id)
         DO UPDATE SET
-        insider_sentiment = excluded.insider_sentiment
+            insider_sentiment = excluded.insider_sentiment
         """
         self.modify_query(query=sentiment_sql, placeholders=(ticker_id, sentiment))
         

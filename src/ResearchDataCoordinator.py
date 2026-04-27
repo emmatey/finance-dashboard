@@ -31,9 +31,37 @@ class ResearchDataCoordinator(CommonQueries):
     research_registry = {table_name: {'i': False, 'o': False, 'api': False, 'modules': []} for table_name in TableLifetimes.__members__}
 
     @classmethod
-    def register_as_research(cls, table_name, i=False, o=False, api=False, modules=[]):
-        # Specify in, out, or api with x=True to categorize functions.
-        # Each table will generally have 3 related methods.
+    def register_as_research(cls, table_name, i=False, o=False, api=False, post=False, modules=[]):
+        """
+        Decorator for registering functions into the research data pipeline registry.
+    
+        Each table in TableLifetimes can have up to four registered functions:
+    
+            api: Fetches raw data from Yahoo Finance and parses it into a
+                 structured format for database insertion. Receives either a
+                 yq modules payload or a ticker string depending on whether
+                 'modules' is specified.
+    
+            i:   Writes parsed data to the database. Receives a db_io_instance
+                 and the output of the table's registered api function.
+    
+            o:   Reads and returns data from the database for a given ticker.
+                 Receives a db_io_instance and a ticker list.
+    
+            post: Runs after i completes, regardless of which tables were updated
+                  in a given orchestrator run. Intended for derived metrics that
+                  are computed from already-stored data rather than fetched
+                  directly from an API (e.g. a sentiment score derived from
+                  insider_trades rows). Receives a db_io_instance only.
+    
+        Args:
+            table_name: Must be a valid TableLifetimes member.
+            i:      Register as database write function.
+            o:      Register as database read function.
+            api:    Register as API fetch/parse function.
+            post:   Register as post-processing function for derived metrics.
+            modules: Yahoo Finance modules required by the api function.
+        """
         def decorator(func):
             if table_name not in TableLifetimes.__members__:
                 raise ValueError(f"Invalid table '{table_name}'. Must be in TableLifetimes enum.")
@@ -48,9 +76,11 @@ class ResearchDataCoordinator(CommonQueries):
                 cls.research_registry[table_name]['api'] = func
                 if modules:
                     cls.research_registry[table_name]['modules'] = modules
+            elif post:
+                logger.debug(f"Registered {func} as post-processing function for {table_name}.")
+                cls.research_registry[table_name]['post'] = func
             else:
-                raise ValueError("Must specify function relation to table, i.e i = in, o = out, api = api adapter.")
-
+                raise ValueError("Must specify function relation to table, i.e i = in, o = out, api = api, post = post-processing.")
             return func
         return decorator
 
