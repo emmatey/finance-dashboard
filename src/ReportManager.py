@@ -228,7 +228,7 @@ class ReportManager(CommonQueries):
 
         return cost_basis_data
     
-    def calculate_insider_sentiment(self, ticker: str, modules: dict, timeframe_in_months: int=12, buy_weight:float=20.0) -> float:
+    def calculate_insider_sentiment_and_record(self, ticker: str, modules: dict, timeframe_in_months: int=12, buy_weight:float=20.0):
         """
         Calculate an insider sentiment score based on the ratio of discretionary
         insider buying to selling within the given timeframe.
@@ -244,6 +244,8 @@ class ReportManager(CommonQueries):
         Multiple unique buyers amplify the buy weight further, as independent
         insiders making the same bet is a stronger signal than one insider buying
         repeatedly.
+
+        Also writes to db, to keep this self contained metric self contained.
 
         Formula:
             weighted_buy = buy_volume * buy_weight  (multiplied further if 2+ unique buyers)
@@ -274,7 +276,7 @@ class ReportManager(CommonQueries):
             buy_weight: Base multiplier applied to buy volume (default: 20.0)
 
         Returns:
-            float in range (-1, 1)
+            None
 
         Raises:
             ValueError: If ticker not found in modules, or insiderTransactions module missing
@@ -354,8 +356,20 @@ class ReportManager(CommonQueries):
         # This prevents the "Divide by Zero" and provides a clearer scale
         weighted_buy = buy_volume * buy_weight
         sentiment = (weighted_buy - sell_volume) / (weighted_buy + sell_volume + 1)
+        logger.debug(f"Sentiment score for {ticker} is {sentiment}")
 
-        return sentiment
+        # Record to DB
+        # Get ticker ID 
+        ticker_id = self.get_symbol_id(ticker=ticker)
+
+        sentiment_sql = """
+        INSERT INTO financial_metrics (symbol_id, insider_sentiment)
+        VALUES (?, ?)
+        ON CONFLICT (symbol_id)
+        DO UPDATE SET
+        insider_sentiment = excluded.insider_sentiment
+        """
+        self.modify_query(query=sentiment_sql, placeholders=(ticker_id, sentiment))
         
     def get_all_users_ranks(self) -> list[dict]:
         """Get rank for all users"""
