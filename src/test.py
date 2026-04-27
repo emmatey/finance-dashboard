@@ -58,16 +58,10 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
+    module = yqs.yq_ticker_fetch_modules("mmm", "insiderTransactions")
+    res = rm.calculate_insider_sentiment(ticker="mmm", modules=module)
 
-    res = yqs.yq_ticker_fetch_modules(["mmm"],["insiderTransactions"])
-
-    for ticker, modules in res.items():
-        print(ticker)
-        insiderTransactions = modules.get("insiderTransactions", {})
-        tx_list = insiderTransactions.get("transactions", [])
-        for tx in tx_list:
-            print(tx.get("transactionText", "N/A"))
-
+    print(res)
 
 
 

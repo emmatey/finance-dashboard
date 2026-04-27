@@ -228,11 +228,14 @@ class ReportManager(CommonQueries):
 
         return cost_basis_data
     
-    def calculate_insider_sentiment(self, ticker: str, modules: dict, timeframe_in_months: int = 5) -> float:
+    def calculate_insider_sentiment(self, ticker: str, modules: dict, timeframe_in_months: int=5, buy_weight:float=20.0) -> float:
         """
         Find the ratio of insider buys to sells of the company's own security. Used as a measure of sentiment. 
-        Weights buys 5x sales because backtesting research says this is a stronger signal.
+        Weights buys over sales because backtesting research says this is a stronger signal.
             Source: my ass, trust me bro
+                "Insiders sell for many reasons, they only buy for one..."
+
+        Weights multiple unique insiders buying even higher.
 
         Args:
             insider_tx_module -
@@ -248,12 +251,16 @@ class ReportManager(CommonQueries):
                 ]}}
             ticker - Company stock ticker.
             timeframe_in_months - Cutoff time in months of the oldest tx used.
+            buy_weight: how much more heavily insider buys are weighted
 
         Returns:
             float
         
         Raises:
             ValueError - if insiderTrades module isnt found or ticker provided isn't found
+
+        Note:
+            Will always return a number between -1 and 1 where 1 is pure buying, and -1 is pure selling.
         """
         buy_str = "Purchase at price"
         sell_str = "Sale at price"
@@ -289,6 +296,7 @@ class ReportManager(CommonQueries):
         
         insider_tx_module = raw_modules["insiderTransactions"]
         tx_list = insider_tx_module["transactions"]
+        buyers = set()
         buy_volume = 0
         sell_volume = 0
         for tx in tx_list:
@@ -299,23 +307,39 @@ class ReportManager(CommonQueries):
             # Skip transaction if older than 5 yrs
             if tx_date < n_months_ago:
                 continue
-
-            tx_text = tx.get("transactionText", "")
-            if buy_str in tx_text:
+        
+            buyer_name = tx.get("filerName")
+            if buyer_name:
+                buyers.add(buyer_name)
+            
+            tx_text: str = tx.get("transactionText", "").strip()
+            if tx_text.startswith(buy_str):
                 buy_volume += tx.get("shares")
-            elif sell_str in tx_text:
+            elif tx_text.startswith(sell_str):
                 sell_volume += tx.get("shares")
             
         logger.debug(f"Raw buy volume for {ticker} is: {buy_volume}")
         logger.debug(f"Raw sell volume for {ticker} is: {sell_volume}")
 
+        if buy_volume == 0 and sell_volume == 0:
+            return 0.0 # Or float('nan') to indicate "No Data"
+
+        # If there are many unique buyers, weight the buys higher.
+        unique_buyers = len(buyers)
+        if unique_buyers >= 3:
+            buy_weight = buy_weight * 2
+        elif unique_buyers >= 2:
+            buy_weight = buy_weight * 1.5
+        else:
+            buy_weight = buy_weight
+
+        # Use a Net-Weighted-Volume approach for a smoother dashboard metric
+        # This prevents the "Divide by Zero" and provides a clearer scale
+        weighted_buy = buy_volume * buy_weight
+        sentiment = (weighted_buy - sell_volume) / (weighted_buy + sell_volume + 1)
+
+        return sentiment
         
-
-
-        
-
-
-
     def get_all_users_ranks(self) -> list[dict]:
         """Get rank for all users"""
         sql = """
