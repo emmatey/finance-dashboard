@@ -28,38 +28,38 @@ class ResearchDataCoordinator(CommonQueries):
     Handles updating of individual SQL tables of finance data based on the age
     of the records.
     """
-    research_registry = {table_name: {'i': False, 'o': False, 'api': False, 'modules': []} for table_name in TableLifetimes.__members__}
+    research_registry = {table_name: {'i': False, 'o': False, 'api': False, 'post': False, 'modules': []} for table_name in TableLifetimes.__members__}
 
     @classmethod
     def register_as_research(cls, table_name, i=False, o=False, api=False, post=False, modules=[]):
         """
         Decorator for registering functions into the research data pipeline registry.
-    
+
         Each table in TableLifetimes can have up to four registered functions:
-    
+
             api: Fetches raw data from Yahoo Finance and parses it into a
                  structured format for database insertion. Receives either a
                  yq modules payload or a ticker string depending on whether
                  'modules' is specified.
-    
+
             i:   Writes parsed data to the database. Receives a db_io_instance
                  and the output of the table's registered api function.
-    
+
             o:   Reads and returns data from the database for a given ticker.
                  Receives a db_io_instance and a ticker list.
-    
-            post: Runs after i completes, regardless of which tables were updated
-                  in a given orchestrator run. Intended for derived metrics that
-                  are computed from already-stored data rather than fetched
-                  directly from an API (e.g. a sentiment score derived from
-                  insider_trades rows). Receives a db_io_instance only.
-    
+
+            post: Runs after all i functions complete, regardless of which tables
+                  were updated in a given orchestrator run. Intended for derived
+                  metrics that are computed from already-stored data rather than
+                  fetched directly from an API (e.g. a sentiment score derived
+                  from insider_trades rows). Receives a db_io_instance only.
+
         Args:
             table_name: Must be a valid TableLifetimes member.
-            i:      Register as database write function.
-            o:      Register as database read function.
-            api:    Register as API fetch/parse function.
-            post:   Register as post-processing function for derived metrics.
+            i:       Register as database write function.
+            o:       Register as database read function.
+            api:     Register as API fetch/parse function.
+            post:    Register as post-processing function for derived metrics.
             modules: Yahoo Finance modules required by the api function.
         """
         def decorator(func):
@@ -185,6 +185,8 @@ class ResearchDataCoordinator(CommonQueries):
 
         Collects all required Yahoo Finance modules for stale tables, makes a single
         API call, then dispatches to the appropriate setter functions via the registry.
+        After all updates complete, runs any registered post-processing functions
+        unconditionally — these compute derived metrics from already-stored data.
 
         Args:
             fresh_report: Dict mapping table names to freshness status.
@@ -242,6 +244,7 @@ class ResearchDataCoordinator(CommonQueries):
             db_io_instance.upsert_symbols(modules)
 
         # Call refresh functions for stale db tables
+        any_updated = False
         for table, status in fresh_report.items():
             # Fresh report has a default k:v pair "fresh_report = {"symbol": symbol}" key is literally the string "symbol" skipping here.
             if table == "symbol":
@@ -263,9 +266,25 @@ class ResearchDataCoordinator(CommonQueries):
                         data = api_func(yqs_instance, symbol)
                         in_func(db_io_instance, data)
 
+                    any_updated = True
+
                 except Exception as e:
                     logger.error(f"Failed to update {table} for {symbol}: {e}")
-                    raise 
+                    raise
+
+        # Run post-processing functions for any table that has one registered.
+        # These compute derived metrics from already-stored data and run unconditionally
+        # as long as at least one table was updated this cycle.
+        if any_updated:
+            for table, funcs in self.research_registry.items():
+                post_func = funcs.get('post')
+                if post_func:
+                    try:
+                        logger.debug(f"Running post-processing for {table}.")
+                        post_func(db_io_instance, symbol)
+                    except Exception as e:
+                        logger.error(f"Post-processing failed for {table}, symbol {symbol}: {e}")
+                        raise
 
     def update_table_subset(self,
                             ticker:str,
@@ -369,4 +388,3 @@ class ResearchDataCoordinator(CommonQueries):
 
         # return result 
         return results
-  
