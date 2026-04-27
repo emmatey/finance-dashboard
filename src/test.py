@@ -59,7 +59,17 @@ def home():
     cc = CommonQueries()
 
 
-    print(yqs.yq_search("hi"))
+    res = yqs.yq_ticker_fetch_modules(["mmm"],["insiderTransactions"])
+
+    for ticker, modules in res.items():
+        print(ticker)
+        insiderTransactions = modules.get("insiderTransactions", {})
+        tx_list = insiderTransactions.get("transactions", [])
+        for tx in tx_list:
+            print(tx.get("transactionText", "N/A"))
+
+
+
 
     filler_page = """
         <body style="background-color: black; color: green;">

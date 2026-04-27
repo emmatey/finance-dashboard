@@ -1,3 +1,4 @@
+import datetime
 import logging
 from CommonQueries import CommonQueries
 from collections import deque, defaultdict
@@ -226,6 +227,94 @@ class ReportManager(CommonQueries):
                 }
 
         return cost_basis_data
+    
+    def calculate_insider_sentiment(self, ticker: str, modules: dict, timeframe_in_months: int = 5) -> float:
+        """
+        Find the ratio of insider buys to sells of the company's own security. Used as a measure of sentiment. 
+        Weights buys 5x sales because backtesting research says this is a stronger signal.
+            Source: my ass, trust me bro
+
+        Args:
+            insider_tx_module -
+                result of get_modules with insiderTransactions as one of the parameters
+                https://yahooquery.dpguthrie.com/guide/ticker/modules/#insider_transactions
+                Shape = TICKER: {insiderTransactions: {transactions:[{
+                    ...
+                    startDate: datetime.date,
+                    shares: int,
+                    transactionText: str,
+                    ...
+                    }, {}, ...
+                ]}}
+            ticker - Company stock ticker.
+            timeframe_in_months - Cutoff time in months of the oldest tx used.
+
+        Returns:
+            float
+        
+        Raises:
+            ValueError - if insiderTrades module isnt found or ticker provided isn't found
+        """
+        buy_str = "Purchase at price"
+        sell_str = "Sale at price"
+        ticker = str(ticker).upper().strip()
+
+        N_MONTHS = datetime.timedelta(days=(30 * timeframe_in_months))
+        today = datetime.datetime.today()
+        n_months_ago = today - N_MONTHS
+
+        # 'i' is the tickers in the modules dict
+        found = False
+        for i in modules:
+            if str(i).upper().strip() != ticker:
+                continue
+            else:
+                found = True
+        if found is False:
+            no_ticker_found_err = f"ticker {ticker} not found in insider_tx_module module dict."
+            logger.error(no_ticker_found_err)
+            raise ValueError(no_ticker_found_err)
+        
+        raw_modules = modules[ticker]
+        found = False
+        for module in raw_modules:
+            if module != "insiderTransactions":
+                continue
+            else:
+                found = True
+        if found is False:
+            module_missing_err = "Insider transactions module missing from modules parameter."
+            logger.error(module_missing_err)
+            raise ValueError(module_missing_err)
+        
+        insider_tx_module = raw_modules["insiderTransactions"]
+        tx_list = insider_tx_module["transactions"]
+        buy_volume = 0
+        sell_volume = 0
+        for tx in tx_list:
+            try:
+                tx_date = datetime.datetime.strptime(tx.get('startDate', "1970-01-01"), "%Y-%m-%d")
+            except (ValueError, TypeError):
+                continue
+            # Skip transaction if older than 5 yrs
+            if tx_date < n_months_ago:
+                continue
+
+            tx_text = tx.get("transactionText", "")
+            if buy_str in tx_text:
+                buy_volume += tx.get("shares")
+            elif sell_str in tx_text:
+                sell_volume += tx.get("shares")
+            
+        logger.debug(f"Raw buy volume for {ticker} is: {buy_volume}")
+        logger.debug(f"Raw sell volume for {ticker} is: {sell_volume}")
+
+        
+
+
+        
+
+
 
     def get_all_users_ranks(self) -> list[dict]:
         """Get rank for all users"""
