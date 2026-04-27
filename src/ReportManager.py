@@ -230,17 +230,38 @@ class ReportManager(CommonQueries):
     
     def calculate_insider_sentiment(self, ticker: str, modules: dict, timeframe_in_months: int=5, buy_weight:float=20.0) -> float:
         """
-        Find the ratio of insider buys to sells of the company's own security. Used as a measure of sentiment. 
-        Weights buys over sales because backtesting research says this is a stronger signal.
-            Source: my ass, trust me bro
-                "Insiders sell for many reasons, they only buy for one..."
+        Calculate an insider sentiment score based on the ratio of discretionary
+        insider buying to selling within the given timeframe.
 
-        Weights multiple unique insiders buying even higher.
+        Only open-market purchases and sales are counted. Grants, awards, and
+        option exercises are excluded as they reflect compensation, not conviction.
+
+        Weights buys over sells because backtesting research says this is a stronger signal. 
+        (not that ive read any, someone just told me that once)
+            "Insiders sell for many reasons (diversification, liquidity, taxes), 
+            they only buy for one..."
+
+        Multiple unique buyers amplify the buy weight further, as independent
+        insiders making the same bet is a stronger signal than one insider buying
+        repeatedly.
+
+        Formula:
+            weighted_buy = buy_volume * buy_weight  (multiplied further if 2+ unique buyers)
+            sentiment = (weighted_buy - sell_volume) / (weighted_buy + sell_volume + 1)
+
+            The +1 denominator term serves two purposes:
+                1. Prevents division by zero when both volumes are 0
+                2. Slightly dampens extreme readings on low-volume data
+
+            Result is always in the range (-1, 1) where:
+                1.0  = pure buying (strongly bullish)
+                0.0  = neutral or no data
+               -1.0  = pure selling (strongly bearish)
 
         Args:
-            insider_tx_module -
-                result of get_modules with insiderTransactions as one of the parameters
-                https://yahooquery.dpguthrie.com/guide/ticker/modules/#insider_transactions
+            ticker: Stock ticker symbol
+            modules: Raw modules dict from yq_ticker_fetch_modules() with 'insiderTransactions'
+            https://yahooquery.dpguthrie.com/guide/ticker/modules/#insider_transactions
                 Shape = TICKER: {insiderTransactions: {transactions:[{
                     ...
                     startDate: datetime.date,
@@ -249,18 +270,14 @@ class ReportManager(CommonQueries):
                     ...
                     }, {}, ...
                 ]}}
-            ticker - Company stock ticker.
-            timeframe_in_months - Cutoff time in months of the oldest tx used.
-            buy_weight: how much more heavily insider buys are weighted
+            timeframe_in_months: How far back to look (default: 5 months)
+            buy_weight: Base multiplier applied to buy volume (default: 20.0)
 
         Returns:
-            float
-        
-        Raises:
-            ValueError - if insiderTrades module isnt found or ticker provided isn't found
+            float in range (-1, 1)
 
-        Note:
-            Will always return a number between -1 and 1 where 1 is pure buying, and -1 is pure selling.
+        Raises:
+            ValueError: If ticker not found in modules, or insiderTransactions module missing
         """
         buy_str = "Purchase at price"
         sell_str = "Sale at price"
@@ -307,14 +324,13 @@ class ReportManager(CommonQueries):
             # Skip transaction if older than 5 yrs
             if tx_date < n_months_ago:
                 continue
-        
-            buyer_name = tx.get("filerName")
-            if buyer_name:
-                buyers.add(buyer_name)
             
             tx_text: str = tx.get("transactionText", "").strip()
             if tx_text.startswith(buy_str):
                 buy_volume += tx.get("shares")
+                buyer_name = tx.get("filerName")
+                if buyer_name:
+                    buyers.add(buyer_name)
             elif tx_text.startswith(sell_str):
                 sell_volume += tx.get("shares")
             
