@@ -228,7 +228,7 @@ class ReportManager(CommonQueries):
 
         return cost_basis_data
     
-    def calculate_insider_sentiment(self, ticker: str, modules: dict, timeframe_in_months: int=5, buy_weight:float=20.0) -> float:
+    def calculate_insider_sentiment(self, ticker: str, modules: dict, timeframe_in_months: int=12, buy_weight:float=20.0) -> float:
         """
         Calculate an insider sentiment score based on the ratio of discretionary
         insider buying to selling within the given timeframe.
@@ -342,6 +342,7 @@ class ReportManager(CommonQueries):
 
         # If there are many unique buyers, weight the buys higher.
         unique_buyers = len(buyers)
+        logger.debug(f"{unique_buyers} number of unique buyers.")
         if unique_buyers >= 3:
             buy_weight = buy_weight * 2
         elif unique_buyers >= 2:

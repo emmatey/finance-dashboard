@@ -58,8 +58,8 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    module = yqs.yq_ticker_fetch_modules("mmm", "insiderTransactions")
-    res = rm.calculate_insider_sentiment(ticker="mmm", modules=module)
+    module = yqs.yq_ticker_fetch_modules("intc", "insiderTransactions")
+    res = rm.calculate_insider_sentiment(ticker="intc", modules=module)
 
     print(res)
 
