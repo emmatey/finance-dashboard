@@ -112,6 +112,7 @@ CREATE TABLE 'financial_metrics' (
     fifty_day_average NUMERIC,
     two_hundred_day_average NUMERIC,
     rating TEXT,
+    insider_sentiment NUMERIC,
     analyst_count INTEGER,
     target_price NUMERIC,
     current_ratio NUMERIC,
