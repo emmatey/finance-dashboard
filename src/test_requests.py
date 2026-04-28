@@ -3,13 +3,13 @@ import requests
 url = "http://localhost:5000"
 s = requests.Session()
 
-response = s.post(f'{url}/auth/register', 
-    json={"username": "emma", "password": "123Pass"})
+#response = s.post(f'{url}/auth/register', 
+#    json={"username": "emma", "password": "123Pass"})
 
 #response = s.post(f'{url}/auth/login', 
 #                  json={"username": "emma", "password": "123Pass"})
 
-response = s.get(f'{url}/screeners')
+response = s.get(f'{url}/research?ticker=GRND')
 
 print(f"Status Code: {response.status_code}\n")
 

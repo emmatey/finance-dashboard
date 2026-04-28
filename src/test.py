@@ -58,12 +58,9 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    module = yqs.yq_ticker_fetch_modules("intc", "insiderTransactions")
-    res = rm.calculate_insider_sentiment(ticker="intc", modules=module)
-
-    print(res)
-
-
+    res = rm.calculate_insider_sentiment_and_record(ticker="GRND")
+    if res:
+        print(res)
 
     filler_page = """
         <body style="background-color: black; color: green;">

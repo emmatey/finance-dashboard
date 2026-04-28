@@ -2,6 +2,7 @@ import datetime
 import logging
 from CommonQueries import CommonQueries
 from collections import deque, defaultdict
+from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import Dict, List, Union, Any
 
 
@@ -228,7 +229,8 @@ class ReportManager(CommonQueries):
 
         return cost_basis_data
     
-    def calculate_insider_sentiment_and_record(self, ticker: str, modules: dict, timeframe_in_months: int=12, buy_weight:float=20.0):
+    @ResearchDataCoordinator.register_as_research(table_name="insider_trades", post=True)
+    def calculate_insider_sentiment_and_record(self, ticker: str, timeframe_in_months: int=12, buy_weight:float=20.0):
         """
         Calculate an insider sentiment score based on the ratio of discretionary
         insider buying to selling within the given timeframe.
@@ -286,55 +288,28 @@ class ReportManager(CommonQueries):
         ticker = str(ticker).upper().strip()
 
         N_MONTHS = datetime.timedelta(days=(30 * timeframe_in_months))
-        today = datetime.datetime.today()
+        today = datetime.date.today()
         n_months_ago = today - N_MONTHS
 
-        # 'i' is the tickers in the modules dict
-        found = False
-        for i in modules:
-            if str(i).upper().strip() != ticker:
-                continue
-            else:
-                found = True
-        if found is False:
-            no_ticker_found_err = f"ticker {ticker} not found in insider_tx_module module dict."
-            logger.error(no_ticker_found_err)
-            raise ValueError(no_ticker_found_err)
-        
-        raw_modules = modules[ticker]
-        found = False
-        for module in raw_modules:
-            if module != "insiderTransactions":
-                continue
-            else:
-                found = True
-        if found is False:
-            module_missing_err = "Insider transactions module missing from modules parameter."
-            logger.error(module_missing_err)
-            raise ValueError(module_missing_err)
-        
-        insider_tx_module = raw_modules["insiderTransactions"]
-        tx_list = insider_tx_module["transactions"]
+        insiders_sql = f"""
+        SELECT shares, filer_name
+        FROM insider_trades
+        WHERE transaction_date > ({n_months_ago})
+        """
+        tx_list = self.select_query(insiders_sql, ())
+
         buyers = set()
         buy_volume = 0
         sell_volume = 0
         for tx in tx_list:
-            try:
-                tx_date = datetime.datetime.strptime(tx.get('startDate', "1970-01-01"), "%Y-%m-%d")
-            except (ValueError, TypeError):
-                continue
-            # Skip transaction if older than 5 yrs
-            if tx_date < n_months_ago:
-                continue
-            
             tx_text: str = tx.get("transactionText", "").strip()
             if tx_text.startswith(buy_str):
-                buy_volume += tx.get("shares")
-                buyer_name = tx.get("filerName")
+                buy_volume += tx.get("shares", 0)
+                buyer_name = tx.get("filer_name")
                 if buyer_name:
                     buyers.add(buyer_name)
             elif tx_text.startswith(sell_str):
-                sell_volume += tx.get("shares")
+                sell_volume += tx.get("shares", 0)
             
         logger.debug(f"Raw buy volume for {ticker} is: {buy_volume}")
         logger.debug(f"Raw sell volume for {ticker} is: {sell_volume}")
