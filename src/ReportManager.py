@@ -233,21 +233,20 @@ class ReportManager(CommonQueries):
     def calculate_insider_sentiment_and_record(self, ticker: str, timeframe_in_months: int=12, buy_weight:float=20.0):
         """
         Calculate an insider sentiment score based on the ratio of discretionary
-        insider buying to selling within the given timeframe.
+        insider buying to selling within the given timeframe, using data already
+        stored in the insider_trades table.
 
         Only open-market purchases and sales are counted. Grants, awards, and
         option exercises are excluded as they reflect compensation, not conviction.
 
-        Weights buys over sells because backtesting research says this is a stronger signal. 
+        Weights buys over sells because backtesting research says this is a stronger signal.
         (not that ive read any, someone just told me that once)
-            "Insiders sell for many reasons (diversification, liquidity, taxes), 
+            "Insiders sell for many reasons (diversification, liquidity, taxes),
             they only buy for one..."
 
         Multiple unique buyers amplify the buy weight further, as independent
         insiders making the same bet is a stronger signal than one insider buying
         repeatedly.
-
-        Also writes to db, to keep this self contained metric self contained.
 
         Formula:
             weighted_buy = buy_volume * buy_weight  (multiplied further if 2+ unique buyers)
@@ -264,24 +263,14 @@ class ReportManager(CommonQueries):
 
         Args:
             ticker: Stock ticker symbol
-            modules: Raw modules dict from yq_ticker_fetch_modules() with 'insiderTransactions'
-            https://yahooquery.dpguthrie.com/guide/ticker/modules/#insider_transactions
-                Shape = TICKER: {insiderTransactions: {transactions:[{
-                    ...
-                    startDate: datetime.date,
-                    shares: int,
-                    transactionText: str,
-                    ...
-                    }, {}, ...
-                ]}}
-            timeframe_in_months: How far back to look (default: 5 months)
+            timeframe_in_months: How far back to look (default: 12 months)
             buy_weight: Base multiplier applied to buy volume (default: 20.0)
 
         Returns:
-            None
+            None on success, or early None if ticker not found in DB or no trade data exists.
 
         Raises:
-            ValueError: If ticker not found in modules, or insiderTransactions module missing
+            ValueError: If ticker not found in DB.
         """
         buy_str = "Purchase at price"
         sell_str = "Sale at price"
@@ -291,18 +280,25 @@ class ReportManager(CommonQueries):
         today = datetime.date.today()
         n_months_ago = today - N_MONTHS
 
+        ticker_id = self.get_symbol_id(ticker=ticker)
+        if not ticker_id:
+            error_str = f"Ticker {ticker} not found in DB..."
+            logger.error(error_str)
+            raise ValueError(error_str)
+        
         insiders_sql = f"""
-        SELECT shares, filer_name
+        SELECT shares, filer_name, transaction_text
         FROM insider_trades
-        WHERE transaction_date > ({n_months_ago})
+        WHERE transaction_date > ?
+        AND symbol_id = ? 
         """
-        tx_list = self.select_query(insiders_sql, ())
+        tx_list = self.select_query(insiders_sql, (n_months_ago, ticker_id))
 
         buyers = set()
         buy_volume = 0
         sell_volume = 0
         for tx in tx_list:
-            tx_text: str = tx.get("transactionText", "").strip()
+            tx_text: str = tx.get("transaction_text", "").strip()
             if tx_text.startswith(buy_str):
                 buy_volume += tx.get("shares", 0)
                 buyer_name = tx.get("filer_name")
@@ -334,9 +330,6 @@ class ReportManager(CommonQueries):
         logger.debug(f"Sentiment score for {ticker} is {sentiment}")
 
         # Record to DB
-        # Get ticker ID 
-        ticker_id = self.get_symbol_id(ticker=ticker)
-
         sentiment_sql = """
         INSERT INTO financial_metrics (symbol_id, insider_sentiment)
         VALUES (?, ?)

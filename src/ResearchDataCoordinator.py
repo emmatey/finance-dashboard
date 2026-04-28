@@ -281,7 +281,7 @@ class ResearchDataCoordinator(CommonQueries):
                 if post_func:
                     try:
                         logger.debug(f"Running post-processing for {table}.")
-                        post_func(db_io_instance, symbol)
+                        post_func(self, symbol)
                     except Exception as e:
                         logger.error(f"Post-processing failed for {table}, symbol {symbol}: {e}")
                         raise
