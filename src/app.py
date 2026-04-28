@@ -129,7 +129,7 @@ def register():
         # Checks for non-letters
         return jsonify({
             "success": False,
-            "error": "Password must contain at least one non-letter character."
+            "message": "Password must contain at least one non-letter character."
             }), 400
     
     # Add user to db
@@ -321,10 +321,7 @@ def portfolio_view():
             "message": f"Database error..."
         }), 500
     if not portfolio_view:
-        return jsonify({
-            "success": True,
-            "message": f"Portfolio for user {cc.get_username_from_user_id(user_id=user_id)} empty."
-        }), 200
+        return jsonify([]), 200
     
     else:
         return jsonify(portfolio_view), 200
@@ -624,6 +621,7 @@ def trade():
 
         if tx_info is not None:
             tm.record_balance_snapshot(user_id=user_id)
+            tx_info["success"] = True
             return jsonify(tx_info), 200
         else:
             return jsonify({

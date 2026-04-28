@@ -4,13 +4,13 @@
 >
 > **Last Updated:** April 2026
 >
-> **Status:** ~80% of routes implemented, not yet integration-tested.
+> **Status:** All routes implemented.
 
 ---
 
 ## Overview
 
-This is a paper trading platform where users compete against each other using virtual money ($10,000 starting balance). Users can buy and sell real stocks at real-time prices, research companies with financial data, and climb a leaderboard. Think of it as a fantasy stock market league.
+This is a paper trading platform where users compete against each other using virtual money ($100,000 starting balance). Users can buy and sell real stocks at real-time prices, research companies with financial data, and climb a leaderboard. Think of it as a fantasy stock market league.
 
 The backend is a Flask + SQLite application powered by Yahoo Finance data (via `yahooquery`). It handles authentication via server-side sessions (cookie-based), automatic price updates through a background daemon, and a smart caching layer that only fetches fresh data from Yahoo when existing data goes stale.
 
@@ -64,10 +64,27 @@ All monetary values and quantities are floats. Quantities can be fractional (par
 
 The API uses two timestamp formats depending on the source:
 
-- **Unix timestamps** (integers): Used for `providerPublishTime` in news, `snap_datetime` and transaction dates
-- **ISO datetime strings**: Used for `last_updated` fields, `split_date`, `transaction_date`
+- **Unix timestamps** (integers): Used for `providerPublishTime` in news and transaction datetimes in some contexts
+- **ISO datetime strings**: Used for `last_updated` fields, `split_date`, `transaction_datetime`
 
 The frontend should be prepared to handle both.
+
+### Caching Behavior
+
+Most data-returning endpoints check a freshness threshold before responding. If data is stale, the backend fetches from Yahoo Finance synchronously before returning. This means **the first request for a new or stale ticker can take several seconds**. Show a loading state. Subsequent requests will be fast until the threshold expires.
+
+**Freshness thresholds by data type:**
+
+| Data | Refresh After |
+|------|--------------|
+| Financial metrics | 12 hours |
+| Historical prices | 24 hours |
+| Insider trades | 24 hours |
+| News | 1 hour |
+| Screeners | 1 hour |
+| Regional ETFs | 1 hour |
+| Company profile | 1 week |
+| Stock splits | 1 week |
 
 ---
 
@@ -171,7 +188,7 @@ The "user card" — a compact summary suitable for a dashboard widget or profile
 | 404 | Username not found in database |
 | 500 | Data partially missing for user |
 
-**Frontend Notes:** `snap_datetime` tells you when the portfolio value and cash balance figures were last calculated. You could display this as "Last updated: 3 hours ago" to set expectations about data freshness. The `rank` is computed against all users' most recent balance snapshots.
+**Frontend Notes:** `snap_datetime` tells you when the portfolio value and cash balance figures were last calculated. You could display this as "Last updated: 3 hours ago" to set expectations about data freshness. `rank` is computed against all users' most recent balance snapshots.
 
 **Related Endpoints:** Pair with `/user/portfolio` for a full profile page, or `/user/balance_snapshots` for a value-over-time chart.
 
@@ -201,7 +218,7 @@ The detailed holdings breakdown — one entry per stock the user currently owns.
 ]
 ```
 
-Sorted by `current_value` descending (biggest positions first). Returns an empty success message if the user has no holdings.
+Sorted by `current_value` descending (biggest positions first). Returns a success message with empty portfolio notice if the user has no holdings (see quirks).
 
 **Field Definitions:**
 
@@ -213,7 +230,7 @@ Sorted by `current_value` descending (biggest positions first). Returns an empty
 - `gain_loss` — `current_value - total_cost` (dollar P&L)
 - `gain_loss_pct` — Percentage return on the position
 
-**Frontend Notes:** This is great data for both a table view and a pie chart (use `current_value` for slice sizes). Color-code `gain_loss` and `gain_loss_pct` green/red. The cost basis uses FIFO — if users ask "why does my cost basis look weird after partial sells?" that's why.
+**Frontend Notes:** Great data for both a table view and a pie chart (use `current_value` for slice sizes). Color-code `gain_loss` and `gain_loss_pct` green/red. Cost basis uses FIFO — if users ask "why does my cost basis look weird after partial sells?" that's why.
 
 ---
 
@@ -249,7 +266,7 @@ Full transaction history for the user, newest first.
 | `deposit` | positive | `"CASH"` | Cash added |
 | `withdraw` | negative | `"CASH"` | Cash removed |
 
-**Frontend Notes:** For deposit/withdraw transactions, the `ticker` field will be `"CASH"` — handle this in your display logic. The `cash_after` field shows the user's cash balance immediately after each transaction, which is useful for showing a running balance column. Consider adding pagination client-side since this list will grow over time (the backend currently returns all records).
+**Frontend Notes:** For deposit/withdraw transactions, the `ticker` field will be `"CASH"` — handle this in your display logic. `cash_after` shows the user's cash balance immediately after each transaction, useful for a running balance column. The backend currently returns all records — implement client-side pagination.
 
 ---
 
@@ -273,19 +290,19 @@ Historical value data for charting the user's account value over time. Snapshots
 ]
 ```
 
-**Frontend Notes:** This is your line chart data. The `grand_total` is a computed column (`cash_balance + portfolio_value`), so you get three potential chart "modes" from one dataset — total value, portfolio value only, or cash only. The data arrives ordered chronologically.
+**Frontend Notes:** This is your line chart data. `grand_total` is a computed column (`cash_balance + portfolio_value`), giving you three potential chart modes from one dataset — total value, portfolio only, or cash only. Data arrives in chronological order.
 
-**Related Endpoints:** Use alongside `/user/summary` for the profile page — summary gives the current snapshot, this gives the history.
+**Related Endpoints:** Use alongside `/user/summary` — summary gives the current snapshot, this gives the history.
 
 ---
 
 ## Trade
 
-The core trading flow. This is a dual-purpose endpoint handling both the order preview screen (GET) and order execution (POST).
+The core trading flow. A dual-purpose endpoint handling both the order preview screen (GET) and order execution (POST).
 
 ### `GET /trade?ticker=<TICKER>` 🔒
 
-Populates the order form with current price data, user's position, and key financial metrics. Also triggers a freshness check to ensure financial metrics are up to date.
+Populates the order form with current price data, the user's existing position, and key financial metrics. Also triggers a freshness check on financial metrics.
 
 **Query Params:** `?ticker=string` (required)
 
@@ -319,7 +336,7 @@ Populates the order form with current price data, user's position, and key finan
 | 404 | Ticker not found (even after checking Yahoo) |
 | 500 | Data missing or corrupt, or no session user_id |
 
-**Frontend Notes:** This response has everything you need for a trade form: the user's available cash, how many shares they already own, the current price for calculating order totals, and enough financial context (52-week range, analyst rating, etc.) to help the user make a decision. `pct_change_since_close` is pre-calculated for you — show it next to the price with the appropriate color.
+**Frontend Notes:** This response has everything needed for a trade form — the user's available cash, how many shares they already own, the current price for calculating order totals, and enough financial context to inform the decision. `pct_change_since_close` is pre-calculated — show it next to the price with green/red coloring.
 
 ---
 
@@ -373,24 +390,13 @@ Execute a buy or sell order. The server re-fetches the latest price from Yahoo i
 | 404 | Ticker not found |
 | 500 | Transaction failed to record |
 
-**Frontend Notes:** The "insufficient funds" error response includes the user's current balance and the required amount in the message string, which you could parse for a nicer UI, but the message is human-readable as-is. After a successful trade, you'll want to refresh the portfolio view and summary since the balance has changed. Note that the sell response doesn't include `"success": true` — a minor inconsistency to be aware of.
+**Frontend Notes:** The "insufficient funds" error message includes the user's current balance and the required amount — it's human-readable as-is. After a successful trade, refresh the portfolio view and user summary since the balance has changed. Note that the sell response doesn't include `"success": true` — check HTTP 200 status instead (see quirks).
 
 ---
 
 ## Research
 
-A rich set of endpoints for company deep-dives. Each endpoint checks data freshness against configurable thresholds and auto-refreshes from Yahoo Finance if stale.
-
-**Freshness Thresholds:**
-
-| Data | Refresh After |
-|------|--------------|
-| Financial metrics | 12 hours |
-| Historical prices | 24 hours |
-| News | 1 hour |
-| Insider trades | 24 hours |
-| Company profile | 1 week |
-| Stock splits | 1 week |
+A rich set of endpoints for company deep-dives. Each endpoint checks data freshness and auto-refreshes from Yahoo Finance if stale. See the freshness thresholds table in Conventions.
 
 ### `GET /research?ticker=<TICKER>`
 
@@ -445,7 +451,8 @@ The "everything" endpoint — returns all research data for a company in a singl
       "debt_to_equity": 176.30,
       "todays_volume": 62000000,
       "ten_day_avg_volume": 57000000,
-      "three_month_avg_volume": 58000000
+      "three_month_avg_volume": 58000000,
+      "insider_sentiment": 0.73
     }
   ],
   "news": [
@@ -476,20 +483,32 @@ The "everything" endpoint — returns all research data for a company in a singl
       "transaction_value": 9626500.0,
       "filer_name": "Tim Cook",
       "filer_relation": "Chief Executive Officer",
-      "transaction_text": "Sale",
+      "transaction_text": "Sale at price 192.53 per share.",
       "last_updated": "2026-04-11 00:00:00"
     }
   ]
 }
 ```
 
-**Frontend Notes:** This is a big payload. Consider whether you need everything at once or if lazy-loading individual sections would feel better. Each section is keyed by table name, and each value is an array (even for single-record tables like `financial_metrics` and `company_profile`). The initial load might be slow if multiple data sources are stale and need refreshing.
+**Notes on `insider_sentiment`:** A derived metric in the range (-1.0, 1.0) where 1.0 is strongly bullish (pure insider buying) and -1.0 is strongly bearish (pure selling). Computed from the `insider_trades` data — open-market purchases and sales only, grants and option exercises excluded. May be `null` if no trade data exists for the company. See `/research/insider_trades` for the raw data behind it.
+
+**Frontend Notes:** This is a large payload. Consider whether you need everything at once or if lazy-loading individual sections would feel better. Each section is keyed by table name, and each value is always an array — even for single-record tables like `financial_metrics` and `company_profile`. The initial load may be slow if multiple data sources are stale.
 
 ---
 
 ### Individual Research Endpoints
 
-These are the same data as `/research` but broken out individually. Each checks and refreshes only its own table. Use these for targeted views or when you want to lazy-load sections.
+The same data as `/research` but broken out per-table. Each checks and refreshes only its own data. Use these for targeted views or lazy-loading.
+
+All individual research endpoints require `?ticker=string` and share the same error responses:
+
+| Status | Meaning |
+|--------|---------|
+| 400 | No ticker provided |
+| 404 | Ticker not found on Yahoo Finance |
+| 500 | Data missing or database error |
+
+---
 
 #### `GET /research/summary?ticker=<TICKER>`
 
@@ -503,7 +522,11 @@ Minimal company info. Useful for search result cards or compact displays.
 }
 ```
 
+---
+
 #### `GET /research/company_profile?ticker=<TICKER>`
+
+Returns a single object (not an array).
 
 ```json
 {
@@ -516,21 +539,42 @@ Minimal company info. Useful for search result cards or compact displays.
 }
 ```
 
-Note: This returns a single object, not an array.
+---
 
 #### `GET /research/financial_metrics?ticker=<TICKER>`
 
-Returns a single object with all financial metrics (see the full shape in the `/research` response above). This is the same data, just unwrapped from the array.
+Returns a single object with all financial metrics including `insider_sentiment`. See the full field list in the `/research` response above.
+
+---
 
 #### `GET /research/insider_trades?ticker=<TICKER>`
 
 **Query Params:** `?ticker=string` (required), `?qty=int` (optional, limits results)
 
-Returns an array of insider trade records.
+Returns an array of insider trade records:
+
+```json
+[
+  {
+    "ticker": "AAPL",
+    "transaction_date": "2026-03-15",
+    "shares": -50000.0,
+    "transaction_value": 9626500.0,
+    "filer_name": "Tim Cook",
+    "filer_relation": "Chief Executive Officer",
+    "transaction_text": "Sale at price 192.53 per share.",
+    "last_updated": "2026-04-11 00:00:00"
+  }
+]
+```
+
+**Frontend Notes:** Positive `shares` = purchase, negative `shares` = sale. `transaction_text` contains a human-readable description and is the field used internally to classify buys vs. sells for the `insider_sentiment` calculation.
+
+---
 
 #### `GET /research/historical_prices?ticker=<TICKER>`
 
-Returns an array of price/volume/timestamp records. Use for price charts.
+Returns an array of daily price records, useful for a price chart:
 
 ```json
 [
@@ -542,6 +586,8 @@ Returns an array of price/volume/timestamp records. Use for price charts.
   }
 ]
 ```
+
+---
 
 #### `GET /research/stock_splits?ticker=<TICKER>`
 
@@ -556,11 +602,13 @@ Returns an array of price/volume/timestamp records. Use for price charts.
 ]
 ```
 
+---
+
 #### `GET /research/news?ticker=<TICKER>`
 
 **Query Params:** `?ticker=string` (optional), `?qty=int` (optional, default 10)
 
-If no ticker is provided, returns global news (all companies). With a ticker, returns news for that company and triggers a freshness check.
+If no ticker is provided, returns global cached news without triggering an update. With a ticker, triggers a freshness check first.
 
 ```json
 [
@@ -575,7 +623,7 @@ If no ticker is provided, returns global news (all companies). With a ticker, re
 ]
 ```
 
-**Frontend Notes:** `providerPublishTime` is a Unix timestamp. `thumbnail` may be `null`. The `uuid` is unique per story and can be used as a React key. When called without a ticker, global news updates are not yet implemented (the `NewsAPIManager` is a stub) — the endpoint will return whatever is already cached in the database.
+**Frontend Notes:** `providerPublishTime` is a Unix timestamp. `thumbnail` may be `null`. The `uuid` is unique per story and can be used as a React key. Global news (no ticker) won't reflect live updates until `NewsAPIManager` is implemented — the endpoint will return whatever is cached.
 
 ---
 
@@ -583,7 +631,7 @@ If no ticker is provided, returns global news (all companies). With a ticker, re
 
 ### `GET /screeners`
 
-Market screener data — day gainers, losers, most active stocks, etc. The backend auto-refreshes this data hourly. Returns results grouped by screener name.
+Market screener data — day gainers, losers, most active stocks, etc. Auto-refreshes hourly. Returns results grouped by screener name.
 
 **Query Params:** None
 
@@ -606,17 +654,17 @@ Market screener data — day gainers, losers, most active stocks, etc. The backe
       "volume_change_pct": 300.0
     }
   ],
-  "day_losers": [ ... ],
-  "most_actives": [ ... ],
-  "most_watched_tickers": [ ... ],
-  "fifty_two_wk_gainers": [ ... ],
-  "fifty_two_wk_losers": [ ... ],
-  "volume_spike_bullish": [ ... ],
-  "volume_spike_bearish": [ ... ]
+  "day_losers": [ "..." ],
+  "most_actives": [ "..." ],
+  "most_watched_tickers": [ "..." ],
+  "fifty_two_wk_gainers": [ "..." ],
+  "fifty_two_wk_losers": [ "..." ],
+  "volume_spike_bullish": [ "..." ],
+  "volume_spike_bearish": [ "..." ]
 }
 ```
 
-**Available Screener Names:**
+**Available Screeners:**
 
 | Screener | Description |
 |----------|-------------|
@@ -629,24 +677,25 @@ Market screener data — day gainers, losers, most active stocks, etc. The backe
 | `volume_spike_bullish` | Custom: unusual volume + price up |
 | `volume_spike_bearish` | Custom: unusual volume + price down |
 
-**Frontend Notes:** The last two screeners (`volume_spike_bullish/bearish`) are custom-derived from the Yahoo data — they identify stocks with abnormal volume relative to their 3-month average. Each screener's array is ordered by `rank`. This is a good candidate for a tabbed interface on the homepage. Note: the response might include a `"broken"` key if any screener records are malformed — you can ignore or log that.
+**Frontend Notes:** Each screener's array is ordered by `rank`. The last two screeners are custom-derived from Yahoo data — they identify stocks with abnormal volume relative to their 3-month average. Good candidate for a tabbed interface on the homepage. The response may include a `"broken"` key if any screener records are malformed — filter it out in your UI.
 
 ---
 
 ## Scoreboard
 
-> **Status: NOT YET IMPLEMENTED as a route**
+### `GET /scoreboard`
 
-Based on `api.md`, this endpoint is planned:
+Rankings for all users based on their most recent balance snapshots.
 
-### `GET /scoreboard` (planned)
+**Query Params:** None
 
-**Expected Response:**
+**200 Response:**
 
 ```json
 [
   {
     "username": "emma",
+    "snap_datetime": "2026-04-12 00:00:00",
     "portfolio_value": 4523.50,
     "cash_balance": 5476.50,
     "grand_total": 10000.00,
@@ -655,19 +704,19 @@ Based on `api.md`, this endpoint is planned:
 ]
 ```
 
-**Frontend Notes:** The backend already has the `get_all_users_ranks()` method in `ReportManager` — it just needs to be wired to a route. This data comes from the most recent balance snapshots, updated daily by the daemon and on each user login. Portfolios are fully visible (not obfuscated) since this is a competition, not a real brokerage. You can use `/user/portfolio?username=<name>` and `/user/balance_snapshots?username=<name>` to drill into any user's detailed holdings.
+**Frontend Notes:** Data comes from the most recent balance snapshot per user, updated daily by the daemon and on each user login. Portfolios are fully visible since this is a competition, not a real brokerage. Drill into any user's details with `/user/portfolio?username=<n>` and `/user/balance_snapshots?username=<n>`.
 
 ---
 
 ## Market Overview
 
-> **Status: NOT YET IMPLEMENTED as a route**
+### `GET /market_overview`
 
-### `GET /market_overview` (planned)
+Regional ETF performance data for a global markets "at a glance" widget. Checks freshness and updates if stale (1-hour threshold).
 
-Regional ETF performance data for a global markets "at a glance" widget.
+**Query Params:** None
 
-**Expected Response:**
+**200 Response:**
 
 ```json
 [
@@ -690,111 +739,221 @@ Regional ETF performance data for a global markets "at a glance" widget.
 
 **Tracked Regions:** USA (VOO), EU (IEUR), LATAM (ILF), Africa (AFK), Australia (EWA), India (INDA), Japan (EWJ), China (MCHI), Gold (GLD), Copper (CPER), Oil (USO)
 
-**Frontend Notes:** The backend (`MarketOverviewCoordinator`) already fetches and caches this data with a 1-hour refresh cycle. It just needs a route. This is homepage material — a row of cards or a small world map with color-coded performance indicators.
+**Frontend Notes:** Homepage material — a row of region cards or a color-coded world map. `pct_change` is the percentage move from previous close, pre-calculated. Green/red coloring applies.
 
 ---
 
 ## Search
 
-> **Status: NOT YET IMPLEMENTED as a route**
+Three endpoints: a combined all-in-one search and two dedicated sub-routes for companies and news that offer more control. There is no dedicated user sub-route for search — use `/search/users` for that.
 
-### `GET /search?q=<query>` (planned)
+### `GET /search?q=<query>`
 
-**Expected Response:**
+Combined search across companies, users, and news in one call. Makes a single Yahoo Finance API call and fans out results to all three pipelines, so it's more efficient than calling the sub-routes individually.
+
+**Query Params:** `?q=string` (required)
+
+**200 Response:**
+
+```json
+{
+  "companies": [
+    {
+      "ticker": "AAPL",
+      "company_name": "Apple Inc.",
+      "quote_type": "EQUITY",
+      "exchange": "NASDAQ",
+      "sector": "Technology",
+      "industry": "Consumer Electronics",
+      "search_type": "company"
+    }
+  ],
+  "users": [
+    {
+      "username": "emma",
+      "snap_datetime": "2026-04-12 00:00:00",
+      "portfolio_value": 4523.50,
+      "cash_balance": 5476.50,
+      "grand_total": 10000.00,
+      "rank": 1,
+      "search_type": "user"
+    }
+  ],
+  "news": [
+    {
+      "uuid": "abc-123-def",
+      "title": "Apple Reports Record Quarter",
+      "publisher": "Reuters",
+      "link": "https://...",
+      "providerPublishTime": 1712880000,
+      "thumbnail": "https://...",
+      "relatedTickers": ["AAPL"],
+      "search_type": "news"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+
+| Status | Meaning |
+|--------|---------|
+| 400 | No `q` parameter provided |
+| 500 | Server error in any pipeline |
+
+**Frontend Notes:** The response is always structured with `companies`, `users`, and `news` keys — any or all may be empty arrays. Each result has a `search_type` field for rendering different card layouts. Consider section headers ("Companies", "Users", "News") within the results UI. Exchange variants of the same ticker (e.g. `MMM.DE`) are deduplicated — only the primary listing is returned.
+
+---
+
+### `GET /search/companies?q=<query>`
+
+Company-only search. Supports a `local` mode for fast datalist population on keystrokes — bypasses Yahoo Finance entirely and queries only the local database.
+
+**Query Params:**
+
+| Param | Type | Required | Default | Notes |
+|-------|------|----------|---------|-------|
+| `q` | string | yes | — | Search term matched against ticker and company name |
+| `limit` | int | no | 20 | Max results to return |
+| `local` | bool | no | false | If `true`, local DB only — no API call |
+
+**200 Response:**
 
 ```json
 [
   {
     "ticker": "AAPL",
-    "name": "Apple Inc.",
+    "company_name": "Apple Inc.",
     "quote_type": "EQUITY",
-    "type": "company"
-  },
-  {
-    "username": "emma",
-    "grand_total": 10000.00,
-    "rank": 1,
-    "type": "user"
-  },
-  {
-    "title": "Apple Reports Record Quarter",
-    "desc": "...",
-    "related_to": ["AAPL"],
-    "link": "https://...",
-    "type": "news"
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "industry": "Consumer Electronics",
+    "search_type": "company"
   }
 ]
 ```
 
-**Frontend Notes:** The backend has `SearchManager` which already implements local DB search and Yahoo Finance online search with deduplication. The search returns a mixed-type result set — use the `type` field to render different card layouts for companies, users, and news. The design calls for section headers ("Companies", "Users", "News") within the results.
+**Frontend Notes:** Use `?local=true` for search-as-you-type datalist suggestions — it's instant since it's just a `LIKE` query against the local DB. Switch to the full search (no `local`) for the results page where freshness matters more than speed.
+
+---
+
+### `GET /search/users?q=<query>`
+
+User search by username.
+
+**Query Params:** `?q=string` (required)
+
+**200 Response:**
+
+```json
+[
+  {
+    "username": "emma",
+    "snap_datetime": "2026-04-12 00:00:00",
+    "portfolio_value": 4523.50,
+    "cash_balance": 5476.50,
+    "grand_total": 10000.00,
+    "rank": 1,
+    "search_type": "user"
+  }
+]
+```
+
+Returns `{"success": true, "message": "User X not found."}` (HTTP 200) if no match.
+
+---
+
+### `GET /search/news?q=<query>`
+
+News search by headline or related ticker.
+
+**Query Params:** `?q=string` (required), `?limit=int` (optional, default 20)
+
+**200 Response:**
+
+```json
+[
+  {
+    "uuid": "abc-123-def",
+    "title": "Apple Reports Record Quarter",
+    "publisher": "Reuters",
+    "link": "https://...",
+    "providerPublishTime": 1712880000,
+    "relatedTickers": ["AAPL"],
+    "search_type": "news"
+  }
+]
+```
+
+Returns `{"success": true, "message": "News related to X not found."}` (HTTP 200) if no results.
 
 ---
 
 ## Suggested Page Architecture
 
-Based on the available (and planned) endpoints, here's a natural mapping of pages to API calls:
-
 ### Homepage
 
-| Section | Endpoint(s) |
-|---------|-------------|
+| Section | Endpoint |
+|---------|----------|
 | User summary card | `GET /user/summary` |
-| Market overview widget | `GET /market_overview` (planned) |
+| Market overview widget | `GET /market_overview` |
 | Screener tabs | `GET /screeners` |
 | News feed | `GET /research/news` (no ticker) |
 
 ### Research / Company Page
 
-| Section | Endpoint(s) |
-|---------|-------------|
+| Section | Endpoint |
+|---------|----------|
 | Full company research | `GET /research?ticker=X` (all-in-one) |
 | OR lazy-load sections | Individual `/research/*` endpoints |
 
 ### Profile Page
 
-| Section | Endpoint(s) |
-|---------|-------------|
+| Section | Endpoint |
+|---------|----------|
 | User card | `GET /user/summary?username=X` |
 | Holdings table + pie chart | `GET /user/portfolio?username=X` |
 | Value history chart | `GET /user/balance_snapshots?username=X` |
 
 ### Trade Page
 
-| Section | Endpoint(s) |
-|---------|-------------|
+| Section | Endpoint |
+|---------|----------|
 | Order preview form | `GET /trade?ticker=X` |
 | Execute order | `POST /trade` |
 | Confirmation | Read the POST response |
 
 ### Transaction History
 
-| Section | Endpoint(s) |
-|---------|-------------|
+| Section | Endpoint |
+|---------|----------|
 | Transaction list | `GET /user/transactions` |
 
 ### Scoreboard
 
-| Section | Endpoint(s) |
-|---------|-------------|
-| Rankings table | `GET /scoreboard` (planned) |
+| Section | Endpoint |
+|---------|----------|
+| Rankings table | `GET /scoreboard` |
 | Drill into user | `GET /user/portfolio?username=X` |
+
+### Search
+
+| Section | Endpoint |
+|---------|----------|
+| Combined results page | `GET /search?q=X` |
+| Search-as-you-type datalist | `GET /search/companies?q=X&local=true` |
+| Company-only results | `GET /search/companies?q=X` |
+| User-only results | `GET /search/users?q=X` |
+| News-only results | `GET /search/news?q=X` |
 
 ---
 
 ## Known Quirks & Gotchas
 
-1. **Slow first requests:** If data is stale, the backend fetches from Yahoo Finance synchronously before responding. The first hit to `/research` for a new ticker can take several seconds. Consider showing a loading state.
+1. **Slow first requests:** If data is stale, the backend fetches from Yahoo Finance synchronously before responding. The first hit to `/research` for a new ticker can take several seconds. Show a loading state.
 
-2. **Sell response missing `success` field:** The `POST /trade` response for sells doesn't include `"success": true` while buys do. Check for HTTP 200 status instead of relying on the response body for sells.
+2. **Yahoo API circuit breaker:** The backend has a circuit breaker with exponential backoff. If Yahoo is down or rate-limits the server, data fetches are skipped silently. The frontend won't see errors — it'll get slightly stale data. There's no public endpoint to check API health status.
 
-3. **Inconsistent error field naming:** Most error responses use `"message"` but the password non-letter validation in `/auth/register` uses `"error"` instead. Parse both to be safe.
+3. **No pagination on transaction history:** `/user/transactions` returns all records. Implement client-side pagination or request this be added server-side.
 
-4. **`/user/portfolio` empty response:** When a user has no holdings, you get `{"success": true, "message": "Portfolio for user X empty."}` (HTTP 200) rather than an empty array. Handle this as a special case.
-
-5. **Yahoo API circuit breaker:** The backend has a circuit breaker with exponential backoff. If Yahoo is down or rate-limits the server, data fetches will be skipped silently. The frontend won't see errors — it'll just get slightly stale data. There's no endpoint to check API health status, but it's tracked internally in `global_events`.
-
-6. **No pagination on transaction history:** The `/user/transactions` endpoint returns all records. Implement client-side pagination or request this be added server-side.
-
-7. **`NewsAPIManager` is a stub:** Global news (no ticker) won't have fresh data unless individual company news was recently fetched. The homepage news feed will be limited until this is completed.
-
-8. **Screener `broken` key:** If malformed screener records exist, they appear under a `"broken"` key in the `/screeners` response. Filter this out in your UI.
+4. **Screener `broken` key:** If malformed screener records exist, they appear under a `"broken"` key in the `/screeners` response. Filter this out in your UI.
