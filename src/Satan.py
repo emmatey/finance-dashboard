@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 class TableLifetimes(Enum):
     """
     Specifies the age at which any given DB table should be updated.
-    Done on a per-table basis because the 'research_api_helpers' are written to fetch and organize
-    the data required to populate one record in one DB table each.
     """
     price = 60 # symbols table
     balance_snapshot = 86400  # 24 hours
