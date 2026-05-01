@@ -15,7 +15,7 @@ class UpdateFrequency(Enum):
     """
     Specifies the age at which any given DB table should be updated.
     """
-    price = 60 # symbols table
+    price = 300 # symbols table
     balance_snapshot = 86400  # 24 hours
 
 column_map = {
@@ -73,9 +73,15 @@ class Satan(CommonQueries):
         """
 
         params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
-        self.modify_query(update_sql, tuple(params))
-        for func in to_update_funcs:
-            func()
+        try:
+            for func in to_update_funcs:
+                func()
+            self.modify_query(update_sql, tuple(params))
+        except Exception:
+            logger.exception("Satan update failed, reverting timestamps")
+            revert_sql = f"UPDATE global_events SET {', '.join(f'{col} = NULL' for col in to_update)} WHERE id = 1"
+            self.modify_query(revert_sql, ())
+            raise
         params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
         self.modify_query(update_sql, tuple(params))
 
