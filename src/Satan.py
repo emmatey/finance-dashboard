@@ -30,12 +30,12 @@ class Satan(CommonQueries):
     Will be run in a separate process to app.py.
     Currently will not really be 'daemons' but just a script that does these two operations and then dies.
     """
-    def __init__(self):
+    def run(self):
         """
-        On run, decide which functions to call. 
-        Write to db as complete immidately,
+        Decide which functions to call. 
+        Write to db as complete immidately to block parallel requests from performing the same actions,
         revert to NULL on exception.
-        Update again on success.
+        Update again on success to reflect true completion time.
         """
         status_sql = """
         SELECT 

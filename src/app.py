@@ -13,6 +13,7 @@ from CommonQueries import CommonQueries
 from MarketOverviewCoordinator import MarketOverviewCoordinator, SYMBOLS
 from ReportManager import ReportManager  # Fixed space in filename
 from ResearchDataCoordinator import ResearchDataCoordinator
+from Satan import Satan
 from SearchManager import SearchManager
 from TransactionManager import TransactionManager
 from YahooQueryService import YahooQueryService
@@ -60,6 +61,9 @@ def teardown_db(exception):
     if exception:
         logger.error(exception)
 
+    dae = Satan()
+    dae.run()
+    
 ### AUTH ###
 
 @app.route("/auth/register", methods=["POST"])
