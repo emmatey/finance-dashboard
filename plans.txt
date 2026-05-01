@@ -18,3 +18,6 @@ LONG TERM FEATURES
 TODO 4/25
     - Add the insiders buy+reward to sell ration. 
     - Start the testing baby!
+
+
+Run a chron job to ping the market overview manager to simulate a background thread.

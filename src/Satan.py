@@ -1,17 +1,17 @@
 from app import app
 import logging
+import time
 
 from CommonQueries import CommonQueries
 from enum import Enum
-from MarketOverviewCoordinator import MarketOverviewCoordinator
-from time import time
+from MarketOverviewCoordinator import MarketOverviewCoordinator, SYMBOLS
 from YahooQueryService import YahooQueryService
 
 
 
 logger = logging.getLogger(__name__)
 
-class TableLifetimes(Enum):
+class UpdateFrequency(Enum):
     """
     Specifies the age at which any given DB table should be updated.
     """
@@ -30,7 +30,55 @@ class Satan(CommonQueries):
     Will be run in a separate process to app.py.
     Currently will not really be 'daemons' but just a script that does these two operations and then dies.
     """
-      
+    def __init__(self):
+        """
+        On run, decide which functions to call. 
+        Write to db as complete immidately,
+        revert to NULL on exception.
+        Update again on success.
+        """
+        status_sql = """
+        SELECT 
+            unixepoch(last_price_update) AS price,
+            unixepoch(last_snapshot_update) AS snap
+        FROM global_events
+        """
+        status = self.select_query(status_sql, ())
+        if not status or len(status) != 1:
+            logger.critical(f"Error reading global_events...Skipping updates.")
+            return
+        
+        to_update = []
+        to_update_funcs = []
+        price_time = status[0].get("price")
+        if not price_time:
+            price_time = 0
+        if time.time() - price_time > UpdateFrequency.price.value:
+            to_update.append("last_price_update")
+            to_update_funcs.append(self.price_updater)
+        snap_time =  status[0].get("snap")
+        if not snap_time:
+            snap_time = 0
+        if time.time() - snap_time > UpdateFrequency.balance_snapshot.value:
+            to_update.append("last_snapshot_update")
+            to_update_funcs.append(self.balance_snapshot_all_users)
+        if not to_update:
+            logger.debug("All satan tables up to date, skipping...")
+            return
+        
+        update_placeholders = ", ".join(f"{i} = ?" for i in to_update)
+        update_sql = f"""
+        UPDATE global_events
+        SET {update_placeholders}
+        """
+
+        params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
+        self.modify_query(update_sql, tuple(params))
+        for func in to_update_funcs:
+            func()
+        params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
+        self.modify_query(update_sql, tuple(params))
+
     def balance_snapshot_all_users(self) -> bool:
         """
         Create balance snapshots for ALL users.
@@ -82,9 +130,7 @@ class Satan(CommonQueries):
 
     def price_updater(self, yq_service=None) -> bool:
         """
-        Update all stock prices using YahooQueryService.
-        Designed to be called once per execution by threading.Timer or scheduler.
-        Thread loop and timing should be managed in app.py.
+        Update all stock prices.
 
         Args:
             yq_service: Instance of YahooQueryService for API calls.
@@ -103,8 +149,9 @@ class Satan(CommonQueries):
         try:
             logger.info("Starting price update cycle.")
 
-            placeholders = ", ".join(["?"for _ in MarketOverviewCoordinator.SYMBOLS.values()])
-            moc_symbols = tuple([s for s in MarketOverviewCoordinator.SYMBOLS.values()])
+            # SYMBOLS is a constant from MarketOverviewCoordinator
+            placeholders = ", ".join(["?"for _ in SYMBOLS.values()])
+            moc_symbols = tuple([s for s in SYMBOLS.values()])
             # Query DB for all active symbols
             tickers_query = f"""
             SELECT DISTINCT s.ticker

@@ -58,9 +58,8 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    res = rm.calculate_insider_sentiment_and_record(ticker="GRND")
-    if res:
-        print(res)#
+    
+
 
     filler_page = """
         <body style="background-color: black; color: green;">
