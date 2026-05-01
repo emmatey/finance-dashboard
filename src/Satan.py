@@ -1,4 +1,3 @@
-from app import app
 import logging
 import time
 
@@ -18,12 +17,6 @@ class UpdateFrequency(Enum):
     price = 300 # symbols table
     balance_snapshot = 86400  # 24 hours
 
-column_map = {
-    # associates enum name to db schema col names.
-    'price': 'last_price_update',
-    'balance_snapshot': 'last_snapshot_update'
-}
-
 class Satan(CommonQueries):
     """
     The deamon manager (please laugh). 
@@ -42,7 +35,9 @@ class Satan(CommonQueries):
             unixepoch(last_price_update) AS price,
             unixepoch(last_snapshot_update) AS snap
         FROM global_events
+        WHERE id = 1
         """
+        logger.debug("Satan is running...")
         status = self.select_query(status_sql, ())
         if not status or len(status) != 1:
             logger.critical(f"Error reading global_events...Skipping updates.")
@@ -70,18 +65,16 @@ class Satan(CommonQueries):
         update_sql = f"""
         UPDATE global_events
         SET {update_placeholders}
+        WHERE id = 1
         """
 
         params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
-        try:
-            for func in to_update_funcs:
-                func()
-            self.modify_query(update_sql, tuple(params))
-        except Exception:
-            logger.exception("Satan update failed, reverting timestamps")
-            revert_sql = f"UPDATE global_events SET {', '.join(f'{col} = NULL' for col in to_update)} WHERE id = 1"
-            self.modify_query(revert_sql, ())
-            raise
+        self.modify_query(update_sql, tuple(params))
+        for func in to_update_funcs:
+            ret = func()
+            if ret is False:
+                revert_sql = f"UPDATE global_events SET {', '.join(f'{col} = NULL' for col in to_update)} WHERE id = 1"
+                self.modify_query(revert_sql, ())
         params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
         self.modify_query(update_sql, tuple(params))
 
@@ -219,10 +212,3 @@ class Satan(CommonQueries):
         except Exception:
             logger.exception("price_updater failed")
             return False
-
-if __name__ == "__main__":
-    
-    with app.app_context():
-        satan = Satan()
-        moc = MarketOverviewCoordinator()
-        

@@ -54,16 +54,18 @@ def after_request(response):
 
 @app.teardown_appcontext
 def teardown_db(exception):
-    db = g.pop('db', None)
+    try:
+        dae = Satan()
+        dae.run()
+    except Exception:
+        logger.exception("Satan.run() failed during teardown")
 
+    db = g.pop('db', None)
     if db is not None:
         db.close()
     if exception:
         logger.error(exception)
 
-    dae = Satan()
-    dae.run()
-    
 ### AUTH ###
 
 @app.route("/auth/register", methods=["POST"])
