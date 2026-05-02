@@ -2,11 +2,9 @@ import logging
 import sqlite3
 import time
 
-from flask import g
+from flask import g, current_app
 from functools import wraps
 from pathlib import Path
-from typing import Union, Dict, Any, List
-
 
 
 logger = logging.getLogger(__name__)
@@ -44,13 +42,16 @@ class DbManager:
         raise RuntimeError(f"Project root not found, missing anchor file {anchor}")
 
     @staticmethod
-    def get_db(db_name="finance.db"):
+    def get_db():
         """
         Check if 'g' contains a reference to the sqlite3.Connection() object.
         Returning this connection for queries if so, and instantiating a connection if not.
         https://flask.palletsprojects.com/en/stable/appcontext/
         """
         root = DbManager.get_root()
+        db_name = current_app.config.get("DATABASE")
+        if not db_name:
+            raise RuntimeError("Database not found in current_app.config...")
         db_path = root / db_name
         if 'db' not in g:
             try:
