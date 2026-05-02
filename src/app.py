@@ -53,7 +53,7 @@ def after_request(response):
     return response
 
 @app.teardown_appcontext
-def teardown_db(exception):
+def teardown(exception):
     try:
         dae = Satan()
         dae.run()
