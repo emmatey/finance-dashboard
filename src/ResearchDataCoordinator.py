@@ -3,7 +3,7 @@ import logging
 from CommonQueries import CommonQueries
 from enum import Enum
 from helpers import TickerNotFoundError
-from time import time, strftime
+from time import time, strftime, gmtime
 
 
 logger = logging.getLogger(__name__)
@@ -165,11 +165,11 @@ class ResearchDataCoordinator(CommonQueries):
         """
         def _claim_fresh_report(fresh_report):
             """
-            Write current timestamp to fresh_report table for all stale tables.
+            Write current UTC timestamp to fresh_report table for all stale tables.
             Acts as a job claim — blocks parallel requests from doing the same work.
             Returns the list of table names claimed, for use in rollback.
             """
-            now = strftime('%Y-%m-%d %H:%M:%S')
+            now = strftime('%Y-%m-%d %H:%M:%S', gmtime())
             symbol_id = self.get_symbol_id(fresh_report["symbol"])
             tables_to_claim = [table for table, fresh in fresh_report.items() if fresh is False]
             if not tables_to_claim:
