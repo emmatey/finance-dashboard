@@ -58,11 +58,12 @@ def after_request(response):
 
 @app.teardown_appcontext
 def teardown(exception):
-    try:
-        dae = Satan()
-        dae.run()
-    except Exception:
-        logger.exception("Satan.run() failed during teardown")
+    if not app.config.get("TESTING", False):
+        try:
+            dae = Satan()
+            dae.run()
+        except Exception:
+            logger.exception("Satan.run() failed during teardown")
 
     db = g.pop('db', None)
     if db is not None:
