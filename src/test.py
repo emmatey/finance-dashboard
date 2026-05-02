@@ -58,8 +58,9 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    
-
+    res = rdc.create_research_fresh_report(symbol="GRND")
+    if res:
+        print(res)
 
     filler_page = """
         <body style="background-color: black; color: green;">

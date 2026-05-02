@@ -3,7 +3,7 @@ import logging
 from CommonQueries import CommonQueries
 from enum import Enum
 from helpers import TickerNotFoundError
-from time import time
+from time import time, strftime
 
 
 logger = logging.getLogger(__name__)
@@ -86,84 +86,41 @@ class ResearchDataCoordinator(CommonQueries):
 
     def create_research_fresh_report(self, symbol: str):
         """
-        Check the age of stored data using a single optimized CTE query.
+        Check the age of stored data associated with the given symbol/ticker.
 
         Args:
             symbol: Stock ticker symbol
 
         Returns:
             Dictionary mapping table names to freshness status.
-            True = data is fresh, False = data is stale
+                True = data is fresh,
+                False = data is stale
 
         Raises:
             ValueError: If symbol not found in database
-
-        Note:
-            In benchmark testing on a mostly empty local DB, this method took 0.0009 seconds
-            vs 0.002 seconds with the naive method of looping over individual queries to
-            each table.
         """
-        now = time()
+        fresh_report: dict[str, bool | str] = {table: False for table in TableLifetimes.__members__}
+        fresh_report["symbol"] = symbol
         symbol = str(symbol).strip().upper()
+        symbol_id = self.get_symbol_id(symbol)
+        if symbol_id is None:
+            raise ValueError(f"Symbol {symbol} not found in DB.")
 
-        # Thank you to "https://www.datacamp.com/tutorial/cte-sql"
-        query = self.select_query(
-            """
-            WITH target AS (
-                SELECT id
-                FROM symbols
-                WHERE ticker = ?
-            ),
-            ss AS (
-                SELECT max(unixepoch(last_updated)) as ts
-                FROM stock_splits
-                WHERE symbol_id = (SELECT id FROM target)
-            ),
-            hp AS (
-                SELECT max(unixepoch(last_updated)) as ts
-                FROM historical_prices
-                WHERE symbol_id = (SELECT id FROM target)
-            ),
-            fm AS (
-                SELECT unixepoch(last_updated) as ts
-                FROM financial_metrics
-                WHERE symbol_id = (SELECT id FROM target)
-            ),
-            n AS (
-                SELECT max(unixepoch(timeInserted)) as ts
-                FROM news
-                JOIN news_symbols AS ns
-                ON news.id = ns.news_id
-                WHERE ns.symbol_id = (SELECT id FROM target)
-            ),
-            cp as (
-                SELECT unixepoch(last_updated) as ts
-                FROM company_profile
-                WHERE symbol_id = (SELECT id FROM target)
-            ),
-            it as (
-                SELECT max(unixepoch(last_updated)) as ts
-                FROM insider_trades
-                WHERE symbol_id = (SELECT id FROM target)
-            )
+        fresh_sql = """
+        SELECT * 
+        FROM fresh_report
+        WHERE symbol_id = ?
+        """
+        raw_ages = {}
+        rows = self.select_query(fresh_sql, (symbol_id, ))
+        for row in rows:
+            table_name = row.get("table_name", "")
+            last_updated = row.get("last_updated", 0)
+            if table_name:
+                raw_ages[table_name] = last_updated 
 
-            SELECT
-                (SELECT ts FROM ss) AS stock_splits,
-                (SELECT ts FROM hp) AS historical_prices,
-                (SELECT ts FROM fm) AS financial_metrics,
-                (SELECT ts FROM n) AS news,
-                (SELECT ts FROM cp) AS company_profile,
-                (SELECT ts FROM it) AS insider_trades
-            """, (symbol, ))
-
-        if not query:
-            logger.error(f"Symbol {symbol} not found in database")
-            query = [{}]
-
-        res = query[0]
-        fresh_report: dict[str, bool | str] = {"symbol": symbol}
-
-        for name, create_time in res.items():
+        now = time()
+        for name, create_time in raw_ages.items():
             if name in TableLifetimes.__members__:
                 if not isinstance(create_time, (int, float)):
                     logger.debug(f"Data for {name} is missing/None. Marking as stale.")
@@ -206,7 +163,32 @@ class ResearchDataCoordinator(CommonQueries):
             Exception: Re-raises any exception that occurs during individual table
                        updates after logging the error.
         """
+        def _update_fresh_report_db_table(fresh_report):
+            """
+            Internal method to update timestamps on freshness db table.
+            Called before and after the transaction to lock out other requets from
+            doing the same work, and then to record the true age.
+            """
+            utc_timestamp = time.gmtime() 
+            now = time.strftime('%Y-%m-%d %H:%M:%S', utc_timestamp)
+            symbol_id = self.get_symbol_id(fresh_report["symbol"])
 
+            tables_updated = []
+            for table, fresh in fresh_report.items():
+                if fresh is False:
+                    tables_updated.append(table)
+
+                fresh_sql = """
+                INSERT INTO fresh_report (symbol_id, table_name, last_updated)
+                VALUES(?, ?, ?)
+                ON CONFLICT(symbol_id, table_name)
+                DO UPDATE SET
+                last_updated = excluded.last_updated
+                """
+                table_tuples = [(symbol_id, table, now) for table in tables_updated]
+                self.bulk_query(fresh_sql, table_tuples)
+
+        _update_fresh_report_db_table(fresh_report=fresh_report)
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
         if not symbol:
@@ -276,6 +258,7 @@ class ResearchDataCoordinator(CommonQueries):
         # These compute derived metrics from already-stored data and run unconditionally
         # as long as at least one table was updated this cycle.
         if any_updated:
+            _update_fresh_report_db_table(fresh_report=fresh_report)
             for table, funcs in self.research_registry.items():
                 post_func = funcs.get('post')
                 if post_func:
@@ -286,7 +269,7 @@ class ResearchDataCoordinator(CommonQueries):
                         logger.error(f"Post-processing failed for {table}, symbol {symbol}: {e}")
                         raise
 
-    def update_table_subset(self,
+    def update_research_data_subset(self,
                             ticker:str,
                             tables_to_update: list[str],
                             yqs_instance=None,

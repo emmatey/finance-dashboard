@@ -17,6 +17,14 @@ CREATE TABLE 'symbols' (
 );
     CREATE INDEX idx_symbols_active ON symbols (ticker);
 
+CREATE TABLE 'fresh_report' (
+    symbol_id INTEGER NOT NULL,
+    table_name TEXT NOT NULL,
+    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (symbol_id, table_name)
+    FOREIGN KEY (symbol_id) REFERENCES symbols(id)
+);
+
 CREATE TABLE 'global_events' (
     id INTEGER PRIMARY KEY,
     last_price_update DATETIME,

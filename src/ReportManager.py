@@ -105,7 +105,6 @@ class ReportManager(CommonQueries):
             grand_total: float
         }
         """
-
         sql = """
         SELECT 
             u.username,
@@ -341,6 +340,10 @@ class ReportManager(CommonQueries):
         
     def get_all_users_ranks(self) -> list[dict]:
         """Get rank for all users"""
+        # Thank you to "https://www.datacamp.com/tutorial/cte-sql"
+        # Select the latest snapshot from each user in a CTE view table
+        # Select from that subset to find the correct ranks.
+        # This handles many snapshots to one user relationship
         sql = """
             WITH latest_snapshots AS (
                 SELECT *

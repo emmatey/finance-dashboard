@@ -68,14 +68,15 @@ class Satan(CommonQueries):
         WHERE id = 1
         """
 
-        params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
+        utc_now = time.gmtime() 
+        params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in to_update]
         self.modify_query(update_sql, tuple(params))
         for func in to_update_funcs:
             ret = func()
             if ret is False:
                 revert_sql = f"UPDATE global_events SET {', '.join(f'{col} = NULL' for col in to_update)} WHERE id = 1"
                 self.modify_query(revert_sql, ())
-        params = [(time.strftime('%Y-%m-%d %H:%M:%S')) for _ in to_update]
+        params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in to_update]
         self.modify_query(update_sql, tuple(params))
 
     def balance_snapshot_all_users(self) -> bool:

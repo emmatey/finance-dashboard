@@ -509,7 +509,7 @@ def trade():
         else:
             ticker = ticker.strip().upper()
 
-        rdc.update_table_subset(ticker=ticker,
+        rdc.update_research_data_subset(ticker=ticker,
                                 tables_to_update=["financial_metrics"],
                                 yqs_instance=yqs,
                                 db_io_instance=io)
@@ -780,7 +780,7 @@ def research_summary():
     ticker = ticker.strip().upper()
 
     try:
-        rdc.update_table_subset(ticker=ticker, tables_to_update=["financial_metrics"], yqs_instance=yqs, db_io_instance=io)
+        rdc.update_research_data_subset(ticker=ticker, tables_to_update=["financial_metrics"], yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
         return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
     except Exception as e:
@@ -821,7 +821,7 @@ def research_company_profile():
     ticker = ticker.strip().upper()
 
     try:
-        rdc.update_table_subset(ticker=ticker, tables_to_update=["company_profile"], yqs_instance=yqs, db_io_instance=io)
+        rdc.update_research_data_subset(ticker=ticker, tables_to_update=["company_profile"], yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
         return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
     except Exception as e:
@@ -885,7 +885,7 @@ def research_financial_metrics():
     ticker = ticker.strip().upper()
 
     try:
-        rdc.update_table_subset(ticker=ticker, tables_to_update=["financial_metrics"], yqs_instance=yqs, db_io_instance=io)
+        rdc.update_research_data_subset(ticker=ticker, tables_to_update=["financial_metrics"], yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
         return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
     except Exception as e:
@@ -924,7 +924,7 @@ def research_insider_trades():
     qty = request.args.get("qty", None)
 
     try:
-        rdc.update_table_subset(ticker=ticker, tables_to_update=["insider_trades"], yqs_instance=yqs, db_io_instance=io)
+        rdc.update_research_data_subset(ticker=ticker, tables_to_update=["insider_trades"], yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
         return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
     except Exception as e:
@@ -966,7 +966,7 @@ def research_historical_prices():
     ticker = ticker.strip().upper()
 
     try:
-        rdc.update_table_subset(ticker=ticker, tables_to_update=["historical_prices"], yqs_instance=yqs, db_io_instance=io)
+        rdc.update_research_data_subset(ticker=ticker, tables_to_update=["historical_prices"], yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
         return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
     except Exception as e:
@@ -1005,7 +1005,7 @@ def research_stock_splits():
     ticker = ticker.strip().upper()
 
     try:
-        rdc.update_table_subset(ticker=ticker, tables_to_update=["stock_splits"], yqs_instance=yqs, db_io_instance=io)
+        rdc.update_research_data_subset(ticker=ticker, tables_to_update=["stock_splits"], yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
         return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
     except Exception as e:
@@ -1072,7 +1072,7 @@ def research_news():
     # Update stories for ticker provided
     if ticker is not None:
         try:
-            rdc.update_table_subset(ticker=ticker, tables_to_update=["news"], yqs_instance=yqs, db_io_instance=io)
+            rdc.update_research_data_subset(ticker=ticker, tables_to_update=["news"], yqs_instance=yqs, db_io_instance=io)
         except helpers.TickerNotFoundError as e:
             logger.exception(e)
             return jsonify({
