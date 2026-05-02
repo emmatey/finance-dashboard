@@ -107,17 +107,17 @@ class ResearchDataCoordinator(CommonQueries):
             raise ValueError(f"Symbol {symbol} not found in DB.")
 
         fresh_sql = """
-        SELECT * 
+        SELECT table_name, unixepoch(last_updated) AS last_updated
         FROM fresh_report
         WHERE symbol_id = ?
         """
         raw_ages = {}
-        rows = self.select_query(fresh_sql, (symbol_id, ))
+        rows = self.select_query(fresh_sql, (symbol_id,))
         for row in rows:
             table_name = row.get("table_name", "")
             last_updated = row.get("last_updated", 0)
             if table_name:
-                raw_ages[table_name] = last_updated 
+                raw_ages[table_name] = last_updated
 
         now = time()
         for name, create_time in raw_ages.items():
@@ -163,77 +163,91 @@ class ResearchDataCoordinator(CommonQueries):
             Exception: Re-raises any exception that occurs during individual table
                        updates after logging the error.
         """
-        def _update_fresh_report_db_table(fresh_report):
+        def _claim_fresh_report(fresh_report):
             """
-            Internal method to update timestamps on freshness db table.
-            Called before and after the transaction to lock out other requets from
-            doing the same work, and then to record the true age.
+            Write current timestamp to fresh_report table for all stale tables.
+            Acts as a job claim — blocks parallel requests from doing the same work.
+            Returns the list of table names claimed, for use in rollback.
             """
-            utc_timestamp = time.gmtime() 
-            now = time.strftime('%Y-%m-%d %H:%M:%S', utc_timestamp)
+            now = strftime('%Y-%m-%d %H:%M:%S')
             symbol_id = self.get_symbol_id(fresh_report["symbol"])
+            tables_to_claim = [table for table, fresh in fresh_report.items() if fresh is False]
+            if not tables_to_claim:
+                return []
+            fresh_sql = """
+            INSERT INTO fresh_report (symbol_id, table_name, last_updated)
+            VALUES (?, ?, ?)
+            ON CONFLICT(symbol_id, table_name)
+            DO UPDATE SET last_updated = excluded.last_updated
+            """
+            table_tuples = [(symbol_id, table, now) for table in tables_to_claim]
+            self.bulk_query(fresh_sql, table_tuples)
+            return tables_to_claim
 
-            tables_updated = []
-            for table, fresh in fresh_report.items():
-                if fresh is False:
-                    tables_updated.append(table)
+        def _rollback_fresh_report(symbol, claimed_tables):
+            """
+            Delete claimed rows on failure so the next request will retry.
+            """
+            if not claimed_tables:
+                return
+            symbol_id = self.get_symbol_id(symbol)
+            placeholders = ", ".join("?" for _ in claimed_tables)
+            rollback_sql = f"""
+            DELETE FROM fresh_report
+            WHERE symbol_id = ?
+            AND table_name IN ({placeholders})
+            """
+            self.modify_query(rollback_sql, (symbol_id, *claimed_tables))
+            logger.info(f"Rolled back fresh_report claim for {symbol}: {claimed_tables}")
 
-                fresh_sql = """
-                INSERT INTO fresh_report (symbol_id, table_name, last_updated)
-                VALUES(?, ?, ?)
-                ON CONFLICT(symbol_id, table_name)
-                DO UPDATE SET
-                last_updated = excluded.last_updated
-                """
-                table_tuples = [(symbol_id, table, now) for table in tables_updated]
-                self.bulk_query(fresh_sql, table_tuples)
-
-        _update_fresh_report_db_table(fresh_report=fresh_report)
+        # Validate before touching the DB
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
         if not symbol:
             logger.info(f"fresh_report invalid, no company name found. {fresh_report}")
             raise RuntimeError("Malformed fresh_report, no symbol found.")
-
         if not yqs_instance or not db_io_instance:
-            logger.info("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
-            raise ValueError("research_data_update_orchestrator function requires YahooQueryService and MarketDataIO instances.")
+            raise ValueError("research_data_update_orchestrator requires YahooQueryService and APIDataIO instances.")
 
-        # Collect list of modules required by updater functions who are associated with 'stale' data.
-        modules_set = set()
-        for table, status in fresh_report.items():
-            if status is False:
-                required_modules = self.research_registry[table].get('modules')
-                if required_modules:
-                    for m in required_modules:
-                        modules_set.add(m)
+        # Claim the job — write now to block duplicate requests
+        claimed_tables = _claim_fresh_report(fresh_report=fresh_report)
+        if not claimed_tables:
+            logger.debug(f"Nothing stale for {symbol}, skipping.")
+            return
 
-        # Always get price if anything is stale so upsert_symbol can be called.
-        modules_set.add("price")
+        try:
+            # Collect modules required by stale tables
+            modules_set = set()
+            for table, status in fresh_report.items():
+                if status is False:
+                    required_modules = self.research_registry.get(table, {}).get('modules')
+                    if required_modules:
+                        for m in required_modules:
+                            modules_set.add(m)
 
-        # Call api once for all required modules.
-        modules = {}
-        logger.info(f"Fetching {len(modules_set)} modules for {symbol}... {modules_set}")
-        modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
-        if isinstance(modules.get(symbol), str) and "Quote not found" in modules[symbol]:
-            logger.error(f"Ticker {symbol} not found on Yahoo Finance.")
-            raise TickerNotFoundError(f"Ticker {symbol} not found on Yahoo Finance.")
-        if not modules:
-            logger.error(f"API failed to fetch modules for {symbol}")
-            raise RuntimeError(f"API failed to fetch modules for {symbol}")
-        else:
+            # Always get price if anything is stale so upsert_symbol can be called.
+            modules_set.add("price")
+
+            # Call API once for all required modules.
+            logger.info(f"Fetching {len(modules_set)} modules for {symbol}... {modules_set}")
+            modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
+            if isinstance(modules.get(symbol), str) and "Quote not found" in modules[symbol]:
+                logger.error(f"Ticker {symbol} not found on Yahoo Finance.")
+                raise TickerNotFoundError(f"Ticker {symbol} not found on Yahoo Finance.")
+            if not modules:
+                logger.error(f"API failed to fetch modules for {symbol}")
+                raise RuntimeError(f"API failed to fetch modules for {symbol}")
+
             # Upsert symbol using already-fetched modules (no extra API call)
             db_io_instance.upsert_symbols(modules)
 
-        # Call refresh functions for stale db tables
-        any_updated = False
-        for table, status in fresh_report.items():
-            # Fresh report has a default k:v pair "fresh_report = {"symbol": symbol}" key is literally the string "symbol" skipping here.
-            if table == "symbol":
-                continue
-            if status is False:
-                try:
-                    # Fetch functions from registry
+            # Call refresh functions for stale tables
+            any_updated = False
+            for table, status in fresh_report.items():
+                # fresh_report always contains {"symbol": <str>} — skip it
+                if table == "symbol":
+                    continue
+                if status is False:
                     api_func = self.research_registry[table]['api']
                     in_func = self.research_registry[table]['i']
                     modules_required = self.research_registry[table]['modules']
@@ -241,6 +255,7 @@ class ResearchDataCoordinator(CommonQueries):
                     if not api_func or not in_func:
                         logger.error(f"Incomplete registry registration for table '{table}'")
                         raise RuntimeError(f"Incomplete registry registration for table '{table}'")
+
                     if modules_required:
                         data = api_func(yqs_instance, modules)
                         in_func(db_io_instance, data)
@@ -250,45 +265,46 @@ class ResearchDataCoordinator(CommonQueries):
 
                     any_updated = True
 
-                except Exception as e:
-                    logger.error(f"Failed to update {table} for {symbol}: {e}")
-                    raise
+            # Run post-processing unconditionally if anything was updated.
+            # These compute derived metrics from already-stored data.
+            if any_updated:
+                # Write true completion time now that work is done
+                _claim_fresh_report(fresh_report=fresh_report)
+                for table, funcs in self.research_registry.items():
+                    post_func = funcs.get('post')
+                    if post_func:
+                        try:
+                            logger.debug(f"Running post-processing for {table}.")
+                            post_func(self, symbol)
+                        except Exception as e:
+                            logger.error(f"Post-processing failed for {table}, symbol {symbol}: {e}")
+                            raise
 
-        # Run post-processing functions for any table that has one registered.
-        # These compute derived metrics from already-stored data and run unconditionally
-        # as long as at least one table was updated this cycle.
-        if any_updated:
-            _update_fresh_report_db_table(fresh_report=fresh_report)
-            for table, funcs in self.research_registry.items():
-                post_func = funcs.get('post')
-                if post_func:
-                    try:
-                        logger.debug(f"Running post-processing for {table}.")
-                        post_func(self, symbol)
-                    except Exception as e:
-                        logger.error(f"Post-processing failed for {table}, symbol {symbol}: {e}")
-                        raise
+        except Exception:
+            _rollback_fresh_report(symbol=symbol, claimed_tables=claimed_tables)
+            raise
 
     def update_research_data_subset(self,
-                            ticker:str,
+                            ticker: str,
                             tables_to_update: list[str],
                             yqs_instance=None,
                             db_io_instance=None
                             ) -> None:
         """
-        Requests to yahooquery for data in tables_to_update param assocaited with ticker param.
+        Requests to yahooquery for data in tables_to_update param associated with ticker param.
 
-        tables_to_update valid options: stock_splits, historical_prices, financial_metrics, 
+        tables_to_update valid options: stock_splits, historical_prices, financial_metrics,
                                 news, company_profile, insider_trades
         """
         if not yqs_instance or not db_io_instance:
-            raise ValueError("research_data_update_orchestrator function requires YahooQueryService and APIDataIO instances.")
+            raise ValueError("update_research_data_subset requires YahooQueryService and APIDataIO instances.")
 
         for table_name in tables_to_update:
             if table_name not in TableLifetimes.__members__:
-                    raise ValueError(f"Invalid table '{table_name}'. Must be in TableLifetimes enum.")
-        
-        # Fresh report is called to check the status of the relevant talbes, all others are forced to "True/Fresh" to skip fetching & upserting.
+                raise ValueError(f"Invalid table '{table_name}'. Must be in TableLifetimes enum.")
+
+        # Fresh report checks status of relevant tables.
+        # All others are forced to True/Fresh to skip fetching.
         fresh_report = self.create_research_fresh_report(symbol=ticker)
         for table in list(fresh_report.keys()):
             if table not in ["symbol"] + tables_to_update:
@@ -298,22 +314,22 @@ class ResearchDataCoordinator(CommonQueries):
             yqs_instance=yqs_instance,
             db_io_instance=db_io_instance
         )
-    
+
     def get_research_data(self,
                           ticker: list[str] | str,
                           tables_to_get: list[str]=["stock_splits", "historical_prices", "financial_metrics", "news", "company_profile", "insider_trades"],
                           db_io_instance=None
                           ) -> dict[str, list[dict]]:
         """
-        Pulls a subset of research data from the database. 
+        Pulls a subset of research data from the database.
         Will not trigger updates, assumes this has been done elsewhere.
 
         Args:
             - ticker: company or companies to fetch data for.
-            - "tables_to_get" valid options: stock_splits, historical_prices, financial_metrics, 
+            - tables_to_get valid options: stock_splits, historical_prices, financial_metrics,
                                     news, company_profile, insider_trades
             - db_io_instance: APIDataIO() class instance.
-        
+
         Returns:
             {
                 table_name: [{}, ...],
@@ -321,53 +337,46 @@ class ResearchDataCoordinator(CommonQueries):
             }
         """
         if not db_io_instance:
-            raise ValueError("get_research_data function requires APIDataIO instance.")
+            raise ValueError("get_research_data requires APIDataIO instance.")
         VALID_OPTIONS = "stock_splits, historical_prices, financial_metrics, news, company_profile, insider_trades"
 
-        # normalize input type
         if not isinstance(tables_to_get, list):
-            raise ValueError(f"tables_to_get argument must be a list of strings is {type(tables_to_get)}... ")
+            raise ValueError(f"tables_to_get must be a list of strings, got {type(tables_to_get)}")
         if not all(isinstance(i, str) for i in tables_to_get):
-            raise ValueError(f"tables_to_get argument must be a list of strings...")
-        
+            raise ValueError("tables_to_get must be a list of strings.")
+
         if isinstance(ticker, str):
             ticker = [ticker.strip().upper()]
         elif isinstance(ticker, list):
             if not all(isinstance(i, str) for i in ticker):
-                raise ValueError(f"Ticker argument must be a string or a list of strings...")
-            else:
-                ticker = [i.strip().upper() for i in ticker]
+                raise ValueError("Ticker must be a string or list of strings.")
+            ticker = [i.strip().upper() for i in ticker]
         else:
-            raise ValueError(f"Ticker argument must be a string or a list of strings. is {type(ticker)}...")
-            
-        # fetch functions associated with param
+            raise ValueError(f"Ticker must be a string or list of strings, got {type(ticker)}.")
+
         tables = (i.lower() for i in tables_to_get)
         results = {}
         invalid_params = []
         missing_out_func = []
+
         for table in tables:
-            table_funcs = self.research_registry.get(table, None)
-            if not table_funcs: 
+            table_funcs = self.research_registry.get(table)
+            if not table_funcs:
                 invalid_params.append(table)
                 continue
-            
-            out_func = table_funcs.get("o", None)
+
+            out_func = table_funcs.get("o")
             if out_func is None:
                 missing_out_func.append(table)
             else:
                 try:
-                    res = out_func(db_io_instance, ticker)
+                    results[table] = out_func(db_io_instance, ticker)
                 except Exception:
                     raise
 
-                results[table] = res
-
-        # log not found funcitons
         if invalid_params:
-            logger.warning(f"Paramaters {str(invalid_params)} are invalid. Valid options are {VALID_OPTIONS}")
-
+            logger.warning(f"Invalid params {invalid_params}. Valid options: {VALID_OPTIONS}")
         if missing_out_func:
-            logger.warning(f"Paramaters {str(missing_out_func)} have no registered 'out' function. Cannot retreive info from db.")
+            logger.warning(f"No registered 'out' function for {missing_out_func}.")
 
-        # return result 
         return results
