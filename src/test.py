@@ -23,6 +23,7 @@ import sys
 
 # export FLASK_APP=test.py
 app = Flask(__name__)
+app.config["DATABASE"] = "finance.db"
 load_dotenv()
 api_key = os.getenv("NEWS_API_KEY")
 
@@ -58,9 +59,9 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    res = rdc.create_research_fresh_report(symbol="GRND")
-    if res:
-        print(res)
+    ret = yqs.yq_ticker_fetch_modules(symbols="adsddg", modules=["price", "calendarEvents"])
+    print(ret)
+
 
     filler_page = """
         <body style="background-color: black; color: green;">

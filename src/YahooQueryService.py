@@ -4,6 +4,7 @@ import pandas as pd
 import yahooquery as yq
 from collections import defaultdict
 from DbManager import DbManager
+from helpers import TickerNotFoundError
 from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import List, Tuple, Dict, Union, Any, Optional
 from YahooAPIClient import yq_exception_handler
@@ -85,7 +86,8 @@ class YahooQueryService:
             Returns empty dict on error
 
         Raises:
-            ValueError: If symbols is not a string or list
+            ValueError: If symbols is not a string or list, or module is invalid.
+            TickerNotFoundError: If ticker not found on yahooquery.
 
         Reference:
             https://yahooquery.dpguthrie.com/guide/ticker/modules/#get_modules
@@ -120,8 +122,8 @@ class YahooQueryService:
         
         for ticker in raw_modules:
             if isinstance(raw_modules[ticker], str):
-                logger.error(f"Error retrieving modules for {ticker}")
-                logger.error(raw_modules[ticker])
+                if "Quote not found for symbol" in raw_modules[ticker]:
+                    raise TickerNotFoundError(f"Ticker {ticker} not found.")
 
         return raw_modules
 

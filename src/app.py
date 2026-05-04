@@ -644,8 +644,119 @@ def trade():
 
 ## RESEARCH ##
 
-@app.route("/research", methods=["GET"])
-def research():
+@app.route("/research/local", methods=["GET"])
+def research_local():
+    """
+    Returns all 'research' data for a given company.
+    Serves a flat list of dicts with a "table_name" k:v pair to differentiate. 
+
+    Query Paramater:
+        ?ticker=str
+
+    Returns:
+        200 
+        404 
+        500 
+
+    Data Format:
+            {
+        "stock_splits": [{
+            "ticker": str,
+            "split_date": str,
+            "split_ratio": float,
+            "last_updated": str
+        }],
+        "historical_prices": [{
+            "ticker": str,
+            "price": float,
+            "timestamp": int,
+            "volume": int
+        }],
+        "financial_metrics": [{
+            "ticker": str,
+            "last_updated": str,
+            "market_open": float,
+            "prev_close": float,
+            "market_cap": float,
+            "eps": float,
+            "beta": float,
+            "trailing_pe": float,
+            "forward_pe": float,
+            "profit_margin": float,
+            "shares_outstanding": float,
+            "book_value": float,
+            "price_to_book": float,
+            "dividend_yield": float,
+            "fifty_two_week_high": float,
+            "fifty_two_week_low": float,
+            "fifty_day_average": float,
+            "two_hundred_day_average": float,
+            "rating": str,
+            "analyst_count": int,
+            "target_price": float,
+            "current_ratio": float,
+            "debt_to_equity": float,
+            "todays_volume": float,
+            "ten_day_avg_volume": float,
+            "three_month_avg_volume": float
+        }],
+        "news": [{
+            "uuid": str,
+            "title": str,
+            "publisher": str,
+            "link": str,
+            "providerPublishTime": int,
+            "thumbnail": str
+        }],
+        "company_profile": [{
+            "ticker": str,
+            "company_desc": str,
+            "employee_count": int,
+            "industry": str,
+            "website": str,
+            "last_updated": str
+        }],
+        "insider_trades": [{
+            "ticker": str,
+            "transaction_date": str,
+            "shares": float,
+            "transaction_value": float,
+            "filer_name": str,
+            "filer_relation": str,
+            "transaction_text": str,
+            "last_updated": str
+        }]
+    }
+
+    Note: All numeric fields may be None if data is unavailable.
+    """
+    
+    rdc = ResearchDataCoordinator()
+    io = APIDataIO()
+    yqs = YahooQueryService()
+
+    ticker = request.args.get("ticker", None)
+    if not ticker:
+        return jsonify({
+            "success": False,
+            "message": "No 'ticker' query paramater provided..."
+        }), 400
+    else:
+        ticker = ticker.strip().upper()
+
+    fresh_report = rdc.create_research_fresh_report(ticker)
+    try:
+        tables_to_get = []
+        always_get = ["historical_prices", "company_profile", ""]
+        for 
+        results = rdc.get_research_data(ticker=ticker, tables_to_get=tables_to_get, db_io_instance=io)
+    except Exception:
+        return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
+
+    return jsonify(results), 200
+
+@app.route("/research/online", methods=["GET"])
+def research_online():
     """
     Returns all 'research' data for a given company.
     Serves a flat list of dicts with a "table_name" k:v pair to differentiate. 
@@ -754,6 +865,7 @@ def research():
         return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
 
     try:
+        # TODO get research data only that is marked as stale
         results = rdc.get_research_data(ticker=ticker, db_io_instance=io)
     except Exception:
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
@@ -775,7 +887,6 @@ def research_summary():
         500 - Data missing
     """
     cc = CommonQueries()
-    rdc = ResearchDataCoordinator()
     io = APIDataIO()
     yqs = YahooQueryService()
 
@@ -784,22 +895,40 @@ def research_summary():
         return jsonify({"success": False, "message": "No 'ticker' query parameter provided."}), 400
     ticker = ticker.strip().upper()
 
+    # Skip API call if stock overview already exists in DB
+    # This info is refreshed on calls to research_data_update_orchestrator()
+    # Price is updated by satan.py background task
+    ticker_info = cc.get_stock_basic_overview(symbol=ticker)
+    if ticker_info and ticker_info.get("exchange") and ticker_info.get("company_name") and ticker_info.get("quote_type"):
+        return jsonify({
+            "quote_type": ticker_info.get("quote_type"),  
+            "exchange": ticker_info.get("exchange"), 
+            "ticker": ticker_info.get("ticker"),
+            "company_name": ticker_info.get("company_name"),
+            "last_price": ticker_info.get("last_price")
+        }), 200
+
+    price_module = []
     try:
-        rdc.update_research_data_subset(ticker=ticker, tables_to_update=["financial_metrics"], yqs_instance=yqs, db_io_instance=io)
-    except helpers.TickerNotFoundError:
-        return jsonify({"success": False, "message": f"Ticker {ticker} not found."}), 404
+        price_module = yqs.yq_ticker_fetch_modules(symbols=ticker, modules=["price"])
+    except helpers.TickerNotFoundError as e:
+        logger.exception(e)
+        return jsonify({"success": False, "message": f"{e}"}), 404
     except Exception as e:
         logger.exception(f"research_summary update failed for {ticker}: {e}")
         return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
+    io.upsert_symbols(modules_dict=price_module)
 
     ticker_info = cc.get_stock_basic_overview(symbol=ticker)
     if not ticker_info:
         return jsonify({"success": False, "message": f"Missing data for {ticker}"}), 500
 
     return jsonify({
+        "quote_type": ticker_info.get("quote_type"),  
+        "exchange": ticker_info.get("exchange"), 
         "ticker": ticker_info.get("ticker"),
-        "name": ticker_info.get("company_name"),
-        "price": ticker_info.get("last_price")
+        "company_name": ticker_info.get("company_name"),
+        "last_price": ticker_info.get("last_price")
     }), 200
 
 @app.route("/research/company_profile", methods=["GET"])

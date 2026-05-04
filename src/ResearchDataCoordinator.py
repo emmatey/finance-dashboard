@@ -16,7 +16,7 @@ class TableLifetimes(Enum):
 
     table_name = lifetime_in_seconds
     """
-    stock_splits = 604800  # 1 week
+    stock_splits = 86400  # 24 hours
     historical_prices = 86400  # 24 hours
     financial_metrics = 43200  # 12 hours
     news = 3600  # 1 hour
