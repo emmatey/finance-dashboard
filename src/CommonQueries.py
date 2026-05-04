@@ -99,15 +99,20 @@ class CommonQueries(DbManager):
             return None
     
     @ResearchDataCoordinator.register_as_research(table_name="symbols", o=True)
-    def get_stock_basic_overview(self, tickers: list[str]):
+    def get_stock_basic_overview(self, tickers: list[str] | str):
         """
-        Retrieve data from the symbols table for a list of holdings.
+        Retrieve data from the symbols table for one or more tickers.
         """
         if not tickers:
             return []
 
-        # Ensure all tickers are uppercase strings for the query.
-        safe_tickers = [str(t).upper() for t in tickers]
+        if isinstance(tickers, str):
+            safe_tickers = [tickers.strip().upper()]
+        else:
+            safe_tickers = [str(t).strip().upper() for t in tickers if t is not None and str(t).strip()]
+
+        if not safe_tickers:
+            return []
 
         # Dynamically create the correct number of placeholders.
         placeholders = ", ".join(["?"] * len(safe_tickers))
@@ -130,11 +135,11 @@ class CommonQueries(DbManager):
         """
         Returns the current price of a given symbol.
         """
-        res = self.get_stock_basic_overview(symbol)
+        res = self.get_stock_basic_overview(tickers=symbol)
         if not res:
             return None
         else:
-            return res.get('last_price')
+            return res[0].get('last_price')
         
     def symbol_exists_in_db(self, symbol: str) -> bool:
         """

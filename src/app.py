@@ -524,7 +524,7 @@ def trade():
                 "message": f"Ticker {ticker} not found."
             }), 404
         
-        ticker_info = cc.get_stock_basic_overview(symbol=ticker)
+        ticker_info = cc.get_stock_basic_overview(tickers=ticker)[0]
         holding_info = cc.get_holding_info_per_user(user_id=user_id, ticker=ticker)
         fin_metrics = io.get_financial_metrics(symbols=[ticker])
         if not isinstance(fin_metrics, list):
@@ -897,7 +897,8 @@ def research_summary():
     # Skip API call if stock overview already exists in DB
     # This info is refreshed on calls to research_data_update_orchestrator()
     # Price is updated by satan.py background task
-    ticker_info = cc.get_stock_basic_overview(symbol=ticker)
+    ticker_info_rows = cc.get_stock_basic_overview(tickers=ticker)
+    ticker_info = ticker_info_rows[0] if ticker_info_rows else None
     if ticker_info and ticker_info.get("exchange") and ticker_info.get("company_name") and ticker_info.get("quote_type"):
         return jsonify({
             "quote_type": ticker_info.get("quote_type"),  
@@ -918,7 +919,8 @@ def research_summary():
         return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
     io.upsert_symbols(modules_dict=price_module)
 
-    ticker_info = cc.get_stock_basic_overview(symbol=ticker)
+    ticker_info_rows = cc.get_stock_basic_overview(tickers=ticker)
+    ticker_info = ticker_info_rows[0] if ticker_info_rows else None
     if not ticker_info:
         return jsonify({"success": False, "message": f"Missing data for {ticker}"}), 500
 
