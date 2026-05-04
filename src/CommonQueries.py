@@ -1,5 +1,4 @@
 from collections import defaultdict
-from ResearchDataCoordinator import ResearchDataCoordinator
 from DbManager import DbManager
 import logging
 import math
@@ -98,7 +97,6 @@ class CommonQueries(DbManager):
         else:
             return None
     
-    @ResearchDataCoordinator.register_as_research(table_name="symbols", o=True)
     def get_stock_basic_overview(self, tickers: list[str] | str):
         """
         Retrieve data from the symbols table for one or more tickers.

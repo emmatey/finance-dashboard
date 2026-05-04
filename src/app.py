@@ -663,7 +663,7 @@ def research_local():
         500 - Database error
 
     Data Format:
-        {table_name: Data | None}
+        [{table_name: Data | None}, ...]
 
     Note: Stale tables will show actual data if they happen to be within their freshness
     threshold. All numeric fields may be None if data is unavailable.
@@ -702,7 +702,8 @@ def research_local():
 def research_online():
     """
     Returns all 'research' data for a given company.
-    Serves a flat list of dicts with a "table_name" k:v pair to differentiate. 
+    Serves a flat list of dicts with a "table_name" k:v pair to differentiate.
+    Checks yahooquery API for all data not found in DB, or considered "stale". 
 
     Query Paramater:
         ?ticker=str
@@ -799,6 +800,7 @@ def research_online():
         ticker = ticker.strip().upper()
 
     try:
+        # Update all "stale" tables in DB
         fresh_report = rdc.create_research_fresh_report(ticker)
         rdc.research_data_update_orchestrator(fresh_report, yqs_instance=yqs, db_io_instance=io)
     except helpers.TickerNotFoundError:
@@ -808,7 +810,7 @@ def research_online():
         return jsonify({"success": False, "message": "Error updating data, see finance.log"}), 500
 
     try:
-        # TODO get research data only that is marked as stale
+        # Get all research data after refreshing
         results = rdc.get_research_data(ticker=ticker, db_io_instance=io)
     except Exception:
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500

@@ -361,6 +361,10 @@ class ResearchDataCoordinator(CommonQueries):
         missing_out_func = []
 
         for table in tables:
+            if table == "symbols":
+                results[table] = self.get_stock_basic_overview(tickers=ticker)
+                continue
+
             table_funcs = self.research_registry.get(table)
             if not table_funcs:
                 invalid_params.append(table)
