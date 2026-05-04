@@ -95,16 +95,14 @@ class ResearchDataCoordinator(CommonQueries):
             Dictionary mapping table names to freshness status.
                 True = data is fresh,
                 False = data is stale
-
-        Raises:
-            ValueError: If symbol not found in database
         """
         fresh_report: dict[str, bool | str] = {table: False for table in TableLifetimes.__members__}
         fresh_report["symbol"] = symbol
         symbol = str(symbol).strip().upper()
         symbol_id = self.get_symbol_id(symbol)
         if symbol_id is None:
-            raise ValueError(f"Symbol {symbol} not found in DB.")
+            logger.debug(f"Symbol {symbol} not found in DB")
+            return fresh_report
 
         fresh_sql = """
         SELECT table_name, unixepoch(last_updated) AS last_updated

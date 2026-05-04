@@ -647,90 +647,30 @@ def trade():
 @app.route("/research/local", methods=["GET"])
 def research_local():
     """
-    Returns all 'research' data for a given company.
-    Serves a flat list of dicts with a "table_name" k:v pair to differentiate. 
+    Returns cached research data for a given company without making any external API calls.
+    Intended for fast initial page load. Call /research/online afterwards for stale tables.
 
-    Query Paramater:
+    Fetches: always-fetch tables (symbols, historical_prices, company_profile) plus any
+    tables the freshness report marks as still valid.
+
+    Query Parameter:
         ?ticker=str
 
     Returns:
-        200 
-        404 
-        500 
+        200 - All known tables; stale tables have the sentinel value "stale" instead of data.
+        400 - No ticker provided
+        404 - Ticker not found in local database
+        500 - Database error
 
     Data Format:
-            {
-        "stock_splits": [{
-            "ticker": str,
-            "split_date": str,
-            "split_ratio": float,
-            "last_updated": str
-        }],
-        "historical_prices": [{
-            "ticker": str,
-            "price": float,
-            "timestamp": int,
-            "volume": int
-        }],
-        "financial_metrics": [{
-            "ticker": str,
-            "last_updated": str,
-            "market_open": float,
-            "prev_close": float,
-            "market_cap": float,
-            "eps": float,
-            "beta": float,
-            "trailing_pe": float,
-            "forward_pe": float,
-            "profit_margin": float,
-            "shares_outstanding": float,
-            "book_value": float,
-            "price_to_book": float,
-            "dividend_yield": float,
-            "fifty_two_week_high": float,
-            "fifty_two_week_low": float,
-            "fifty_day_average": float,
-            "two_hundred_day_average": float,
-            "rating": str,
-            "analyst_count": int,
-            "target_price": float,
-            "current_ratio": float,
-            "debt_to_equity": float,
-            "todays_volume": float,
-            "ten_day_avg_volume": float,
-            "three_month_avg_volume": float
-        }],
-        "news": [{
-            "uuid": str,
-            "title": str,
-            "publisher": str,
-            "link": str,
-            "providerPublishTime": int,
-            "thumbnail": str
-        }],
-        "company_profile": [{
-            "ticker": str,
-            "company_desc": str,
-            "employee_count": int,
-            "industry": str,
-            "website": str,
-            "last_updated": str
-        }],
-        "insider_trades": [{
-            "ticker": str,
-            "transaction_date": str,
-            "shares": float,
-            "transaction_value": float,
-            "filer_name": str,
-            "filer_relation": str,
-            "transaction_text": str,
-            "last_updated": str
-        }]
-    }
+        {table_name: Data | None}
 
-    Note: All numeric fields may be None if data is unavailable.
+    Note: Stale tables will show actual data if they happen to be within their freshness
+    threshold. All numeric fields may be None if data is unavailable.
     """
-    
+
+    ALWAYS_GET = ["symbols", "historical_prices", "company_profile"]
+
     rdc = ResearchDataCoordinator()
     io = APIDataIO()
 
@@ -738,19 +678,23 @@ def research_local():
     if not ticker:
         return jsonify({
             "success": False,
-            "message": "No 'ticker' query paramater provided..."
+            "message": "No 'ticker' query parameter provided..."
         }), 400
-    else:
-        ticker = ticker.strip().upper()
+    ticker = ticker.strip().upper()
 
     fresh_report = rdc.create_research_fresh_report(ticker)
+    fresh_tables = [t for t, is_fresh in fresh_report.items() if t != "symbol" and is_fresh is True]
+    tables_to_fetch = list(set(ALWAYS_GET) | set(fresh_tables))
+
     try:
-        tables_to_get = []
-        always_get = ["historical_prices", "company_profile", ""]
-        for 
-        results = rdc.get_research_data(ticker=ticker, tables_to_get=tables_to_get, db_io_instance=io)
+        fetched = rdc.get_research_data(ticker=ticker, tables_to_get=tables_to_fetch, db_io_instance=io)
     except Exception:
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
+
+    # 'symbol' is stock ticker, 'symbols' is table containg data about ticker like price and name and exchange.
+    all_tables = [t for t in fresh_report if t != "symbol"] + ["symbols"]
+    # If table not 
+    results = {t: fetched.get(t, None) for t in all_tables}
 
     return jsonify(results), 200
 
