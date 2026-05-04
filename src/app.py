@@ -733,7 +733,6 @@ def research_local():
     
     rdc = ResearchDataCoordinator()
     io = APIDataIO()
-    yqs = YahooQueryService()
 
     ticker = request.args.get("ticker", None)
     if not ticker:

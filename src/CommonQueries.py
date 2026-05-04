@@ -1,4 +1,5 @@
 from collections import defaultdict
+from ResearchDataCoordinator import ResearchDataCoordinator
 from DbManager import DbManager
 import logging
 import math
@@ -97,25 +98,33 @@ class CommonQueries(DbManager):
         else:
             return None
     
-    def get_stock_basic_overview(self, symbol: str):
+    @ResearchDataCoordinator.register_as_research(table_name="symbols", o=True)
+    def get_stock_basic_overview(self, tickers: list[str]):
         """
-        Retrieve data from the symbols table about a given holding.
+        Retrieve data from the symbols table for a list of holdings.
         """
-        # Convert user input to string.
-        safe_query = str(symbol).upper()
+        if not tickers:
+            return []
 
+        # Ensure all tickers are uppercase strings for the query.
+        safe_tickers = [str(t).upper() for t in tickers]
+
+        # Dynamically create the correct number of placeholders.
+        placeholders = ", ".join(["?"] * len(safe_tickers))
+        
         sql = f"""
         SELECT *
         FROM symbols 
-        WHERE ticker = ?
+        WHERE ticker IN ({placeholders})
         """
-        rows = self.select_query(sql, (safe_query, ))
+        
+        rows = self.select_query(sql, tuple(safe_tickers))
 
         if rows:
-            return rows[0]
+            return rows
         else:
-            logger.info(f"No data found locally for {safe_query}.")
-            return None
+            logger.info(f"No data found locally for {safe_tickers}.")
+            return []
         
     def get_current_price_from_db(self, symbol: str) -> float | None:
         """

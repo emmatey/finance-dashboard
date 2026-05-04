@@ -317,7 +317,7 @@ class ResearchDataCoordinator(CommonQueries):
 
     def get_research_data(self,
                           ticker: list[str] | str,
-                          tables_to_get: list[str]=["stock_splits", "historical_prices", "financial_metrics", "news", "company_profile", "insider_trades"],
+                          tables_to_get: list[str]=["symbols", "stock_splits", "historical_prices", "financial_metrics", "news", "company_profile", "insider_trades"],
                           db_io_instance=None
                           ) -> dict[str, list[dict]]:
         """
@@ -338,12 +338,15 @@ class ResearchDataCoordinator(CommonQueries):
         """
         if not db_io_instance:
             raise ValueError("get_research_data requires APIDataIO instance.")
-        VALID_OPTIONS = "stock_splits, historical_prices, financial_metrics, news, company_profile, insider_trades"
+        VALID_OPTIONS = ['symbols', 'stock_splits', 'historical_prices', 'financial_metrics', 'news', 'company_profile', 'insider_trades']
 
         if not isinstance(tables_to_get, list):
             raise ValueError(f"tables_to_get must be a list of strings, got {type(tables_to_get)}")
         if not all(isinstance(i, str) for i in tables_to_get):
             raise ValueError("tables_to_get must be a list of strings.")
+        for i in tables_to_get:
+            if i not in VALID_OPTIONS:
+                raise ValueError(f"{i} not a valid table, options are {VALID_OPTIONS}...")
 
         if isinstance(ticker, str):
             ticker = [ticker.strip().upper()]
