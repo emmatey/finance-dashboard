@@ -19,5 +19,7 @@ TODO 4/25
     - Add the insiders buy+reward to sell ration. 
     - Start the testing baby!
 
+5/6 
+    - starting design on figma
 
 Run a chron job to ping the market overview manager to simulate a background thread.
