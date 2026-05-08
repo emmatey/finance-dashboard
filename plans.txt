@@ -25,4 +25,7 @@ TODO 4/25
 5/6
     - Design work day 2, researching frameworks, laying out font and color palettes
 
+5/6 
+    - Continuing work from yesterday
+
 Run a chron job to ping the market overview manager to simulate a background thread.
