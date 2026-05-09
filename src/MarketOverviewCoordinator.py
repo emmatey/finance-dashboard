@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 
 # ETF tickers representing each region for global market overview
 SYMBOLS = {
-    'USA': 'VOO',
+    'USA S&P 500': 'VOO',
+    'USA Dow': 'DIA',
+    'USA Nasdaq': 'QQQ',
+    'USA Russell 2000': 'IWM',
     'EU': 'IEUR',
     'LATAM': 'ILF',
     'Africa': 'AFK',
