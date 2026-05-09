@@ -12,6 +12,39 @@ LONG TERM FEATURES
     Every 24 hours all users will have balance snapshot taken. (global events)
     Every 24 hours trim all data over 5 yrs old
 
+- Data to Display
+    - "Research data"
+        /Research
+
+    - User summary
+        /home
+        /profile
+        /scoreboard
+    
+    - Balance snapshot history 
+        /profile
+        /scoreboard
+    
+    - User holdings
+        /profile
+    
+    - Transaction history 
+        /profile (logged-in)
+
+    - News headlines
+        /home
+        /news
+    
+    - Global markets overview.
+        /home
+       
+    - Screeners
+        /home
+    
+    - Scoreboard
+        /scoreboard
+    
+    
 TODO 4/25
     - Add the insiders buy+reward to sell ration. 
     - Start the testing baby!
