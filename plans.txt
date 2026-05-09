@@ -1,8 +1,4 @@
 LONG TERM FEATURES
-    - Cache user holdings reoprt in session token
-    - Cache time since last updated prices in session token to send to frontend
-        and syncronize polling to run animations.
-
     - Populate buy/sell 2ndary cards with data about user holdngs and current price
     - CSS animation on buy/sell orders on table row
     - Animations to fade in/out red/green on price moves.
@@ -27,5 +23,7 @@ TODO 4/25
 
 5/6 
     - Continuing work from yesterday
+5/7 
+    - Colors have been established. Working on home page - logged in today.
 
 Run a chron job to ping the market overview manager to simulate a background thread.
