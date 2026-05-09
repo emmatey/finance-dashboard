@@ -4,6 +4,7 @@ LONG TERM FEATURES
     - Animations to fade in/out red/green on price moves.
     - Refresh price button on research and index that shows when last price was fetched.
     - Deposit/withdraw cash routes
+    - Add seed transactions to create various mock users of different investment profiles
 
 - Daemons
     Satan will be handling all db writes and api queries via a process queue and thereadding.
