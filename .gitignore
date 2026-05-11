@@ -211,3 +211,9 @@ __marimo__/
 finance.db
 finance.db-shm
 finance.db-wal
+
+# Vite / Node
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
