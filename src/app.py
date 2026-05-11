@@ -86,8 +86,8 @@ def register():
 
     Returns:
         201: Registration successful. {"success": True}
-        400: Invalid request body or validation failure. {"success": False, "error": str}
-        409: Username already in use. {"success": False, "error": str}
+        400: Invalid request body or validation failure. {"success": False, "message": str}
+        409: Username already in use. {"success": False, "message": str}
     """
     # Checks for request body.
     if not request.is_json:
@@ -165,12 +165,12 @@ def login():
 
     Returns:
         200: Login successful. {"success": True}
-        400: Invalid request body. {"success": False, "error": str}
-        401: Invalid username or password. {"success": False, "error": str}
+        400: Invalid request body. {"success": False, "message": str}
+        401: Invalid username or password. {"success": False, "message": str}
     """
     # Checks for request body.
     if not request.is_json:
-        return jsonify({"success": False, "error": "Missing JSON in request"}), 400
+        return jsonify({"success": False, "message": "Missing JSON in request"}), 400
     am = AccountManager()
 
     # Extract response body from request.
@@ -332,10 +332,9 @@ def portfolio_view():
             "message": f"Database error..."
         }), 500
     if not portfolio_view:
-        return jsonify([]), 200
-    
+        return jsonify({"success": True, "data": []}), 200
     else:
-        return jsonify(portfolio_view), 200
+        return jsonify({"success": True, "data": portfolio_view}), 200
 
 @app.route("/user/transactions", methods=["GET"])
 @helpers.login_required
@@ -385,9 +384,7 @@ def transaction_history():
             "success": False, 
             "message": "Database error, see finance.log for more information"}), 500
     if len(tx_history) == 0:
-        return jsonify({
-            "success": True,
-            "message": f"User {cc.get_username_from_user_id(user_id=user_id)} has no recorded transactions."}), 200
+        return jsonify({"success": True, "data": []}), 200
     
     formatted_response = []
     username = cc.get_username_from_user_id(tx_history[0].get("user_id", 0))
@@ -414,7 +411,7 @@ def transaction_history():
             "cash_after": tx.get("cash_after") 
         })
     
-    return jsonify(formatted_response), 200
+    return jsonify({"success": True, "data": formatted_response}), 200
 
 @app.route("/user/balance_snapshots", methods=["GET"])
 @helpers.login_required
@@ -462,12 +459,9 @@ def balance_snapshots():
         }), 500
     
     if len(rows) < 1:
-        return jsonify({
-            "success": False, 
-            "message": f"No balance history for user {cc.get_username_from_user_id(user_id=user_id)} found..."
-            }), 200
+        return jsonify({"success": True, "data": []}), 200
     else:
-        return jsonify(rows), 200
+        return jsonify({"success": True, "data": rows}), 200
 
 ## TRADE ##
 
@@ -549,6 +543,7 @@ def trade():
             }), 500
             
         return jsonify({
+            "success": True,
             "ticker": ticker,
             "name": ticker_info.get("company_name"),
             "current_price": last_price,
@@ -695,6 +690,7 @@ def research_local():
     all_tables = [t for t in fresh_report if t != "symbol"] + ["symbols"]
     # If table not 
     results = {t: fetched.get(t, None) for t in all_tables}
+    results["success"] = True # type: ignore
 
     return jsonify(results), 200
 
@@ -815,6 +811,7 @@ def research_online():
     except Exception:
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
+    results["success"] = True # type: ignore
     return jsonify(results), 200
 
 @app.route("/research/summary", methods=["GET"])
@@ -847,8 +844,9 @@ def research_summary():
     ticker_info = ticker_info_rows[0] if ticker_info_rows else None
     if ticker_info and ticker_info.get("exchange") and ticker_info.get("company_name") and ticker_info.get("quote_type"):
         return jsonify({
-            "quote_type": ticker_info.get("quote_type"),  
-            "exchange": ticker_info.get("exchange"), 
+            "success": True,
+            "quote_type": ticker_info.get("quote_type"),
+            "exchange": ticker_info.get("exchange"),
             "ticker": ticker_info.get("ticker"),
             "company_name": ticker_info.get("company_name"),
             "last_price": ticker_info.get("last_price")
@@ -871,8 +869,9 @@ def research_summary():
         return jsonify({"success": False, "message": f"Missing data for {ticker}"}), 500
 
     return jsonify({
-        "quote_type": ticker_info.get("quote_type"),  
-        "exchange": ticker_info.get("exchange"), 
+        "success": True,
+        "quote_type": ticker_info.get("quote_type"),
+        "exchange": ticker_info.get("exchange"),
         "ticker": ticker_info.get("ticker"),
         "company_name": ticker_info.get("company_name"),
         "last_price": ticker_info.get("last_price")
@@ -913,7 +912,7 @@ def research_company_profile():
     if not results:
         return jsonify({"success": False, "message": f"No company profile found for {ticker}"}), 500
 
-    return jsonify(results[0]), 200
+    return jsonify({"success": True, **results[0]}), 200
 
 @app.route("/research/financial_metrics", methods=["GET"])
 def research_financial_metrics():
@@ -977,7 +976,7 @@ def research_financial_metrics():
     if not results:
         return jsonify({"success": False, "message": f"No financial metrics found for {ticker}"}), 500
 
-    return jsonify(results[0]), 200
+    return jsonify({"success": True, **results[0]}), 200
 
 @app.route("/research/insider_trades", methods=["GET"])
 def research_insider_trades():
@@ -1021,7 +1020,7 @@ def research_insider_trades():
         logger.exception(f"research_insider_trades db fetch failed for {ticker}: {e}")
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
-    return jsonify(results), 200
+    return jsonify({"success": True, "data": results}), 200
 
 @app.route("/research/historical_prices", methods=["GET"])
 def research_historical_prices():
@@ -1060,7 +1059,7 @@ def research_historical_prices():
         logger.exception(f"research_historical_prices db fetch failed for {ticker}: {e}")
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
-    return jsonify(results), 200
+    return jsonify({"success": True, "data": results}), 200
 
 @app.route("/research/stock_splits", methods=["GET"])
 def research_stock_splits():
@@ -1099,7 +1098,7 @@ def research_stock_splits():
         logger.exception(f"research_stock_splits db fetch failed for {ticker}: {e}")
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
-    return jsonify(results), 200
+    return jsonify({"success": True, "data": results}), 200
 
 ## NEWS ##
 
@@ -1187,7 +1186,7 @@ def research_news():
             "message": "Server error, unable to fetch news stories from database."
             }), 500
     
-    return jsonify(stories), 200
+    return jsonify({"success": True, "data": stories}), 200
 
 ## SCREENERS ##
 
@@ -1259,11 +1258,10 @@ def screeners():
             except KeyError:
                 grouped[screener_name] = [screener]
     
+    grouped["success"] = True
     if broken:
         grouped['broken'] = broken
-        return jsonify(grouped), 200
-    else:
-        return jsonify(grouped), 200
+    return jsonify(grouped), 200
 
 @app.route("/search", methods=["GET"])
 def search():
@@ -1349,6 +1347,7 @@ def search():
             "message": "Server error in users pipeline. (/search)"
         }), 500
 
+    results["success"] = True
     return jsonify(results), 200
 
 @app.route("/search/companies", methods=["GET"])
@@ -1404,7 +1403,7 @@ def search_companies():
     else:
         local = False
 
-    return jsonify(sm.search_companies(query=query, limit=limit, local=local)), 200
+    return jsonify({"success": True, "data": sm.search_companies(query=query, limit=limit, local=local)}), 200
 
 @app.route("/search/users", methods=["GET"])
 def search_users():
@@ -1446,12 +1445,9 @@ def search_users():
         }), 500
     
     if not res:
-        return jsonify({
-            "success": True,
-            "message": f"User {query} not found."
-        }), 200
-    
-    return jsonify(res), 200
+        return jsonify({"success": True, "data": []}), 200
+
+    return jsonify({"success": True, "data": res}), 200
 
 @app.route("/search/news", methods=["GET"])
 def search_news():
@@ -1507,12 +1503,9 @@ def search_news():
         }), 500
     
     if res is None or not res:
-        return jsonify({
-            "success": True,
-            "message": f"News related to {query} not found."
-        }), 200
+        return jsonify({"success": True, "data": []}), 200
 
-    return jsonify(res), 200
+    return jsonify({"success": True, "data": res}), 200
 
 ## MARKET OVERVIEW ##
 
@@ -1553,7 +1546,7 @@ def market_overview():
             "message": "Database error fetching regional overview. See finance.log for details..."
         }), 500
 
-    return jsonify(results), 200
+    return jsonify({"success": True, "data": results}), 200
 
 ## SCOREBOARD ##
 
@@ -1583,7 +1576,7 @@ def scoreboard():
             "message": "Database error fetching scoreboard. See finance.log for details..."
         }), 500
 
-    return jsonify(results), 200
+    return jsonify({"success": True, "data": results}), 200
 
 @app.route("/")
 def home():
