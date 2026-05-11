@@ -59,5 +59,8 @@ TODO 4/25
     - Continuing work from yesterday
 5/7 
     - Colors have been established. Working on home page - logged in today.
-
-Run a chron job to ping the market overview manager to simulate a background thread.
+5/8
+    - Decided that left panel will be used to control which cards to display. Data from the backend will be grouped into cards and 
+        shown where relevant.
+5/11 
+    - Laying out the "research" page.
