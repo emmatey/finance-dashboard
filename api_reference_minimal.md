@@ -81,15 +81,23 @@ Features
 RESPONSE CONVENTIONS
     errors
     {
-        "success": False,
+        "success": false,
         "message": str
     }
-    non errors
+    object responses (single record / flat data)
     {
-        "success": True,
-        "message": str
+        "success": true,
+        <data fields>
     }
-    non errors with return values will forego this json and simply return what was requested
+    list responses (arrays)
+    {
+        "success": true,
+        "data": [...]
+    }
+    simple confirmations (no data)
+    {
+        "success": true
+    }
 
 RESOURCES 
 
@@ -108,7 +116,7 @@ RESOURCES
         summary - DONE 4/2 
             to   - GET ?username=str (optional, defaults to logged in user)
             from - {
-                success: bool,
+                success: true,
                 username: str,
                 user_id: int,
                 snap_datetime: str,
@@ -119,61 +127,75 @@ RESOURCES
             }
         portfolio - DONE 4/4
             to   - GET ?username=str (optional, defaults to logged in user)
-            from - [{
-                symbol: str,
-                name: str,
-                shares: float,
-                unit_price: float,
-                cost_basis: float,
-                current_value: float,
-                total_cost: float,
-                gain_loss: float,
-                gain_loss_pct: float
-            }]
-            empty portfolio returns []
+            from - {
+                success: true,
+                data: [{
+                    symbol: str,
+                    name: str,
+                    shares: float,
+                    unit_price: float,
+                    cost_basis: float,
+                    current_value: float,
+                    total_cost: float,
+                    gain_loss: float,
+                    gain_loss_pct: float
+                }]
+            }
+            empty portfolio returns { success: true, data: [] }
         transactions - login required - DONE 4/5
             to   - GET ?username=str (optional, defaults to logged in user)
                        ?limit=int (optional, default all)
                        ?offset=int (optional, default 0)
-            from - [{
-                transaction_id: int,
-                username: str,
-                ticker: str, (cash transactions use "CASH")
-                transaction_type: str, (buy | sell | deposit | withdraw)
-                qty: float,
-                unit_price: float,
-                datetime: str,
-                cash_after: float
-            }]
+            from - {
+                success: true,
+                data: [{
+                    transaction_id: int,
+                    username: str,
+                    ticker: str, (cash transactions use "CASH")
+                    transaction_type: str, (buy | sell | deposit | withdraw)
+                    qty: float,
+                    unit_price: float,
+                    datetime: str,
+                    cash_after: float
+                }]
+            }
         balance_snapshots - DONE 4/6
             to   - GET ?username=str
-            from - [{
-                username: str,
-                snap_datetime: str,
-                cash_balance: float,
-                portfolio_value: float,
-                grand_total: float
-            }]
+            from - {
+                success: true,
+                data: [{
+                    username: str,
+                    snap_datetime: str,
+                    cash_balance: float,
+                    portfolio_value: float,
+                    grand_total: float
+                }]
+            }
+            empty returns { success: true, data: [] }
 
     SCOREBOARD - DONE 4/27
         to   - GET
-        from - [{
-            username: str,
-            snap_datetime: str,
-            portfolio_value: float,
-            cash_balance: float,
-            grand_total: float,
-            rank: int
-        }]
+        from - {
+            success: true,
+            data: [{
+                username: str,
+                snap_datetime: str,
+                portfolio_value: float,
+                cash_balance: float,
+                grand_total: float,
+                rank: int
+            }]
+        }
 
     RESEARCH
         note - individual routes each check freshness for
                their own table only and update themselves only.
-               RESEARCH route does a bulk update and serves everything.
+               RESEARCH/ONLINE route does a bulk update and serves everything.
 
-        research (without path param) DONE - 4/9
+        research/online DONE - 4/9
             to   - GET ?ticker=str
             from - {
+                success: true,
                 stock_splits: [{}],
                 historical_prices: [{}],
                 financial_metrics: [{}],
@@ -184,13 +206,17 @@ RESOURCES
         summary DONE - 4/10
             to   - GET ?ticker=str
             from - {
+                success: true,
                 ticker: str,
-                name: str,
-                price: float
+                quote_type: str,
+                exchange: str,
+                company_name: str,
+                last_price: float
             }
         company_profile DONE - 4/10
             to   - GET ?ticker=str
             from - {
+                success: true,
                 ticker: str,
                 company_desc: str,
                 industry: str,
@@ -200,27 +226,34 @@ RESOURCES
             }
         insider_trades DONE - 4/10
             to   - GET ?ticker=str ?qty=int (optional)
-            from - [{
-                ticker: str,
-                transaction_date: str,
-                shares: float,
-                transaction_value: float,
-                transaction_text: str,
-                filer_name: str,
-                filer_relation: str,
-                last_updated: str
-            }]
+            from - {
+                success: true,
+                data: [{
+                    ticker: str,
+                    transaction_date: str,
+                    shares: float,
+                    transaction_value: float,
+                    transaction_text: str,
+                    filer_name: str,
+                    filer_relation: str,
+                    last_updated: str
+                }]
+            }
         historical_prices DONE - 4/10
             to   - GET ?ticker=str
-            from - [{
-                ticker: str,
-                price: float,
-                timestamp: int,
-                volume: int
-            }]
+            from - {
+                success: true,
+                data: [{
+                    ticker: str,
+                    price: float,
+                    timestamp: int,
+                    volume: int
+                }]
+            }
         financial_metrics DONE - 4/10
             to   - GET ?ticker=str
             from - {
+                success: true,
                 ticker: str,
                 last_updated: str,
                 market_open: float,
@@ -251,26 +284,33 @@ RESOURCES
             }
         stock_splits DONE - 4/10
             to   - GET ?ticker=str
-            from - [{
-                ticker: str,
-                split_date: str,
-                split_ratio: float,
-                last_updated: str
-            }]
+            from - {
+                success: true,
+                data: [{
+                    ticker: str,
+                    split_date: str,
+                    split_ratio: float,
+                    last_updated: str
+                }]
+            }
         news DONE - 4/10
             to   - GET ?ticker=str (optional) ?qty=int (optional, default 10)
-            from - [{
-                uuid: str,
-                title: str,
-                link: str,
-                publisher: str,
-                thumbnail: str,
-                providerPublishTime: int
-            }]
+            from - {
+                success: true,
+                data: [{
+                    uuid: str,
+                    title: str,
+                    link: str,
+                    publisher: str,
+                    thumbnail: str,
+                    providerPublishTime: int
+                }]
+            }
 
     SCREENERS - DONE 4/12
         to   - GET
         from - {
+            success: true,
             screener_name: [{
                 screener_name: str,
                 rank: int,
@@ -292,19 +332,23 @@ RESOURCES
 
     MARKET_OVERVIEW - DONE 4/27
         to   - GET
-        from - [{
-            region: str,
-            ticker: str,
-            current_price: float,
-            prev_close: float,
-            pct_change: float
-        }]
+        from - {
+            success: true,
+            data: [{
+                region: str,
+                ticker: str,
+                current_price: float,
+                prev_close: float,
+                pct_change: float
+            }]
+        }
         regions: USA, EU, LATAM, Africa, Australia, India, Japan,
                  China, Gold, Copper, Oil
 
     TRADE - DONE 4/6
         to   - GET ?ticker=str
         from - {
+            success: true,
             ticker: str,
             name: str,
             current_price: float,
@@ -335,6 +379,7 @@ RESOURCES
         /search
             to   - GET ?q=str
             from - {
+                success: true,
                 companies: [{
                     ticker: str,
                     company_name: str,
@@ -365,10 +410,12 @@ RESOURCES
             }
         /search/companies
             to   - GET ?q=str ?limit=int (optional, default 20) ?local=bool (optional, default false)
-            from - [{ same company shape as above }]
+            from - { success: true, data: [{ same company shape as above }] }
         /search/users
             to   - GET ?q=str
-            from - [{ same user shape as above }]
+            from - { success: true, data: [{ same user shape as above }] }
+            no match returns { success: true, data: [] }
         /search/news
             to   - GET ?q=str ?limit=int (optional, default 20)
-            from - [{ same news shape as above }]
+            from - { success: true, data: [{ same news shape as above }] }
+            no match returns { success: true, data: [] }

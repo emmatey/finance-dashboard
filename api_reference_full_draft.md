@@ -2,7 +2,7 @@
 
 > **Base URL:** `http://localhost:5000`
 >
-> **Last Updated:** April 2026
+> **Last Updated:** May 2026
 >
 > **Status:** All routes implemented.
 
@@ -45,16 +45,37 @@ All errors follow a consistent shape:
 
 ### Success Responses
 
-Simple confirmations:
+All success responses include `"success": true`.
+
+**Object responses** — `success: true` is added as a field alongside the data:
 
 ```json
 {
   "success": true,
-  "message": "Optional description"
+  "ticker": "AAPL",
+  "name": "Apple Inc.",
+  "..."
 }
 ```
 
-Endpoints that return data generally return the data directly (a list or object), without wrapping it in a `success` envelope. The exception is `/user/summary`, which includes `"success": true` alongside its data fields.
+**List responses** — data is wrapped under a `"data"` key:
+
+```json
+{
+  "success": true,
+  "data": [
+    { "..." }
+  ]
+}
+```
+
+**Simple confirmations** (no data payload):
+
+```json
+{
+  "success": true
+}
+```
 
 ### Numeric Fields
 
@@ -203,22 +224,25 @@ The detailed holdings breakdown — one entry per stock the user currently owns.
 **200 Response:**
 
 ```json
-[
-  {
-    "symbol": "AAPL",
-    "name": "Apple Inc.",
-    "shares": 10.0,
-    "unit_price": 192.53,
-    "cost_basis": 178.20,
-    "current_value": 1925.30,
-    "total_cost": 1782.00,
-    "gain_loss": 143.30,
-    "gain_loss_pct": 8.04
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "symbol": "AAPL",
+      "name": "Apple Inc.",
+      "shares": 10.0,
+      "unit_price": 192.53,
+      "cost_basis": 178.20,
+      "current_value": 1925.30,
+      "total_cost": 1782.00,
+      "gain_loss": 143.30,
+      "gain_loss_pct": 8.04
+    }
+  ]
+}
 ```
 
-Sorted by `current_value` descending (biggest positions first). Returns a success message with empty portfolio notice if the user has no holdings (see quirks).
+Sorted by `current_value` descending (biggest positions first). Returns `{"success": true, "data": []}` if the user has no holdings.
 
 **Field Definitions:**
 
@@ -243,18 +267,21 @@ Full transaction history for the user, newest first.
 **200 Response:**
 
 ```json
-[
-  {
-    "transaction_id": 42,
-    "username": "emma",
-    "ticker": "AAPL",
-    "transaction_type": "buy",
-    "qty": 10.0,
-    "unit_price": 178.20,
-    "datetime": "2026-04-10 14:30:00",
-    "cash_after": 8218.00
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "transaction_id": 42,
+      "username": "emma",
+      "ticker": "AAPL",
+      "transaction_type": "buy",
+      "qty": 10.0,
+      "unit_price": 178.20,
+      "datetime": "2026-04-10 14:30:00",
+      "cash_after": 8218.00
+    }
+  ]
+}
 ```
 
 **Transaction Types:**
@@ -279,16 +306,21 @@ Historical value data for charting the user's account value over time. Snapshots
 **200 Response:**
 
 ```json
-[
-  {
-    "username": "emma",
-    "snap_datetime": "2026-04-12 00:00:00",
-    "cash_balance": 5476.50,
-    "portfolio_value": 4523.50,
-    "grand_total": 10000.00
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "username": "emma",
+      "snap_datetime": "2026-04-12 00:00:00",
+      "cash_balance": 5476.50,
+      "portfolio_value": 4523.50,
+      "grand_total": 10000.00
+    }
+  ]
+}
 ```
+
+Returns `{"success": true, "data": []}` if no snapshots exist yet for the user.
 
 **Frontend Notes:** This is your line chart data. `grand_total` is a computed column (`cash_balance + portfolio_value`), giving you three potential chart modes from one dataset — total value, portfolio only, or cash only. Data arrives in chronological order.
 
@@ -310,6 +342,7 @@ Populates the order form with current price data, the user's existing position, 
 
 ```json
 {
+  "success": true,
   "ticker": "AAPL",
   "name": "Apple Inc.",
   "current_price": 192.53,
@@ -356,7 +389,7 @@ Execute a buy or sell order. The server re-fetches the latest price from Yahoo i
 
 `transaction_type` must be `"buy"` or `"sell"`.
 
-**200 Response (buy):**
+**200 Response:**
 
 ```json
 {
@@ -369,18 +402,6 @@ Execute a buy or sell order. The server re-fetches the latest price from Yahoo i
 }
 ```
 
-**200 Response (sell):**
-
-```json
-{
-  "ticker": "AAPL",
-  "qty": 5,
-  "unit_price": 192.53,
-  "tx_value": 962.65,
-  "new_balance": 6439.15
-}
-```
-
 **Error Responses:**
 
 | Status | Meaning |
@@ -390,7 +411,7 @@ Execute a buy or sell order. The server re-fetches the latest price from Yahoo i
 | 404 | Ticker not found |
 | 500 | Transaction failed to record |
 
-**Frontend Notes:** The "insufficient funds" error message includes the user's current balance and the required amount — it's human-readable as-is. After a successful trade, refresh the portfolio view and user summary since the balance has changed. Note that the sell response doesn't include `"success": true` — check HTTP 200 status instead (see quirks).
+**Frontend Notes:** The "insufficient funds" error message includes the user's current balance and the required amount — it's human-readable as-is. After a successful trade, refresh the portfolio view and user summary since the balance has changed.
 
 ---
 
@@ -398,7 +419,7 @@ Execute a buy or sell order. The server re-fetches the latest price from Yahoo i
 
 A rich set of endpoints for company deep-dives. Each endpoint checks data freshness and auto-refreshes from Yahoo Finance if stale. See the freshness thresholds table in Conventions.
 
-### `GET /research?ticker=<TICKER>`
+### `GET /research/online?ticker=<TICKER>`
 
 The "everything" endpoint — returns all research data for a company in a single call. Checks freshness for all tables and updates any that are stale. This is what you'd call when a user navigates to a full company research page.
 
@@ -408,6 +429,7 @@ The "everything" endpoint — returns all research data for a company in a singl
 
 ```json
 {
+  "success": true,
   "stock_splits": [
     {
       "ticker": "AAPL",
@@ -498,7 +520,7 @@ The "everything" endpoint — returns all research data for a company in a singl
 
 ### Individual Research Endpoints
 
-The same data as `/research` but broken out per-table. Each checks and refreshes only its own data. Use these for targeted views or lazy-loading.
+The same data as `/research/online` but broken out per-table. Each checks and refreshes only its own data. Use these for targeted views or lazy-loading.
 
 All individual research endpoints require `?ticker=string` and share the same error responses:
 
@@ -516,9 +538,12 @@ Minimal company info. Useful for search result cards or compact displays.
 
 ```json
 {
+  "success": true,
+  "quote_type": "EQUITY",
+  "exchange": "NASDAQ",
   "ticker": "AAPL",
-  "name": "Apple Inc.",
-  "price": 192.53
+  "company_name": "Apple Inc.",
+  "last_price": 192.53
 }
 ```
 
@@ -530,6 +555,7 @@ Returns a single object (not an array).
 
 ```json
 {
+  "success": true,
   "ticker": "AAPL",
   "company_desc": "Apple Inc. designs, manufactures...",
   "industry": "Consumer Electronics",
@@ -543,7 +569,7 @@ Returns a single object (not an array).
 
 #### `GET /research/financial_metrics?ticker=<TICKER>`
 
-Returns a single object with all financial metrics including `insider_sentiment`. See the full field list in the `/research` response above.
+Returns a single object with all financial metrics including `insider_sentiment`. See the full field list in the `/research/online` response above. Includes `"success": true` alongside the data fields.
 
 ---
 
@@ -551,21 +577,22 @@ Returns a single object with all financial metrics including `insider_sentiment`
 
 **Query Params:** `?ticker=string` (required), `?qty=int` (optional, limits results)
 
-Returns an array of insider trade records:
-
 ```json
-[
-  {
-    "ticker": "AAPL",
-    "transaction_date": "2026-03-15",
-    "shares": -50000.0,
-    "transaction_value": 9626500.0,
-    "filer_name": "Tim Cook",
-    "filer_relation": "Chief Executive Officer",
-    "transaction_text": "Sale at price 192.53 per share.",
-    "last_updated": "2026-04-11 00:00:00"
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "ticker": "AAPL",
+      "transaction_date": "2026-03-15",
+      "shares": -50000.0,
+      "transaction_value": 9626500.0,
+      "filer_name": "Tim Cook",
+      "filer_relation": "Chief Executive Officer",
+      "transaction_text": "Sale at price 192.53 per share.",
+      "last_updated": "2026-04-11 00:00:00"
+    }
+  ]
+}
 ```
 
 **Frontend Notes:** Positive `shares` = purchase, negative `shares` = sale. `transaction_text` contains a human-readable description and is the field used internally to classify buys vs. sells for the `insider_sentiment` calculation.
@@ -574,17 +601,18 @@ Returns an array of insider trade records:
 
 #### `GET /research/historical_prices?ticker=<TICKER>`
 
-Returns an array of daily price records, useful for a price chart:
-
 ```json
-[
-  {
-    "ticker": "AAPL",
-    "price": 192.53,
-    "timestamp": 1712880000,
-    "volume": 58000000
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "ticker": "AAPL",
+      "price": 192.53,
+      "timestamp": 1712880000,
+      "volume": 58000000
+    }
+  ]
+}
 ```
 
 ---
@@ -592,14 +620,17 @@ Returns an array of daily price records, useful for a price chart:
 #### `GET /research/stock_splits?ticker=<TICKER>`
 
 ```json
-[
-  {
-    "ticker": "AAPL",
-    "split_date": "2020-08-31",
-    "split_ratio": 4.0,
-    "last_updated": "2026-04-10 12:00:00"
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "ticker": "AAPL",
+      "split_date": "2020-08-31",
+      "split_ratio": 4.0,
+      "last_updated": "2026-04-10 12:00:00"
+    }
+  ]
+}
 ```
 
 ---
@@ -611,16 +642,19 @@ Returns an array of daily price records, useful for a price chart:
 If no ticker is provided, returns global cached news without triggering an update. With a ticker, triggers a freshness check first.
 
 ```json
-[
-  {
-    "uuid": "abc-123-def",
-    "title": "Apple Reports Record Quarter",
-    "thumbnail": "https://...",
-    "link": "https://...",
-    "publisher": "Reuters",
-    "providerPublishTime": 1712880000
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "uuid": "abc-123-def",
+      "title": "Apple Reports Record Quarter",
+      "thumbnail": "https://...",
+      "link": "https://...",
+      "publisher": "Reuters",
+      "providerPublishTime": 1712880000
+    }
+  ]
+}
 ```
 
 **Frontend Notes:** `providerPublishTime` is a Unix timestamp. `thumbnail` may be `null`. The `uuid` is unique per story and can be used as a React key. Global news (no ticker) won't reflect live updates until `NewsAPIManager` is implemented — the endpoint will return whatever is cached.
@@ -639,6 +673,7 @@ Market screener data — day gainers, losers, most active stocks, etc. Auto-refr
 
 ```json
 {
+  "success": true,
   "day_gainers": [
     {
       "screener_name": "day_gainers",
@@ -692,16 +727,19 @@ Rankings for all users based on their most recent balance snapshots.
 **200 Response:**
 
 ```json
-[
-  {
-    "username": "emma",
-    "snap_datetime": "2026-04-12 00:00:00",
-    "portfolio_value": 4523.50,
-    "cash_balance": 5476.50,
-    "grand_total": 10000.00,
-    "rank": 1
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "username": "emma",
+      "snap_datetime": "2026-04-12 00:00:00",
+      "portfolio_value": 4523.50,
+      "cash_balance": 5476.50,
+      "grand_total": 10000.00,
+      "rank": 1
+    }
+  ]
+}
 ```
 
 **Frontend Notes:** Data comes from the most recent balance snapshot per user, updated daily by the daemon and on each user login. Portfolios are fully visible since this is a competition, not a real brokerage. Drill into any user's details with `/user/portfolio?username=<n>` and `/user/balance_snapshots?username=<n>`.
@@ -719,22 +757,25 @@ Regional ETF performance data for a global markets "at a glance" widget. Checks 
 **200 Response:**
 
 ```json
-[
-  {
-    "region": "USA",
-    "ticker": "VOO",
-    "current_price": 480.00,
-    "prev_close": 478.50,
-    "pct_change": 0.31
-  },
-  {
-    "region": "EU",
-    "ticker": "IEUR",
-    "current_price": 55.20,
-    "prev_close": 54.90,
-    "pct_change": 0.55
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "region": "USA",
+      "ticker": "VOO",
+      "current_price": 480.00,
+      "prev_close": 478.50,
+      "pct_change": 0.31
+    },
+    {
+      "region": "EU",
+      "ticker": "IEUR",
+      "current_price": 55.20,
+      "prev_close": 54.90,
+      "pct_change": 0.55
+    }
+  ]
+}
 ```
 
 **Tracked Regions:** USA (VOO), EU (IEUR), LATAM (ILF), Africa (AFK), Australia (EWA), India (INDA), Japan (EWJ), China (MCHI), Gold (GLD), Copper (CPER), Oil (USO)
@@ -757,6 +798,7 @@ Combined search across companies, users, and news in one call. Makes a single Ya
 
 ```json
 {
+  "success": true,
   "companies": [
     {
       "ticker": "AAPL",
@@ -820,17 +862,20 @@ Company-only search. Supports a `local` mode for fast datalist population on key
 **200 Response:**
 
 ```json
-[
-  {
-    "ticker": "AAPL",
-    "company_name": "Apple Inc.",
-    "quote_type": "EQUITY",
-    "exchange": "NASDAQ",
-    "sector": "Technology",
-    "industry": "Consumer Electronics",
-    "search_type": "company"
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "ticker": "AAPL",
+      "company_name": "Apple Inc.",
+      "quote_type": "EQUITY",
+      "exchange": "NASDAQ",
+      "sector": "Technology",
+      "industry": "Consumer Electronics",
+      "search_type": "company"
+    }
+  ]
+}
 ```
 
 **Frontend Notes:** Use `?local=true` for search-as-you-type datalist suggestions — it's instant since it's just a `LIKE` query against the local DB. Switch to the full search (no `local`) for the results page where freshness matters more than speed.
@@ -846,20 +891,23 @@ User search by username.
 **200 Response:**
 
 ```json
-[
-  {
-    "username": "emma",
-    "snap_datetime": "2026-04-12 00:00:00",
-    "portfolio_value": 4523.50,
-    "cash_balance": 5476.50,
-    "grand_total": 10000.00,
-    "rank": 1,
-    "search_type": "user"
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "username": "emma",
+      "snap_datetime": "2026-04-12 00:00:00",
+      "portfolio_value": 4523.50,
+      "cash_balance": 5476.50,
+      "grand_total": 10000.00,
+      "rank": 1,
+      "search_type": "user"
+    }
+  ]
+}
 ```
 
-Returns `{"success": true, "message": "User X not found."}` (HTTP 200) if no match.
+Returns `{"success": true, "data": []}` if no match.
 
 ---
 
@@ -872,20 +920,23 @@ News search by headline or related ticker.
 **200 Response:**
 
 ```json
-[
-  {
-    "uuid": "abc-123-def",
-    "title": "Apple Reports Record Quarter",
-    "publisher": "Reuters",
-    "link": "https://...",
-    "providerPublishTime": 1712880000,
-    "relatedTickers": ["AAPL"],
-    "search_type": "news"
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "uuid": "abc-123-def",
+      "title": "Apple Reports Record Quarter",
+      "publisher": "Reuters",
+      "link": "https://...",
+      "providerPublishTime": 1712880000,
+      "relatedTickers": ["AAPL"],
+      "search_type": "news"
+    }
+  ]
+}
 ```
 
-Returns `{"success": true, "message": "News related to X not found."}` (HTTP 200) if no results.
+Returns `{"success": true, "data": []}` if no results.
 
 ---
 
@@ -904,7 +955,7 @@ Returns `{"success": true, "message": "News related to X not found."}` (HTTP 200
 
 | Section | Endpoint |
 |---------|----------|
-| Full company research | `GET /research?ticker=X` (all-in-one) |
+| Full company research | `GET /research/online?ticker=X` (all-in-one) |
 | OR lazy-load sections | Individual `/research/*` endpoints |
 
 ### Profile Page
@@ -950,7 +1001,7 @@ Returns `{"success": true, "message": "News related to X not found."}` (HTTP 200
 
 ## Known Quirks & Gotchas
 
-1. **Slow first requests:** If data is stale, the backend fetches from Yahoo Finance synchronously before responding. The first hit to `/research` for a new ticker can take several seconds. Show a loading state.
+1. **Slow first requests:** If data is stale, the backend fetches from Yahoo Finance synchronously before responding. The first hit to `/research/online` for a new ticker can take several seconds. Show a loading state.
 
 2. **Yahoo API circuit breaker:** The backend has a circuit breaker with exponential backoff. If Yahoo is down or rate-limits the server, data fetches are skipped silently. The frontend won't see errors — it'll get slightly stale data. There's no public endpoint to check API health status.
 
