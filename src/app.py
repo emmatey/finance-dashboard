@@ -73,7 +73,7 @@ def teardown(exception):
 
 ### AUTH ###
 
-@app.route("/auth/register", methods=["POST"])
+@app.route("/api/auth/register", methods=["POST"])
 def register():
     """
     Registers a new user.
@@ -154,7 +154,7 @@ def register():
     # Return good state 
     return jsonify({"success": True}), 201
 
-@app.route("/auth/login", methods=["POST"])
+@app.route("/api/auth/login", methods=["POST"])
 def login():
     """
     Logs in an existing user and sets session cookie.
@@ -196,7 +196,7 @@ def login():
     return jsonify({"success": True,
                     "message": f"User {username} logged in."}), 200
 
-@app.route("/auth/logout", methods=["POST"])
+@app.route("/api/auth/logout", methods=["POST"])
 def logout():
     """
     Logs out a user.
@@ -215,7 +215,7 @@ def logout():
 
 ## USER ##
 
-@app.route("/user/summary", methods=["GET"])
+@app.route("/api/user/summary", methods=["GET"])
 def user_summary():
     """
     Returns a summary of a user profile. Including username, value of
@@ -282,7 +282,7 @@ def user_summary():
         out_data["success"] = True
         return jsonify(out_data), 200
 
-@app.route("/user/portfolio", methods=["GET"])
+@app.route("/api/user/portfolio", methods=["GET"])
 def portfolio_view():
     """
     Retreieves a summary of user holdings.
@@ -336,7 +336,7 @@ def portfolio_view():
     else:
         return jsonify({"success": True, "data": portfolio_view}), 200
 
-@app.route("/user/transactions", methods=["GET"])
+@app.route("/api/user/transactions", methods=["GET"])
 @helpers.login_required
 def transaction_history():
     """
@@ -413,7 +413,7 @@ def transaction_history():
     
     return jsonify({"success": True, "data": formatted_response}), 200
 
-@app.route("/user/balance_snapshots", methods=["GET"])
+@app.route("/api/user/balance_snapshots", methods=["GET"])
 @helpers.login_required
 def balance_snapshots():
     """
@@ -465,7 +465,7 @@ def balance_snapshots():
 
 ## TRADE ##
 
-@app.route("/trade", methods=["GET", "POST"])
+@app.route("/api/trade", methods=["GET", "POST"])
 @helpers.login_required
 def trade():
     """
@@ -639,7 +639,7 @@ def trade():
 
 ## RESEARCH ##
 
-@app.route("/research/local", methods=["GET"])
+@app.route("/api/research/local", methods=["GET"])
 def research_local():
     """
     Returns cached research data for a given company without making any external API calls.
@@ -694,7 +694,7 @@ def research_local():
 
     return jsonify(results), 200
 
-@app.route("/research/online", methods=["GET"])
+@app.route("/api/research/online", methods=["GET"])
 def research_online():
     """
     Returns all 'research' data for a given company.
@@ -814,7 +814,7 @@ def research_online():
     results["success"] = True # type: ignore
     return jsonify(results), 200
 
-@app.route("/research/summary", methods=["GET"])
+@app.route("/api/research/summary", methods=["GET"])
 def research_summary():
     """
     Returns basic company summary. Upserts symbol if new.
@@ -877,7 +877,7 @@ def research_summary():
         "last_price": ticker_info.get("last_price")
     }), 200
 
-@app.route("/research/company_profile", methods=["GET"])
+@app.route("/api/research/company_profile", methods=["GET"])
 def research_company_profile():
     """
     Returns company profile data.
@@ -914,7 +914,7 @@ def research_company_profile():
 
     return jsonify({"success": True, **results[0]}), 200
 
-@app.route("/research/financial_metrics", methods=["GET"])
+@app.route("/api/research/financial_metrics", methods=["GET"])
 def research_financial_metrics():
     """
     Returns financial metrics for a company.
@@ -978,7 +978,7 @@ def research_financial_metrics():
 
     return jsonify({"success": True, **results[0]}), 200
 
-@app.route("/research/insider_trades", methods=["GET"])
+@app.route("/api/research/insider_trades", methods=["GET"])
 def research_insider_trades():
     """
     Returns insider trading history for a company.
@@ -1022,7 +1022,7 @@ def research_insider_trades():
 
     return jsonify({"success": True, "data": results}), 200
 
-@app.route("/research/historical_prices", methods=["GET"])
+@app.route("/api/research/historical_prices", methods=["GET"])
 def research_historical_prices():
     """
     Returns historical price data for a company.
@@ -1061,7 +1061,7 @@ def research_historical_prices():
 
     return jsonify({"success": True, "data": results}), 200
 
-@app.route("/research/stock_splits", methods=["GET"])
+@app.route("/api/research/stock_splits", methods=["GET"])
 def research_stock_splits():
     """
     Returns stock split history for a company.
@@ -1102,7 +1102,7 @@ def research_stock_splits():
 
 ## NEWS ##
 
-@app.route("/research/news", methods=["GET"])
+@app.route("/api/research/news", methods=["GET"])
 def research_news():
     """
     Returns latest news stories, optionally filtered by ticker and/or quantity.
@@ -1190,7 +1190,7 @@ def research_news():
 
 ## SCREENERS ##
 
-@app.route("/screeners")
+@app.route("/api/screeners")
 def screeners():
     """
     Updates (if stale, defined in MarketOverviewCoordinator class) screener data
@@ -1263,7 +1263,7 @@ def screeners():
         grouped['broken'] = broken
     return jsonify(grouped), 200
 
-@app.route("/search", methods=["GET"])
+@app.route("/api/search", methods=["GET"])
 def search():
     """
     Returns combined search results across companies, users, and news.
@@ -1350,7 +1350,7 @@ def search():
     results["success"] = True
     return jsonify(results), 200
 
-@app.route("/search/companies", methods=["GET"])
+@app.route("/api/search/companies", methods=["GET"])
 def search_companies():
     """
     Search for companies by ticker symbol or company name.
@@ -1405,7 +1405,7 @@ def search_companies():
 
     return jsonify({"success": True, "data": sm.search_companies(query=query, limit=limit, local=local)}), 200
 
-@app.route("/search/users", methods=["GET"])
+@app.route("/api/search/users", methods=["GET"])
 def search_users():
     """
     Search for users by username.
@@ -1449,7 +1449,7 @@ def search_users():
 
     return jsonify({"success": True, "data": res}), 200
 
-@app.route("/search/news", methods=["GET"])
+@app.route("/api/search/news", methods=["GET"])
 def search_news():
     """
     Search for news articles by headline text or related ticker symbols.
@@ -1509,7 +1509,7 @@ def search_news():
 
 ## MARKET OVERVIEW ##
 
-@app.route("/market_overview", methods=["GET"])
+@app.route("/api/market_overview", methods=["GET"])
 def market_overview():
     """
     Returns regional market overview data for the homepage.
@@ -1550,7 +1550,7 @@ def market_overview():
 
 ## SCOREBOARD ##
 
-@app.route("/scoreboard", methods=["GET"])
+@app.route("/api/scoreboard", methods=["GET"])
 def scoreboard():
     """
     Returns rankings for all users.
