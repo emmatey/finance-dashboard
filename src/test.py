@@ -24,6 +24,7 @@ import sys
 # export FLASK_APP=test.py
 app = Flask(__name__)
 app.config["DATABASE"] = "finance.db"
+app.config["TESTING"] = True
 load_dotenv()
 api_key = os.getenv("NEWS_API_KEY")
 
@@ -59,9 +60,23 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    ret = yqs.yq_ticker_fetch_modules(symbols="adsddg", modules=["price", "calendarEvents"])
-    print(ret)
+    res = sm.search_news_local(query="grind")
+    print("localkeys")
+    print(res[0].keys())
+    print(res)
+    print(type(res[0].get('relatedTickers')))
+    #res = sm.search_news_online(query="grindr")
+    #print("online keys")
+    #print(res[0].keys())
+    #print(res)
+    #print(type(res[0].get('relatedTickers')))
+    """
+    localkeys
+    dict_keys(['id', 'uuid', 'timeInserted', 'title', 'thumbnail', 'link', 'publisher', 'providerPublishTime'])
 
+    online keys
+    dict_keys(['uuid', 'title', 'publisher', 'link', 'providerPublishTime', 'thumbnail', 'relatedTickers', 'search_type'])
+    """
 
     filler_page = """
         <body style="background-color: black; color: green;">

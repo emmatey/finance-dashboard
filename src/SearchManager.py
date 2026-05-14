@@ -155,13 +155,51 @@ class SearchManager(CommonQueries):
     def search_news_local(
             self,
             query: str,
-            limit: int = 19
+            limit: int = 20
         ) -> list[dict]:
         """
-        Search the database for news stories based on their titles.
+        Search the local database for news stories matching the query.
+        Used for datalist suggestions on each keystroke — fast, no API call.
+
+        Args:
+            query: Partial title or keyword to search for
+            limit: Maximum number of results to return (default: 19)
+
+        Returns:
+            List of dicts with keys: uuid, title, publisher, link,
+            providerPublishTime, thumbnail, relatedTickers, search_type.
+            Returns empty list if no results found.
         """
 
+        safe_query = f"%{str(query).strip()}%"
+        news_sql = """
+        SELECT
+            n.uuid,
+            n.title,
+            n.publisher,
+            n.link,
+            n.providerPublishTime,
+            n.thumbnail,
+            GROUP_CONCAT(DISTINCT s.ticker) AS relatedTickers,
+            'news' AS search_type
+        FROM news AS n
+        LEFT JOIN news_symbols AS ns ON ns.news_id = n.id
+        LEFT JOIN symbols AS s ON s.id = ns.symbol_id
+        WHERE n.title LIKE ?
+        GROUP BY n.id
+        ORDER BY n.providerPublishTime DESC
+        LIMIT ?;
+        """
+        rows = self.select_query(query=news_sql, placeholders=(safe_query, limit))
+        if not rows:
+            return []
 
+        for row in rows:
+            relatedTickersRaw = row.get("relatedTickers", None)
+            if isinstance(relatedTickersRaw, str):
+                row['relatedTickers'] = relatedTickersRaw.split(',')
+        return rows
+    
     def search_news_online(
         self,
         query: str = "",
