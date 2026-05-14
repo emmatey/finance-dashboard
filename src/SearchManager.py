@@ -244,6 +244,31 @@ class SearchManager(CommonQueries):
 
         return news
 
+    def search_news(
+        self,
+        query: str = "",
+        limit: int = 10,
+        local: bool = False,
+        yq_search_payload: dict | None = None
+    ) -> list[dict]:
+        """
+        Search for news stories either locally or online based on the local flag.
+
+        Args:
+            query: Partial title or keyword to search for
+            limit: Maximum number of results to return (default: 10)
+            local: If True, search local DB only — fast, no API call (default: False)
+            yq_search_payload: Optional raw yq.search() response, passed through
+                               to search_news_online if provided.
+
+        Returns:
+            List of news dicts. Returns empty list if no results found.
+        """
+        query = query.strip()
+        if local:
+            return self.search_news_local(query=query, limit=limit)
+        return self.search_news_online(query=query, limit=limit, yq_search_payload=yq_search_payload)
+
     def search_users(self, query: str, report_manager_instance=None) -> list[dict]:
         """
         Search for users by username.
