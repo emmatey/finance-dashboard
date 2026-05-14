@@ -3,11 +3,14 @@ import '../styles/colors.css';
 
 export default function SearchBar() {
     function searchOnline() {
-        
+        // hit api/search
     }
 
     function searchOffline() {
-
+        // hit api/search/companies(local, i.e query param)
+        // news (local)
+        // users
+        // i.e 3 api hits, concat.
     }
 
     return (
