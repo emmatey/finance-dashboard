@@ -1,0 +1,52 @@
+:root {
+  /* ─── Grey ─────────────────────────────────────── */
+  --grey-1: #FFFFFF;
+  --grey-2: #F8FAFC;
+  --grey-3: #F1F5F9;
+  --grey-4: #E2E8F0;
+  --grey-5: #CBD5E1;
+
+  /* ─── Red ──────────────────────────────────────── */
+  --red-1: #FFA9A5;
+  --red-2: #FF948F;
+  --red-3: #FF6962;
+  --red-4: #FF534C;
+  --red-5: #FF2920;
+
+  /* ─── Green ────────────────────────────────────── */
+  --green-1: #DCFCE7;
+  --green-2: #BBF7D0;
+  --green-3: #4ADE80;
+  --green-4: #16A34A;
+  --green-5: #15803D;
+
+  /* ─── Blue ─────────────────────────────────────── */
+  --blue-1: #C2F7FF;
+  --blue-2: #73EEFF;
+  --blue-3: #4AE9FF;
+  --blue-4: #1996AC;
+  --blue-5: #006C83;
+
+  /* ─── Yellow ───────────────────────────────────── */
+  --yellow-1: #FEFCE8;
+  --yellow-2: #FEF08A;
+  --yellow-3: #FFFD37;
+  --yellow-4: #FFDA03;
+  --yellow-5: #E1A95F;
+
+  /* ─── Semantic aliases ──────────────────────────── */
+
+  --color-gain: var(--green-4);
+  --color-gain-subtle: var(--green-1);
+  --color-loss: var(--red-4);
+  --color-loss-subtle: var(--red-1);
+
+  --color-primary: var(--blue-5);
+  --color-primary-light: var(--blue-3);
+  --color-accent: var(--yellow-4);
+
+  --color-bg: var(--grey-1);
+  --color-surface: var(--grey-2);
+  --color-border: var(--grey-4);
+  --color-text: var(--grey-5);
+}
