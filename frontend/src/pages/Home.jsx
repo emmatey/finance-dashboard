@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import SearchBar from '../components/SearchBar.jsx'
 
 export default function Home() {
   const [data, setData] = useState(null)
@@ -19,12 +20,15 @@ export default function Home() {
   }, []); // Empty dependency array means this runs once on mount
 
   return (
-    <div>
-      <h1>Scoreboard</h1>
-      {/* 2. Use curly braces and <pre> for formatting */}
-      <pre>
-        {data ? JSON.stringify(data, null, 2) : "Loading..."}
-      </pre>
-    </div>
+    <>
+      <SearchBar />
+      <div>
+        <h1>Scoreboard</h1>
+        {/* 2. Use curly braces and <pre> for formatting */}
+        <pre>
+          {data ? JSON.stringify(data, null, 2) : "Loading..."}
+        </pre>
+      </div>
+    </>
   )
 }

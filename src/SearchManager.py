@@ -151,8 +151,18 @@ class SearchManager(CommonQueries):
             for i in res:
                 i["search_type"] = "company"
         return res
-    
-    def search_news(
+
+    def search_news_local(
+            self,
+            query: str,
+            limit: int = 19
+        ) -> list[dict]:
+        """
+        Search the database for news stories based on their titles.
+        """
+
+
+    def search_news_online(
         self,
         query: str = "",
         limit: int = 10,
