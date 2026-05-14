@@ -1453,11 +1453,13 @@ def search_users():
 def search_news():
     """
     Search for news articles by headline text or related ticker symbols.
+    Supports a local-only mode for fast datalist population on each keystroke,
+    bypassing the Yahoo Finance API and querying only the local database.
 
     Query Parameters:
-        ?q=str - Search term (required), matched against article titles
-                 and related ticker symbols
+        ?q=str          - Search term (required), matched against article titles
         ?limit=int      - Qty of results.
+        ?local=bool     - If true, search local DB only (default: false)
 
     Returns:
         200 - [{
@@ -1475,7 +1477,8 @@ def search_news():
     sm = SearchManager()
 
     query = request.args.get("q", None)
-    limit = request.args.get("limit", 20)
+    limit = request.args.get("limit", 10)
+    local = False
 
     try:
         limit = int(limit)
@@ -1485,25 +1488,29 @@ def search_news():
             "success": False,
             "message": f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT"
         }), 400
-    
+
     if query is None:
         return jsonify({
             "success": False,
             "message": "Query paramater 'q' i.e. your search term, is required."
         }), 400
-    
-    res = None
+
+    local = request.args.get("local")
+    if isinstance(local, str):
+        local = local.lower().strip()
+    if local and local == 'true':
+        local = True
+    else:
+        local = False
+
     try:
-        res = sm.search_news(query=query, limit=limit)
+        res = sm.search_news(query=query, limit=limit, local=local)
     except Exception as e:
         logger.exception(e)
         return jsonify({
             "success": False,
-            "message": "Server error..."
+            "message": "Server error during news search. (/search/news)"
         }), 500
-    
-    if res is None or not res:
-        return jsonify({"success": True, "data": []}), 200
 
     return jsonify({"success": True, "data": res}), 200
 
