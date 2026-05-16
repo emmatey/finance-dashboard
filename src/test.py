@@ -60,16 +60,8 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    res = sm.search_news_local(query="grind")
-    print("localkeys")
-    print(res[0].keys())
-    print(res)
-    print(type(res[0].get('relatedTickers')))
-    #res = sm.search_news_online(query="grindr")
-    #print("online keys")
-    #print(res[0].keys())
-    #print(res)
-    #print(type(res[0].get('relatedTickers')))
+    sm.search_companies_online("mmm")
+    
     """
     localkeys
     dict_keys(['id', 'uuid', 'timeInserted', 'title', 'thumbnail', 'link', 'publisher', 'providerPublishTime'])

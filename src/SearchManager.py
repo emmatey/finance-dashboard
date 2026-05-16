@@ -72,7 +72,7 @@ class SearchManager(CommonQueries):
         if not yq_search_payload:
             logger.warning(f"Yahoo search failed for '{query}' - API may be down")
             return []
-
+        print(yq_search_payload)
         # Extract company quotes
         out = []
         ticker_bases = set()  # tracks base tickers to filter exchange variants e.g. MMM.DE
