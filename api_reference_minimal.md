@@ -144,8 +144,6 @@ RESOURCES
             empty portfolio returns { success: true, data: [] }
         transactions - login required - DONE 4/5
             to   - GET ?username=str (optional, defaults to logged in user)
-                       ?limit=int (optional, default all)
-                       ?offset=int (optional, default 0)
             from - {
                 success: true,
                 data: [{
@@ -192,6 +190,17 @@ RESOURCES
                their own table only and update themselves only.
                RESEARCH/ONLINE route does a bulk update and serves everything.
 
+        research/local DONE
+            to   - GET ?ticker=str
+            from - {
+                success: true,
+                <table_name>: data | "stale" | null,
+                ... (same table keys as research/online)
+            }
+            stale tables return the string "stale" instead of data.
+            always-fetched: symbols, historical_prices, company_profile.
+            fresh tables return actual data; stale tables return sentinel.
+            400 - no ticker, 404 - ticker not in local db, 500 - db error
         research/online DONE - 4/9
             to   - GET ?ticker=str
             from - {
@@ -279,8 +288,7 @@ RESOURCES
                 debt_to_equity: float,
                 todays_volume: float,
                 ten_day_avg_volume: float,
-                three_month_avg_volume: float,
-                insider_sentiment: float (-1.0 to 1.0, null if no data)
+                three_month_avg_volume: float
             }
         stock_splits DONE - 4/10
             to   - GET ?ticker=str
@@ -404,6 +412,7 @@ RESOURCES
                     publisher: str,
                     link: str,
                     providerPublishTime: int,
+                    thumbnail: str,
                     relatedTickers: list[str],
                     search_type: "news"
                 }]
@@ -416,6 +425,6 @@ RESOURCES
             from - { success: true, data: [{ same user shape as above }] }
             no match returns { success: true, data: [] }
         /search/news
-            to   - GET ?q=str ?limit=int (optional, default 20)
+            to   - GET ?q=str ?limit=int (optional, default 10)
             from - { success: true, data: [{ same news shape as above }] }
             no match returns { success: true, data: [] }

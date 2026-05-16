@@ -419,6 +419,43 @@ Execute a buy or sell order. The server re-fetches the latest price from Yahoo i
 
 A rich set of endpoints for company deep-dives. Each endpoint checks data freshness and auto-refreshes from Yahoo Finance if stale. See the freshness thresholds table in Conventions.
 
+### `GET /research/local?ticker=<TICKER>`
+
+Fast initial load — returns all research data from the local database without making any external API calls. Stale tables return the sentinel string `"stale"` instead of data. After this call, fire `/research/online` to fill in any stale sections.
+
+**Which tables are always returned with real data:** `symbols`, `historical_prices`, `company_profile`. All other tables return real data only if within their freshness threshold; otherwise `"stale"`.
+
+**Query Params:** `?ticker=string` (required)
+
+**200 Response:**
+
+```json
+{
+  "success": true,
+  "symbols": [{ "..." }],
+  "historical_prices": [{ "..." }],
+  "company_profile": [{ "..." }],
+  "financial_metrics": "stale",
+  "insider_trades": [{ "..." }],
+  "news": "stale",
+  "stock_splits": [{ "..." }]
+}
+```
+
+Each key is either the table's data array or the string `"stale"`. The frontend should treat `"stale"` as a loading placeholder and refresh that section from the corresponding individual endpoint or from `/research/online`.
+
+**Error Responses:**
+
+| Status | Meaning |
+|--------|---------|
+| 400 | No ticker provided |
+| 404 | Ticker not found in local database |
+| 500 | Database error |
+
+**Frontend Notes:** Use this as the first request when a user navigates to a company research page — it returns instantly since it's all local DB reads. Follow up with `/research/online` (or individual endpoints) to refresh any stale sections. This two-step pattern (local first, online second) keeps the page feeling fast.
+
+---
+
 ### `GET /research/online?ticker=<TICKER>`
 
 The "everything" endpoint — returns all research data for a company in a single call. Checks freshness for all tables and updates any that are stale. This is what you'd call when a user navigates to a full company research page.
@@ -474,7 +511,6 @@ The "everything" endpoint — returns all research data for a company in a singl
       "todays_volume": 62000000,
       "ten_day_avg_volume": 57000000,
       "three_month_avg_volume": 58000000,
-      "insider_sentiment": 0.73
     }
   ],
   "news": [
@@ -569,7 +605,7 @@ Returns a single object (not an array).
 
 #### `GET /research/financial_metrics?ticker=<TICKER>`
 
-Returns a single object with all financial metrics including `insider_sentiment`. See the full field list in the `/research/online` response above. Includes `"success": true` alongside the data fields.
+Returns a single object with all financial metrics. See the full field list in the `/research/online` response above. Includes `"success": true` alongside the data fields.
 
 ---
 
@@ -915,7 +951,7 @@ Returns `{"success": true, "data": []}` if no match.
 
 News search by headline or related ticker.
 
-**Query Params:** `?q=string` (required), `?limit=int` (optional, default 20)
+**Query Params:** `?q=string` (required), `?limit=int` (optional, default 10)
 
 **200 Response:**
 
@@ -955,7 +991,8 @@ Returns `{"success": true, "data": []}` if no results.
 
 | Section | Endpoint |
 |---------|----------|
-| Full company research | `GET /research/online?ticker=X` (all-in-one) |
+| Fast initial load | `GET /research/local?ticker=X` (local DB, no API) |
+| Fill stale sections | `GET /research/online?ticker=X` (all-in-one) |
 | OR lazy-load sections | Individual `/research/*` endpoints |
 
 ### Profile Page
