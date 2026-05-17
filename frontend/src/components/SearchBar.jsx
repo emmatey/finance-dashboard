@@ -39,8 +39,10 @@ export default function SearchBar() {
     const [dataList, setDataList] = useState([]);
 
     async function handleKeyUp(query) {
-        const data = await buildDataList(query);
-        setDataList(data);
+        setTimeout(async ()=>{
+            const data = await buildDataList(query);
+            setDataList(data);
+        }, 100)
     }
 
     return (
