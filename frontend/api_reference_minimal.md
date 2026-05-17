@@ -102,18 +102,18 @@ RESPONSE CONVENTIONS
 RESOURCES 
 
     AUTH
-        login - DONE 3/30
+        login
             to   - POST {username: str, password: str}
             from - {success: bool, message: str}
-        logout - DONE 3/30
+        logout
             to   - POST
             from - {success: bool}
-        register - DONE 3/30
+        register
             to   - POST {username: str, password: str}
             from - {success: bool}
 
     USER 
-        summary - DONE 4/2 
+        summary
             to   - GET ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
@@ -125,7 +125,7 @@ RESOURCES
                 grand_total: float,
                 rank: int
             }
-        portfolio - DONE 4/4
+        portfolio
             to   - GET ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
@@ -142,7 +142,7 @@ RESOURCES
                 }]
             }
             empty portfolio returns { success: true, data: [] }
-        transactions - login required - DONE 4/5
+        transactions - login required
             to   - GET ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
@@ -157,8 +157,8 @@ RESOURCES
                     cash_after: float
                 }]
             }
-        balance_snapshots - DONE 4/6
-            to   - GET ?username=str
+        balance_snapshots - login required
+            to   - GET ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
                 data: [{
@@ -171,7 +171,7 @@ RESOURCES
             }
             empty returns { success: true, data: [] }
 
-    SCOREBOARD - DONE 4/27
+    SCOREBOARD
         to   - GET
         from - {
             success: true,
@@ -190,18 +190,18 @@ RESOURCES
                their own table only and update themselves only.
                RESEARCH/ONLINE route does a bulk update and serves everything.
 
-        research/local DONE
+        research/local
             to   - GET ?ticker=str
             from - {
                 success: true,
-                <table_name>: data | "stale" | null,
+                <table_name>: data | null,
                 ... (same table keys as research/online)
             }
-            stale tables return the string "stale" instead of data.
+            stale tables return null instead of data.
             always-fetched: symbols, historical_prices, company_profile.
-            fresh tables return actual data; stale tables return sentinel.
+            fresh tables return actual data; stale tables return null.
             400 - no ticker, 404 - ticker not in local db, 500 - db error
-        research/online DONE - 4/9
+        research/online
             to   - GET ?ticker=str
             from - {
                 success: true,
@@ -212,7 +212,7 @@ RESOURCES
                 company_profile: [{}],
                 insider_trades: [{}]
             }
-        summary DONE - 4/10
+        summary
             to   - GET ?ticker=str
             from - {
                 success: true,
@@ -222,7 +222,7 @@ RESOURCES
                 company_name: str,
                 last_price: float
             }
-        company_profile DONE - 4/10
+        company_profile
             to   - GET ?ticker=str
             from - {
                 success: true,
@@ -233,7 +233,7 @@ RESOURCES
                 employee_count: int,
                 last_updated: str
             }
-        insider_trades DONE - 4/10
+        insider_trades
             to   - GET ?ticker=str ?qty=int (optional)
             from - {
                 success: true,
@@ -248,7 +248,7 @@ RESOURCES
                     last_updated: str
                 }]
             }
-        historical_prices DONE - 4/10
+        historical_prices
             to   - GET ?ticker=str
             from - {
                 success: true,
@@ -259,7 +259,7 @@ RESOURCES
                     volume: int
                 }]
             }
-        financial_metrics DONE - 4/10
+        financial_metrics
             to   - GET ?ticker=str
             from - {
                 success: true,
@@ -288,9 +288,10 @@ RESOURCES
                 debt_to_equity: float,
                 todays_volume: float,
                 ten_day_avg_volume: float,
-                three_month_avg_volume: float
+                three_month_avg_volume: float,
+                insider_sentiment: float | null
             }
-        stock_splits DONE - 4/10
+        stock_splits
             to   - GET ?ticker=str
             from - {
                 success: true,
@@ -301,7 +302,7 @@ RESOURCES
                     last_updated: str
                 }]
             }
-        news DONE - 4/10
+        news
             to   - GET ?ticker=str (optional) ?qty=int (optional, default 10)
             from - {
                 success: true,
@@ -315,7 +316,7 @@ RESOURCES
                 }]
             }
 
-    SCREENERS - DONE 4/12
+    SCREENERS
         to   - GET
         from - {
             success: true,
@@ -338,7 +339,7 @@ RESOURCES
                         fifty_two_wk_losers, volume_spike_bullish,
                         volume_spike_bearish
 
-    MARKET_OVERVIEW - DONE 4/27
+    MARKET_OVERVIEW
         to   - GET
         from - {
             success: true,
@@ -353,7 +354,7 @@ RESOURCES
         regions: USA, EU, LATAM, Africa, Australia, India, Japan,
                  China, Gold, Copper, Oil
 
-    TRADE - DONE 4/6
+    TRADE
         to   - GET ?ticker=str
         from - {
             success: true,
@@ -383,7 +384,7 @@ RESOURCES
             new_balance: float
         }
 
-    SEARCH - DONE 4/27
+    SEARCH
         /search
             to   - GET ?q=str
             from - {

@@ -1,6 +1,6 @@
 # Paper Trading Platform — Frontend API Reference
 
-> **Base URL:** `http://localhost:5000`
+> **Base URL:** `http://localhost:5000/api`
 >
 > **Last Updated:** May 2026
 >
@@ -421,9 +421,9 @@ A rich set of endpoints for company deep-dives. Each endpoint checks data freshn
 
 ### `GET /research/local?ticker=<TICKER>`
 
-Fast initial load — returns all research data from the local database without making any external API calls. Stale tables return the sentinel string `"stale"` instead of data. After this call, fire `/research/online` to fill in any stale sections.
+Fast initial load — returns all research data from the local database without making any external API calls. Stale tables return `null` instead of data. After this call, fire `/research/online` to fill in any stale sections.
 
-**Which tables are always returned with real data:** `symbols`, `historical_prices`, `company_profile`. All other tables return real data only if within their freshness threshold; otherwise `"stale"`.
+**Which tables are always returned with real data:** `symbols`, `historical_prices`, `company_profile`. All other tables return real data only if within their freshness threshold; otherwise `null`.
 
 **Query Params:** `?ticker=string` (required)
 
@@ -435,14 +435,14 @@ Fast initial load — returns all research data from the local database without 
   "symbols": [{ "..." }],
   "historical_prices": [{ "..." }],
   "company_profile": [{ "..." }],
-  "financial_metrics": "stale",
+  "financial_metrics": null,
   "insider_trades": [{ "..." }],
-  "news": "stale",
+  "news": null,
   "stock_splits": [{ "..." }]
 }
 ```
 
-Each key is either the table's data array or the string `"stale"`. The frontend should treat `"stale"` as a loading placeholder and refresh that section from the corresponding individual endpoint or from `/research/online`.
+Each key is either the table's data array or `null` if stale. The frontend should treat `null` as a loading placeholder and refresh that section from the corresponding individual endpoint or from `/research/online`.
 
 **Error Responses:**
 
@@ -511,6 +511,7 @@ The "everything" endpoint — returns all research data for a company in a singl
       "todays_volume": 62000000,
       "ten_day_avg_volume": 57000000,
       "three_month_avg_volume": 58000000,
+      "insider_sentiment": null
     }
   ],
   "news": [
@@ -548,7 +549,7 @@ The "everything" endpoint — returns all research data for a company in a singl
 }
 ```
 
-**Notes on `insider_sentiment`:** A derived metric in the range (-1.0, 1.0) where 1.0 is strongly bullish (pure insider buying) and -1.0 is strongly bearish (pure selling). Computed from the `insider_trades` data — open-market purchases and sales only, grants and option exercises excluded. May be `null` if no trade data exists for the company. See `/research/insider_trades` for the raw data behind it.
+**Note on `insider_sentiment`:** This field is included in the `financial_metrics` object (range -1.0 to 1.0, where 1.0 is strongly bullish and -1.0 is strongly bearish). It's computed from the `insider_trades` data — open-market purchases and sales only, grants and option exercises excluded. Recalculated automatically as a post-processing step whenever any research data is refreshed. Will be `null` if no trade data exists for the company.
 
 **Frontend Notes:** This is a large payload. Consider whether you need everything at once or if lazy-loading individual sections would feel better. Each section is keyed by table name, and each value is always an array — even for single-record tables like `financial_metrics` and `company_profile`. The initial load may be slow if multiple data sources are stale.
 
@@ -822,7 +823,7 @@ Regional ETF performance data for a global markets "at a glance" widget. Checks 
 
 ## Search
 
-Three endpoints: a combined all-in-one search and two dedicated sub-routes for companies and news that offer more control. There is no dedicated user sub-route for search — use `/search/users` for that.
+Four endpoints: a combined all-in-one search plus dedicated sub-routes for companies, users, and news.
 
 ### `GET /search?q=<query>`
 
