@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { searchOnline, searchOffline } from '../scripts/backend-fetch.js'
 import '../styles/colors.css';
 
-async function buildDataList(query) {
+async function buildDataList(event) {
     /*
         Builds a datalist from the db items LIKE the search query.
     */
+    const query = event.target.value;
     const safeQuery = String(query).trim();
     const result = await searchOffline(safeQuery);
     
@@ -37,15 +38,11 @@ async function buildDataList(query) {
 export default function SearchBar() {
     const [dataList, setDataList] = useState([]);
 
-    useEffect(() => {
-        async function callBuildDataList() {
-            const dataListRaw = await buildDataList("grindr");
-            setDataList(dataListRaw);
-        }
-        callBuildDataList();
-    }, [])
+    async function handleKeyUp(query) {
+        const data = await buildDataList(query);
+        setDataList(data);
+    }
 
-    console.log(dataList);
     return (
         <>
         <div>
@@ -54,6 +51,7 @@ export default function SearchBar() {
                 type='search' 
                 placeholder='Search...'
                 list='offlineSuggest'
+                onKeyUp={handleKeyUp}
             />
             <button>Search</button>
             <datalist id='offlineSuggest'>
@@ -64,4 +62,4 @@ export default function SearchBar() {
         </div>
         </>
     );
-}
+}   
