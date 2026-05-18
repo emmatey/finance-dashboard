@@ -1,4 +1,6 @@
-async function unpackResponse(response) {
+
+export async function unpackResponse(response) {
+    /* */
     if (!(response instanceof Response)) {
         throw new Error("response parameter must be a Response object.")
     }
@@ -11,7 +13,7 @@ async function unpackResponse(response) {
     try {
         data = await response.json();
     } catch (error) {
-      console.error("Failed to parse JSON:", error)
+      console.error(`The response object provided. /n'${response}'/m is not compatable with JSON format.e`, error)
       console.error("Response status was:", response.status)
       data = {}
     }
@@ -29,8 +31,7 @@ export async function searchOnline(query) {
     
 export async function searchOffline(query) {
     /*
-        Errors with promise.all() method will bubble up to this
-        function's caller.
+        Requests data similar to the search query via app.py.
     */
     const safeQuery = String(query).trim();
     

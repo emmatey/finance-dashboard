@@ -1,31 +1,36 @@
+import { unpackResponse } from '../scripts/backend-fetch.js';
 import { useEffect, useState } from 'react';
 import { searchOnline, searchOffline } from '../scripts/backend-fetch.js'
 import '../styles/colors.css';
 
-async function buildDataList(event) {
+async function buildDataListObjects(event) {
     /*
-        Builds a datalist from the db items LIKE the search query.
+        Returns: {data list item: URL}
     */
     const query = event.target.value;
     const safeQuery = String(query).trim();
-    const result = await searchOffline(safeQuery);
+    const backend_fetch_result = await searchOffline(safeQuery);
     
     let listItems = [];
-    const companiesObj = result?.companies??false;
+    const companiesObj = backend_fetch_result?.companies??false;
     if (companiesObj && companiesObj?.success == true) {
         for (const obj of companiesObj?.data??[]) {
-            listItems.push(`${obj?.ticker??''}: ${obj?.company_name??''} - ${obj?.exchange??''}`);
+            const list_item = {
+                li_str: "(`${obj?.ticker??''}: ${obj?.company_name??''} - ${obj?.exchange??''}`)",
+                li_url: 
+            }
+            listItems.push;
         };
     };
 
-    const newsObj = result?.news??false
+    const newsObj = backend_fetch_result?.news??false
     if (newsObj && newsObj?.success == true) {
         for (const obj of newsObj?.data??[]) {
             listItems.push(`News: ${obj?.title}`);
         };
     };
     
-    const usersObj = result?.users??false;
+    const usersObj = backend_fetch_result?.users??false;
     if (usersObj && usersObj?.success == true) {
         for (const obj of usersObj?.data??[]) {
             listItems.push(`User: ${obj?.username} - Rank: ${obj?.rank??'N/A'}`);
@@ -35,13 +40,16 @@ async function buildDataList(event) {
     return listItems
 }
 
+async function request_at_selected_url() {
+    
+}
+
 export default function SearchBar() {
     const [dataList, setDataList] = useState([]);
 
     async function handleKeyUp(query) {
         setTimeout(async ()=>{
-            const data = await buildDataList(query);
-            setDataList(data);
+
         }, 100)
     }
 
