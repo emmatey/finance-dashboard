@@ -10,7 +10,7 @@ async function buildDataListObjects(event) {
     */
     const query = event.target.value;
     const safeQuery = String(query).trim();
-    const backend_fetch_result = searchOffline(safeQuery)
+    const backend_fetch_result = await searchOffline(safeQuery)
 
     let dataListObjects = [];
     const companiesObj = backend_fetch_result?.companies??false;

@@ -1,7 +1,19 @@
+import { useNavigate } from 'react-router-dom'
+import SearchBar from './SearchBar.jsx'
+import '../styles/Header.css'
+
 export default function Header() {
+    const navigate = useNavigate()
+
     return (
         <header>
-            <h1>Finance Dashboard</h1>
+            <span className="header-logo" onClick={() => navigate('/')}>
+                Finance Dashboard
+            </span>
+            <div className="header-right">
+                <SearchBar />
+                <button className="header-user-btn" aria-label="User" />
+            </div>
         </header>
     )
 }
