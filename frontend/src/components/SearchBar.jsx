@@ -62,7 +62,7 @@ export default function SearchBar() {
         }, 100)
     }
 
-    function handleClick(event) {
+    function handleInput(event) {
         const selected = dataListObjects.find(obj => obj.li_str === event.target.value);
         if (!selected) return;
 
@@ -73,18 +73,27 @@ export default function SearchBar() {
         }
     }
 
+    function handleSubmit(event) {
+        event.preventDefault();
+        const query = event.currentTarget.querySelector('input').value.trim();
+        if (!query) return;
+        navigate(`/search?q=${encodeURIComponent(query)}`);
+    }
+
     return (
         <>
         <div>
-            <input 
-                id='search' 
-                type='search' 
-                placeholder='Search...'
-                list='offlineSuggest'
-                onKeyUp={handleKeyUp}
-                onChange={handleClick}
-            />
-            <button>Search</button>
+            <form onSubmit={handleSubmit}>
+                <input
+                    id='search'
+                    type='search'
+                    placeholder='Search...'
+                    list='offlineSuggest'
+                    onKeyUp={handleKeyUp}
+                    onInput={handleInput}
+                />
+                <button>Search</button>
+            </form>
             <datalist id='offlineSuggest'>
                 {dataList.map((i, index) => (
                     <option key={index} value={i}></option>
