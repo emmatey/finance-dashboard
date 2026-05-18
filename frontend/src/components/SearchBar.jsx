@@ -1,4 +1,4 @@
-import { unpackResponse } from '../scripts/backend-fetch.js';
+
 import { useEffect, useState } from 'react';
 import { searchOnline, searchOffline } from '../scripts/backend-fetch.js'
 import '../styles/colors.css';
@@ -9,31 +9,39 @@ async function buildDataListObjects(event) {
     */
     const query = event.target.value;
     const safeQuery = String(query).trim();
-    const backend_fetch_result = await searchOffline(safeQuery);
     
     let listItems = [];
     const companiesObj = backend_fetch_result?.companies??false;
     if (companiesObj && companiesObj?.success == true) {
         for (const obj of companiesObj?.data??[]) {
-            const list_item = {
+            const company_list_item = {
                 li_str: "(`${obj?.ticker??''}: ${obj?.company_name??''} - ${obj?.exchange??''}`)",
-                li_url: 
+                li_url: `/api/research/online?ticker=${safeQuery}`
             }
-            listItems.push;
+            listItems.push(company_list_item);
         };
     };
 
     const newsObj = backend_fetch_result?.news??false
     if (newsObj && newsObj?.success == true) {
         for (const obj of newsObj?.data??[]) {
-            listItems.push(`News: ${obj?.title}`);
+            const news_list_item = {
+                li_str: `News: ${obj?.title??''}`,
+                li_url: `/api/news?id=${obj?.id??''}`
+            }
+
+            listItems.push(news_list_item);
         };
     };
-    
+
     const usersObj = backend_fetch_result?.users??false;
     if (usersObj && usersObj?.success == true) {
         for (const obj of usersObj?.data??[]) {
-            listItems.push(`User: ${obj?.username} - Rank: ${obj?.rank??'N/A'}`);
+            const user_list_item = {
+                li_str: `User: ${obj?.username} - Rank: ${obj?.rank??'N/A'}`,
+                li_url: `/api/user/${obj?.username??''}`
+            }
+            listItems.push(user_list_item);
         };
     };
 
