@@ -1,34 +1,13 @@
-import { useState, useEffect } from 'react'
-import SearchBar from '../components/SearchBar.jsx'
+import Header from '../components/Header.jsx'
+import Footer from '../components/Footer.jsx'
+import HomeBody from '../components/HomeBody.jsx'
 
 export default function Home() {
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    // 1. Define the async function inside
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/scoreboard");
-        const json = await res.json();
-        setData(json);
-      } catch (error) {
-        console.error("Failed to fetch:", error);
-      }
-    };
-
-    fetchData();
-  }, []); // Empty dependency array means this runs once on mount
-
-  return (
-    <>
-      <SearchBar />
-      <div>
-        <h1>Scoreboard</h1>
-        {/* 2. Use curly braces and <pre> for formatting */}
-        <pre>
-          {data ? JSON.stringify(data, null, 2) : "Loading..."}
-        </pre>
-      </div>
-    </>
-  )
+    return (
+        <>
+            <Header />
+            <HomeBody />
+            <Footer />
+        </>
+    )
 }
