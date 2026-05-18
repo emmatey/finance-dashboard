@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
-import { searchOnline, searchOffline } from '../scripts/backend-fetch.js'
+import { useNavigate } from 'react-router-dom';
+import { searchOnline, searchOffline, unpackResponse } from '../scripts/backend-fetch.js'
 import '../styles/colors.css';
 
 async function buildDataListObjects(event) {
@@ -9,8 +10,9 @@ async function buildDataListObjects(event) {
     */
     const query = event.target.value;
     const safeQuery = String(query).trim();
-    
-    let listItems = [];
+    const backend_fetch_result = searchOffline(safeQuery)
+
+    let dataListObjects = [];
     const companiesObj = backend_fetch_result?.companies??false;
     if (companiesObj && companiesObj?.success == true) {
         for (const obj of companiesObj?.data??[]) {
@@ -18,7 +20,7 @@ async function buildDataListObjects(event) {
                 li_str: "(`${obj?.ticker??''}: ${obj?.company_name??''} - ${obj?.exchange??''}`)",
                 li_url: `/api/research/online?ticker=${safeQuery}`
             }
-            listItems.push(company_list_item);
+            dataListObjects.push(company_list_item);
         };
     };
 
@@ -27,10 +29,9 @@ async function buildDataListObjects(event) {
         for (const obj of newsObj?.data??[]) {
             const news_list_item = {
                 li_str: `News: ${obj?.title??''}`,
-                li_url: `/api/news?id=${obj?.id??''}`
+                li_url: obj?.link??''
             }
-
-            listItems.push(news_list_item);
+            dataListObjects.push(news_list_item);
         };
     };
 
@@ -41,24 +42,35 @@ async function buildDataListObjects(event) {
                 li_str: `User: ${obj?.username} - Rank: ${obj?.rank??'N/A'}`,
                 li_url: `/api/user/${obj?.username??''}`
             }
-            listItems.push(user_list_item);
+            dataListObjects.push(user_list_item);
         };
     };
 
-    return listItems
-}
-
-async function request_at_selected_url() {
-    
+    return dataListObjects
 }
 
 export default function SearchBar() {
     const [dataList, setDataList] = useState([]);
+    const [dataListObjects, setDataListObjects] = useState([]);
+    const navigate = useNavigate();
 
     async function handleKeyUp(query) {
         setTimeout(async ()=>{
-
+            const objects = await buildDataListObjects(query);
+            setDataListObjects(objects);
+            setDataList(objects.map(i => i.li_str));
         }, 100)
+    }
+
+    function handleClick(event) {
+        const selected = dataListObjects.find(obj => obj.li_str === event.target.value);
+        if (!selected) return;
+
+        if (selected.li_url.startsWith('http')) {
+            window.open(selected.li_url);
+        } else {
+            navigate(selected.li_url);
+        }
     }
 
     return (
@@ -70,6 +82,7 @@ export default function SearchBar() {
                 placeholder='Search...'
                 list='offlineSuggest'
                 onKeyUp={handleKeyUp}
+                onChange={handleClick}
             />
             <button>Search</button>
             <datalist id='offlineSuggest'>
