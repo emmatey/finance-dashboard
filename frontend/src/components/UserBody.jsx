@@ -1,27 +1,27 @@
 import { useEffect, useState } from 'react'
 import { unpackResponse } from '../scripts/backend-fetch.js'
 
-export default function ResearchBody({ ticker }) {
+export default function UserBody({ username }) {
     const [data, setData] = useState(null)
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        if (!ticker) return
+        if (!username) return
         setData(null)
         setError(null)
-        fetch(`/api/research/online?ticker=${ticker}`)
+        fetch(`/api/user/summary?username=${username}`)
             .then(unpackResponse)
             .then(setData)
             .catch(err => setError(err.message))
-    }, [ticker])
+    }, [username])
 
-    if (!ticker) return <main><h2>Research</h2><p>Search for a company to view research.</p></main>
-    if (error) return <main><h2>Research: {ticker}</h2><p>Error: {error}</p></main>
-    if (!data) return <main><h2>Research: {ticker}</h2><p>Loading...</p></main>
+    if (!username) return <main><h2>User</h2><p>No user specified.</p></main>
+    if (error) return <main><h2>User: {username}</h2><p>Error: {error}</p></main>
+    if (!data) return <main><h2>User: {username}</h2><p>Loading...</p></main>
 
     return (
         <main>
-            <h2>Research: {ticker}</h2>
+            <h2>User: {username}</h2>
             <pre>{JSON.stringify(data, null, 2)}</pre>
         </main>
     )

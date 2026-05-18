@@ -17,8 +17,8 @@ async function buildDataListObjects(event) {
     if (companiesObj && companiesObj?.success == true) {
         for (const obj of companiesObj?.data??[]) {
             const company_list_item = {
-                li_str: "(`${obj?.ticker??''}: ${obj?.company_name??''} - ${obj?.exchange??''}`)",
-                li_url: `/api/research/online?ticker=${safeQuery}`
+                li_str: `${obj?.ticker??''}: ${obj?.company_name??''} - ${obj?.exchange??''}`,
+                li_url: `/research?ticker=${obj?.ticker??safeQuery}`
             }
             dataListObjects.push(company_list_item);
         };
@@ -40,7 +40,7 @@ async function buildDataListObjects(event) {
         for (const obj of usersObj?.data??[]) {
             const user_list_item = {
                 li_str: `User: ${obj?.username} - Rank: ${obj?.rank??'N/A'}`,
-                li_url: `/api/user/${obj?.username??''}`
+                li_url: `/user/${obj?.username??''}`
             }
             dataListObjects.push(user_list_item);
         };
