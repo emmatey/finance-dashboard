@@ -19,8 +19,8 @@ function SentimentBar({ score }) {
     const position = Math.max(0, Math.min(100, ((score + 1) / 2) * 100))
     return (
         <div className="mt-2">
-            <div className="sentiment-track">
-                <div className="sentiment-needle" style={{ left: `${position}%` }} />
+            <div style={{ position: 'relative', height: '8px', borderRadius: '4px', background: 'linear-gradient(to right, var(--color-loss), var(--color-border) 50%, var(--color-gain))' }}>
+                <div style={{ position: 'absolute', left: `${position}%`, top: '-4px', transform: 'translateX(-50%)', width: '3px', height: '16px', background: '#333', borderRadius: '2px' }} />
             </div>
             <div className="d-flex justify-content-between mt-1 small">
                 <span className="text-muted">Bearish</span>
@@ -301,7 +301,7 @@ export default function ResearchBody({ ticker }) {
                                         ['3-mo Avg Vol', formatLargeNumber(metrics.three_month_avg_volume)],
                                     ].map(([label, value]) => (
                                         <div key={label} className="col border-bottom pb-1">
-                                            <div className="text-muted metric-label">{label}</div>
+                                            <div className="text-muted" style={{ fontSize: '0.72rem' }}>{label}</div>
                                             <div className="fw-semibold small">{value}</div>
                                         </div>
                                     ))}
