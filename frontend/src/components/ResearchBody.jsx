@@ -301,7 +301,7 @@ export default function ResearchBody({ ticker }) {
                             <h5 className="card-title">Company Profile</h5>
                             {profile ? (
                                 <>
-                                    <p className="small" style={{ maxHeight: '80px', overflowY: 'auto' }}>{profile.company_desc ?? 'No description available.'}</p>
+                                    <p className="small" style={{ maxHeight: '140px', overflowY: 'auto' }}>{profile.company_desc ?? 'No description available.'}</p>
                                     <table className="table table-sm mb-0">
                                         <tbody>
                                             {[
