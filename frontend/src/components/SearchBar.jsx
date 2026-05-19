@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchOnline, searchOffline, unpackResponse } from '../scripts/backend-fetch.js'
+import { searchOnline, searchOffline } from '../scripts/backend-fetch.js'
 import '../styles/colors.css';
 
 async function buildDataListObjects(event) {

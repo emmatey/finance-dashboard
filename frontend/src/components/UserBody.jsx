@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { unpackResponse } from '../scripts/backend-fetch.js'
+import { unpackFetchResponse } from '../scripts/utils.js'
 
 export default function UserBody({ username }) {
     const [data, setData] = useState(null)
@@ -10,7 +10,7 @@ export default function UserBody({ username }) {
         setData(null)
         setError(null)
         fetch(`/api/user/summary?username=${username}`)
-            .then(unpackResponse)
+            .then(unpackFetchResponse)
             .then(setData)
             .catch(err => setError(err.message))
     }, [username])

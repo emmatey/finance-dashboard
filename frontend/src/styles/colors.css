@@ -70,3 +70,26 @@
   --color-text-on-primary:  var(--grey-1);
   --color-link:             var(--blue-4);
 }
+
+/* ─── Sentiment bar ──────────────────────────────── */
+.sentiment-track {
+    position: relative;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, var(--color-loss), var(--color-border) 50%, var(--color-gain));
+}
+
+.sentiment-needle {
+    position: absolute;
+    top: -4px;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 16px;
+    background: #333;
+    border-radius: 2px;
+}
+
+/* ─── Financial metrics grid ─────────────────────── */
+.metric-label {
+    font-size: 0.72rem;
+}

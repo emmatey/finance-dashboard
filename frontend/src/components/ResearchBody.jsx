@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import '../styles/colors.css'
 import {
     unpackFetchResponse,
     formatCurrencyUSD,
@@ -18,19 +19,10 @@ function SentimentBar({ score }) {
     const position = Math.max(0, Math.min(100, ((score + 1) / 2) * 100))
     return (
         <div className="mt-2">
-            <div style={{ position: 'relative', height: '8px', borderRadius: '4px', background: 'linear-gradient(to right, #FF534C, #dee2e6 50%, #16A34A)' }}>
-                <div style={{
-                    position: 'absolute',
-                    left: `${position}%`,
-                    top: '-4px',
-                    transform: 'translateX(-50%)',
-                    width: '3px',
-                    height: '16px',
-                    background: '#333',
-                    borderRadius: '2px'
-                }} />
+            <div className="sentiment-track">
+                <div className="sentiment-needle" style={{ left: `${position}%` }} />
             </div>
-            <div className="d-flex justify-content-between mt-1" style={{ fontSize: '0.7rem' }}>
+            <div className="d-flex justify-content-between mt-1 small">
                 <span className="text-muted">Bearish</span>
                 <span className="text-muted">Neutral</span>
                 <span className="text-muted">Bullish</span>
@@ -255,7 +247,7 @@ export default function ResearchBody({ ticker }) {
                             <h5 className="card-title">Company Profile</h5>
                             {profile ? (
                                 <>
-                                    <p className="small" style={{ maxHeight: '170px', overflowY: 'auto' }}>{profile.company_desc ?? 'No description available.'}</p>
+                                    <p className="small overflow-auto" style={{ maxHeight: '170px' }}>{profile.company_desc ?? 'No description available.'}</p>
                                     <table className="table table-sm mb-0">
                                         <tbody>
                                             {[
@@ -309,7 +301,7 @@ export default function ResearchBody({ ticker }) {
                                         ['3-mo Avg Vol', formatLargeNumber(metrics.three_month_avg_volume)],
                                     ].map(([label, value]) => (
                                         <div key={label} className="col border-bottom pb-1">
-                                            <div className="text-muted" style={{ fontSize: '0.72rem' }}>{label}</div>
+                                            <div className="text-muted metric-label">{label}</div>
                                             <div className="fw-semibold small">{value}</div>
                                         </div>
                                     ))}
@@ -408,17 +400,17 @@ export default function ResearchBody({ ticker }) {
                         <div className="card-body">
                             <h5 className="card-title">News</h5>
                             {news.length > 0 ? (
-                                <ul className="list-unstyled mb-0" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                <ul className="list-unstyled mb-0 overflow-auto" style={{ maxHeight: '400px' }}>
                                     {news.map((n, i) => (
                                         <li key={n.uuid ?? i} className="d-flex gap-2 align-items-start py-2 border-bottom">
                                             {n.thumbnail && (
-                                                <img src={n.thumbnail} alt="" style={{ width: '64px', height: '42px', objectFit: 'cover', borderRadius: '4px', flexShrink: 0 }} />
+                                                <img src={n.thumbnail} alt="" className="object-fit-cover rounded-1 flex-shrink-0" style={{ width: '64px', height: '42px' }} />
                                             )}
                                             <div>
                                                 <a href={n.link} target="_blank" rel="noreferrer" className="fw-semibold small d-block mb-1">
                                                     {n.title}
                                                 </a>
-                                                <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                                <span className="text-muted small">
                                                     {n.publisher}
                                                     {n.providerPublishTime ? ` · ${new Date(n.providerPublishTime * 1000).toLocaleDateString()}` : ''}
                                                 </span>
@@ -438,7 +430,7 @@ export default function ResearchBody({ ticker }) {
                         <div className="card-body">
                             <h5 className="card-title">Insider Trades</h5>
                             {insiderTrades.length > 0 ? (
-                                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                <div className="table-responsive overflow-auto" style={{ maxHeight: '400px' }}>
                                     <table className="table table-sm mb-0">
                                         <thead>
                                             <tr>
