@@ -1,63 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { unpackResponse } from '../scripts/backend-fetch.js'
+import {
+    unpackFetchResponse,
+    formatCurrencyUSD,
+    formatPercent,
+    formatNumber,
+    formatLargeNumber,
+    formatAnalystRating,
+    getAnalystRatingColorClass,
+    getSentimentLabel,
+    getSentimentColorClass,
+} from '../scripts/utils.js'
 
 const RANGES = { '1yr': 31536000, '1mo': 2592000, '1wk': 604800 }
-
-function usd(n) {
-    if (n == null) return 'N/A'
-    return Number(n).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
-}
-
-function pct(n) {
-    if (n == null) return 'N/A'
-    return (Number(n) * 100).toFixed(2) + '%'
-}
-
-function fmt(n, decimals = 2) {
-    if (n == null) return 'N/A'
-    return Number(n).toLocaleString('en-US', { maximumFractionDigits: decimals })
-}
-
-function fmtLarge(n) {
-    if (n == null) return 'N/A'
-    const abs = Math.abs(n)
-    if (abs >= 1e12) return (n / 1e12).toFixed(2) + 'T'
-    if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'B'
-    if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M'
-    return Number(n).toLocaleString('en-US')
-}
-
-function formatRating(rating) {
-    if (!rating) return 'N/A'
-    return rating
-        .replace(/_/g, ' ')
-        .replace(/([a-z])([A-Z])/g, '$1 $2')
-        .replace(/\b\w/g, c => c.toUpperCase())
-}
-
-function ratingColor(rating) {
-    if (!rating) return ''
-    const r = rating.toLowerCase()
-    if (r.includes('buy')) return 'text-success'
-    if (r.includes('sell') || r.includes('underperform')) return 'text-danger'
-    return 'text-warning'
-}
-
-function sentimentLabel(score) {
-    if (score == null) return 'No Data'
-    if (score > 0.5) return 'Strongly Bullish'
-    if (score > 0.15) return 'Bullish'
-    if (score > -0.15) return 'Neutral'
-    if (score > -0.5) return 'Bearish'
-    return 'Strongly Bearish'
-}
-
-function sentimentColorClass(score) {
-    if (score == null) return 'text-muted'
-    if (score > 0.15) return 'text-success'
-    if (score < -0.15) return 'text-danger'
-    return 'text-warning'
-}
 
 function SentimentBar({ score }) {
     if (score == null) return <p className="text-muted small mb-0">No data available.</p>
@@ -197,7 +151,7 @@ export default function ResearchBody({ ticker }) {
         async function load() {
             try {
                 const localRes = await fetch(`/api/research/local?ticker=${ticker}`)
-                const local = await unpackResponse(localRes)
+                const local = await unpackFetchResponse(localRes)
                 if (!cancelled) setData(local)
             } catch {
                 // ticker may not be in DB yet — continue to online
@@ -205,7 +159,7 @@ export default function ResearchBody({ ticker }) {
 
             try {
                 const onlineRes = await fetch(`/api/research/online?ticker=${ticker}`)
-                const online = await unpackResponse(onlineRes)
+                const online = await unpackFetchResponse(onlineRes)
                 if (!cancelled) setData(online)
             } catch (err) {
                 if (!cancelled) setError(err.message)
@@ -252,12 +206,12 @@ export default function ResearchBody({ ticker }) {
                         </span>
                     </div>
                     <div className="d-flex align-items-baseline gap-3">
-                        <span className="fw-bold fs-3">{lastPrice != null ? usd(lastPrice) : '—'}</span>
+                        <span className="fw-bold fs-3">{lastPrice != null ? formatCurrencyUSD(lastPrice) : '—'}</span>
                         {metrics && (
                             <span className="text-muted small">
-                                Open {usd(metrics.market_open)}
+                                Open {formatCurrencyUSD(metrics.market_open)}
                                 <span className="mx-2">·</span>
-                                Prev Close {usd(metrics.prev_close)}
+                                Prev Close {formatCurrencyUSD(metrics.prev_close)}
                             </span>
                         )}
                     </div>
@@ -307,7 +261,7 @@ export default function ResearchBody({ ticker }) {
                                             {[
                                                 ['Sector', profile.sector],
                                                 ['Industry', profile.industry],
-                                                ['Employees', profile.employee_count != null ? fmt(profile.employee_count, 0) : null],
+                                                ['Employees', profile.employee_count != null ? formatNumber(profile.employee_count, 0) : null],
                                                 ['Website', profile.website
                                                     ? <a href={profile.website} target="_blank" rel="noreferrer">{profile.website}</a>
                                                     : null],
@@ -334,25 +288,25 @@ export default function ResearchBody({ ticker }) {
                             {metrics ? (
                                 <div className="row row-cols-3 g-2">
                                     {[
-                                        ['Market Cap', fmtLarge(metrics.market_cap)],
-                                        ['EPS', usd(metrics.eps)],
-                                        ['Beta', fmt(metrics.beta)],
-                                        ['Trailing P/E', fmt(metrics.trailing_pe)],
-                                        ['Forward P/E', fmt(metrics.forward_pe)],
-                                        ['Profit Margin', pct(metrics.profit_margin)],
-                                        ['Dividend Yield', pct(metrics.dividend_yield)],
-                                        ['52-wk High', usd(metrics.fifty_two_week_high)],
-                                        ['52-wk Low', usd(metrics.fifty_two_week_low)],
-                                        ['50-day Avg', usd(metrics.fifty_day_average)],
-                                        ['200-day Avg', usd(metrics.two_hundred_day_average)],
-                                        ['Price / Book', fmt(metrics.price_to_book)],
-                                        ['Book Value', usd(metrics.book_value)],
-                                        ['Shares Out.', fmtLarge(metrics.shares_outstanding)],
-                                        ['Current Ratio', fmt(metrics.current_ratio)],
-                                        ['Debt / Equity', fmt(metrics.debt_to_equity)],
-                                        ["Today's Vol.", fmtLarge(metrics.todays_volume)],
-                                        ['10-day Avg Vol', fmtLarge(metrics.ten_day_avg_volume)],
-                                        ['3-mo Avg Vol', fmtLarge(metrics.three_month_avg_volume)],
+                                        ['Market Cap', formatLargeNumber(metrics.market_cap)],
+                                        ['EPS', formatCurrencyUSD(metrics.eps)],
+                                        ['Beta', formatNumber(metrics.beta)],
+                                        ['Trailing P/E', formatNumber(metrics.trailing_pe)],
+                                        ['Forward P/E', formatNumber(metrics.forward_pe)],
+                                        ['Profit Margin', formatPercent(metrics.profit_margin)],
+                                        ['Dividend Yield', formatPercent(metrics.dividend_yield)],
+                                        ['52-wk High', formatCurrencyUSD(metrics.fifty_two_week_high)],
+                                        ['52-wk Low', formatCurrencyUSD(metrics.fifty_two_week_low)],
+                                        ['50-day Avg', formatCurrencyUSD(metrics.fifty_day_average)],
+                                        ['200-day Avg', formatCurrencyUSD(metrics.two_hundred_day_average)],
+                                        ['Price / Book', formatNumber(metrics.price_to_book)],
+                                        ['Book Value', formatCurrencyUSD(metrics.book_value)],
+                                        ['Shares Out.', formatLargeNumber(metrics.shares_outstanding)],
+                                        ['Current Ratio', formatNumber(metrics.current_ratio)],
+                                        ['Debt / Equity', formatNumber(metrics.debt_to_equity)],
+                                        ["Today's Vol.", formatLargeNumber(metrics.todays_volume)],
+                                        ['10-day Avg Vol', formatLargeNumber(metrics.ten_day_avg_volume)],
+                                        ['3-mo Avg Vol', formatLargeNumber(metrics.three_month_avg_volume)],
                                     ].map(([label, value]) => (
                                         <div key={label} className="col border-bottom pb-1">
                                             <div className="text-muted" style={{ fontSize: '0.72rem' }}>{label}</div>
@@ -377,8 +331,8 @@ export default function ResearchBody({ ticker }) {
                             {metrics ? (
                                 <>
                                     <div className="mb-3">
-                                        <span className={`fw-bold fs-4 ${ratingColor(metrics.rating)}`}>
-                                            {formatRating(metrics.rating)}
+                                        <span className={`fw-bold fs-4 ${getAnalystRatingColorClass(metrics.rating)}`}>
+                                            {formatAnalystRating(metrics.rating)}
                                         </span>
                                         {metrics.analyst_count != null && (
                                             <span className="text-muted small ms-2">
@@ -390,11 +344,11 @@ export default function ResearchBody({ ticker }) {
                                         <tbody>
                                             <tr>
                                                 <th className="text-muted fw-normal small">Target Price</th>
-                                                <td className="small">{usd(metrics.target_price)}</td>
+                                                <td className="small">{formatCurrencyUSD(metrics.target_price)}</td>
                                             </tr>
                                             <tr>
                                                 <th className="text-muted fw-normal small">Current Price</th>
-                                                <td className="small">{usd(lastPrice)}</td>
+                                                <td className="small">{formatCurrencyUSD(lastPrice)}</td>
                                             </tr>
                                             {analystUpside != null && (
                                                 <tr>
@@ -425,8 +379,8 @@ export default function ResearchBody({ ticker }) {
                             {metrics ? (
                                 <>
                                     <div className="mb-2">
-                                        <span className={`fw-bold fs-4 ${sentimentColorClass(metrics.insider_sentiment)}`}>
-                                            {sentimentLabel(metrics.insider_sentiment)}
+                                        <span className={`fw-bold fs-4 ${getSentimentColorClass(metrics.insider_sentiment)}`}>
+                                            {getSentimentLabel(metrics.insider_sentiment)}
                                         </span>
                                         {metrics.insider_sentiment != null && (
                                             <span className="text-muted small ms-2">
@@ -499,8 +453,8 @@ export default function ResearchBody({ ticker }) {
                                                     <td className="small">{t.transaction_date ?? 'N/A'}</td>
                                                     <td className="small">{t.filer_name ?? 'N/A'}</td>
                                                     <td className="small">{t.filer_relation ?? 'N/A'}</td>
-                                                    <td className="small">{t.shares != null ? fmt(t.shares, 0) : 'N/A'}</td>
-                                                    <td className="small">{usd(t.transaction_value)}</td>
+                                                    <td className="small">{t.shares != null ? formatNumber(t.shares, 0) : 'N/A'}</td>
+                                                    <td className="small">{formatCurrencyUSD(t.transaction_value)}</td>
                                                     <td className="small">{t.transaction_text ?? 'N/A'}</td>
                                                 </tr>
                                             ))}
