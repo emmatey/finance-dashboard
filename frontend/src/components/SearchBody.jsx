@@ -8,21 +8,22 @@ export default function SearchBody({ query }) {
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (!query) return
-        setData(null)
-        setError(null)
-        searchOnline(query)
-            .then(setData)
-            .catch(err => setError(err.message))
+        async function fetchSearch(query_str=query) {
+            const result = await searchOnline(query_str)
+            if (result?.success) {
+                setData(result);
+            };
+        }
+        fetchSearch(query)
     }, [query])
 
     if (!query) return <main><h2>Search</h2><p>Enter a query to search.</p></main>
     if (error) return <main><h2>Search: {query}</h2><p>Error: {error}</p></main>
     if (!data) return <main><h2>Search: {query}</h2><p>Loading...</p></main>
-
-    const companies = data?.companies?.data ?? []
-    const news = data?.news?.data ?? []
-    const users = data?.users?.data ?? []
+   
+    const companies = data?.companies ?? []
+    const news = data?.news ?? []
+    const users = data?.users ?? []
 
     return (
         <main>
