@@ -301,7 +301,7 @@ export default function ResearchBody({ ticker }) {
                             <h5 className="card-title">Company Profile</h5>
                             {profile ? (
                                 <>
-                                    <p className="small" style={{ maxHeight: '140px', overflowY: 'auto' }}>{profile.company_desc ?? 'No description available.'}</p>
+                                    <p className="small" style={{ maxHeight: '170px', overflowY: 'auto' }}>{profile.company_desc ?? 'No description available.'}</p>
                                     <table className="table table-sm mb-0">
                                         <tbody>
                                             {[
@@ -454,7 +454,7 @@ export default function ResearchBody({ ticker }) {
                         <div className="card-body">
                             <h5 className="card-title">News</h5>
                             {news.length > 0 ? (
-                                <ul className="list-unstyled mb-0">
+                                <ul className="list-unstyled mb-0" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                     {news.map((n, i) => (
                                         <li key={n.uuid ?? i} className="d-flex gap-2 align-items-start py-2 border-bottom">
                                             {n.thumbnail && (
@@ -484,7 +484,7 @@ export default function ResearchBody({ ticker }) {
                         <div className="card-body">
                             <h5 className="card-title">Insider Trades</h5>
                             {insiderTrades.length > 0 ? (
-                                <div className="table-responsive">
+                                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                     <table className="table table-sm mb-0">
                                         <thead>
                                             <tr>
