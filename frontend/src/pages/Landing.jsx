@@ -5,7 +5,7 @@ export default function Landing() {
     return (
         <>
             <Header />
-            <main></main>
+            <p>butt</p>
             <Footer />
         </>
     )
