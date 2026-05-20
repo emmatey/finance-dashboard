@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import SearchBar from './SearchBar.jsx'
 import '../styles/Header.css'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Header() {
     const navigate = useNavigate()
+    const {user, login, logout} = useAuth();
 
     return (
         <header>
@@ -12,7 +14,11 @@ export default function Header() {
             </span>
             <div className="header-right">
                 <SearchBar />
-                <button className="header-user-btn" aria-label="User" />
+                {user 
+                ? 
+                (<button className="header-user-btn" aria-label="User"/>)
+                :
+                (<button className='btn'>Log In</button>)}
             </div>
         </header>
     )
