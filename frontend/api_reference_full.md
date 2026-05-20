@@ -169,6 +169,30 @@ Clear the session. No request body needed.
 
 ---
 
+### `GET /auth/me` 🔒
+
+Returns the currently logged-in user. The primary use is session restoration on page load — call this once when the app mounts to check whether an active session exists.
+
+**200 Response:**
+
+```json
+{
+  "success": true,
+  "username": "emma"
+}
+```
+
+**Responses:**
+
+| Status | Meaning |
+|--------|---------|
+| 200 | Session active, returns username |
+| 401 | No active session |
+
+**Frontend Notes:** Call this on app load before rendering any protected routes. A 401 means the user is logged out. A 200 means the session cookie is valid and you can restore auth state without prompting the user to log in again.
+
+---
+
 ## User
 
 These endpoints power the profile page, portfolio view, transaction history, and the account value chart. All support the `?username=` query param pattern for viewing other users' data.

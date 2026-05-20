@@ -111,6 +111,9 @@ RESOURCES
         register
             to   - POST {username: str, password: str}
             from - {success: bool}
+        me - login required
+            to   - GET
+            from - {success: true, username: str}
 
     USER 
         summary
