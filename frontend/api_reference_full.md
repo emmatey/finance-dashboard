@@ -1,12 +1,5 @@
-# Paper Trading Platform — Frontend API Reference
-
-> **Base URL:** `http://localhost:5000/api`
->
-> **Last Updated:** May 2026
->
-> **Status:** All routes implemented.
-
----
+# Paper Trading Platform — Frontend API Reference*
+## *This document is entirely AI generated*
 
 ## Overview
 
