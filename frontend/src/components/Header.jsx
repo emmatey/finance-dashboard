@@ -18,7 +18,13 @@ export default function Header() {
                 ? 
                 (<button className="header-user-btn" aria-label="User"/>)
                 :
-                (<button className='btn'>Log In</button>)}
+                (<button
+                    type='button'
+                    className='btn btn-primary' 
+                    onClick={() => navigate('/login')}
+                    > 
+                    Log In
+                </button>)}
             </div>
         </header>
     )

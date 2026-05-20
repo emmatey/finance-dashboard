@@ -84,21 +84,24 @@ export default function SearchBar() {
         <>
         <div>
             <form onSubmit={handleSubmit}>
-                <input
-                    id='search'
-                    type='search'
-                    placeholder='Search...'
-                    list='offlineSuggest'
-                    onKeyUp={handleKeyUp}
-                    onInput={handleInput}
-                />
-                <button>Search</button>
-            </form>
-            <datalist id='offlineSuggest'>
+                <div className='input-group'>
+                    <input
+                        className='form-control'
+                        id='search'
+                        type='search'
+                        placeholder='Search...'
+                        list='offlineSuggest'
+                        onKeyUp={handleKeyUp}
+                        onInput={handleInput}
+                    />
+                    <button className='btn btn-primary'>Search</button>
+                </div>
+                <datalist id='offlineSuggest'>
                 {dataList.map((i, index) => (
                     <option key={index} value={i}></option>
                 ))}
-            </datalist>
+                </datalist>
+            </form>
         </div>
         </>
     );
