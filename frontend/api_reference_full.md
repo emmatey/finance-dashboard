@@ -13,11 +13,11 @@ The backend is a Flask + SQLite application powered by Yahoo Finance data (via `
 
 ### Authentication
 
-Session-based authentication via cookies. After a successful `POST /auth/login`, the server sets a session cookie. Include this cookie on subsequent requests. Some routes require login (marked with 🔒), others accept an optional `?username=` query parameter to look up other users' public data.
+Session-based authentication via cookies. After a successful `POST /api/auth/login`, the server sets a session cookie. Include this cookie on subsequent requests. Some routes require login (marked with 🔒), others accept an optional `?username=` query parameter to look up other users' public data.
 
 ### User Resolution
 
-Many `/user/*` endpoints follow a consistent pattern for identifying which user to query:
+Many `/api/user/*` endpoints follow a consistent pattern for identifying which user to query:
 
 1. If `?username=<username>` query param is present → resolve that user
 2. Otherwise → fall back to the logged-in user's session
@@ -106,7 +106,7 @@ Most data-returning endpoints check a freshness threshold before responding. If 
 
 These three endpoints manage the user lifecycle. No session cookie is required to call register or login.
 
-### `POST /auth/register`
+### `POST /api/auth/register`
 
 Create a new account. On success the user is **not** automatically logged in — a separate login call is needed.
 
@@ -131,7 +131,7 @@ Create a new account. On success the user is **not** automatically logged in —
 
 ---
 
-### `POST /auth/login`
+### `POST /api/auth/login`
 
 Authenticate and start a session. Also triggers a balance snapshot for the user (their portfolio value gets recalculated and recorded).
 
@@ -156,7 +156,7 @@ Authenticate and start a session. Also triggers a balance snapshot for the user 
 
 ---
 
-### `POST /auth/logout`
+### `POST /api/auth/logout`
 
 Clear the session. No request body needed.
 
@@ -169,7 +169,7 @@ Clear the session. No request body needed.
 
 ---
 
-### `GET /auth/me` 🔒
+### `GET /api/auth/me` 🔒
 
 Returns the currently logged-in user. The primary use is session restoration on page load — call this once when the app mounts to check whether an active session exists.
 
@@ -197,7 +197,7 @@ Returns the currently logged-in user. The primary use is session restoration on 
 
 These endpoints power the profile page, portfolio view, transaction history, and the account value chart. All support the `?username=` query param pattern for viewing other users' data.
 
-### `GET /user/summary`
+### `GET /api/user/summary`
 
 The "user card" — a compact summary suitable for a dashboard widget or profile header.
 
@@ -228,11 +228,11 @@ The "user card" — a compact summary suitable for a dashboard widget or profile
 
 **Frontend Notes:** `snap_datetime` tells you when the portfolio value and cash balance figures were last calculated. You could display this as "Last updated: 3 hours ago" to set expectations about data freshness. `rank` is computed against all users' most recent balance snapshots.
 
-**Related Endpoints:** Pair with `/user/portfolio` for a full profile page, or `/user/balance_snapshots` for a value-over-time chart.
+**Related Endpoints:** Pair with `/api/user/portfolio` for a full profile page, or `/api/user/balance_snapshots` for a value-over-time chart.
 
 ---
 
-### `GET /user/portfolio`
+### `GET /api/user/portfolio`
 
 The detailed holdings breakdown — one entry per stock the user currently owns. This is the data behind a portfolio table with gain/loss columns.
 
@@ -275,7 +275,7 @@ Sorted by `current_value` descending (biggest positions first). Returns `{"succe
 
 ---
 
-### `GET /user/transactions` 🔒
+### `GET /api/user/transactions` 🔒
 
 Full transaction history for the user, newest first.
 
@@ -314,7 +314,7 @@ Full transaction history for the user, newest first.
 
 ---
 
-### `GET /user/balance_snapshots` 🔒
+### `GET /api/user/balance_snapshots` 🔒
 
 Historical value data for charting the user's account value over time. Snapshots are created on login, after every trade, and once daily by the background daemon.
 
@@ -341,7 +341,7 @@ Returns `{"success": true, "data": []}` if no snapshots exist yet for the user.
 
 **Frontend Notes:** This is your line chart data. `grand_total` is a computed column (`cash_balance + portfolio_value`), giving you three potential chart modes from one dataset — total value, portfolio only, or cash only. Data arrives in chronological order.
 
-**Related Endpoints:** Use alongside `/user/summary` — summary gives the current snapshot, this gives the history.
+**Related Endpoints:** Use alongside `/api/user/summary` — summary gives the current snapshot, this gives the history.
 
 ---
 
@@ -349,7 +349,7 @@ Returns `{"success": true, "data": []}` if no snapshots exist yet for the user.
 
 The core trading flow. A dual-purpose endpoint handling both the order preview screen (GET) and order execution (POST).
 
-### `GET /trade?ticker=<TICKER>` 🔒
+### `GET /api/trade?ticker=<TICKER>` 🔒
 
 Populates the order form with current price data, the user's existing position, and key financial metrics. Also triggers a freshness check on financial metrics.
 
@@ -390,7 +390,7 @@ Populates the order form with current price data, the user's existing position, 
 
 ---
 
-### `POST /trade` 🔒
+### `POST /api/trade` 🔒
 
 Execute a buy or sell order. The server re-fetches the latest price from Yahoo immediately before executing to minimize stale-price risk. A balance snapshot is automatically recorded after every successful trade.
 
@@ -436,9 +436,9 @@ Execute a buy or sell order. The server re-fetches the latest price from Yahoo i
 
 A rich set of endpoints for company deep-dives. Each endpoint checks data freshness and auto-refreshes from Yahoo Finance if stale. See the freshness thresholds table in Conventions.
 
-### `GET /research/local?ticker=<TICKER>`
+### `GET /api/research/local?ticker=<TICKER>`
 
-Fast initial load — returns all research data from the local database without making any external API calls. Stale tables return `null` instead of data. After this call, fire `/research/online` to fill in any stale sections.
+Fast initial load — returns all research data from the local database without making any external API calls. Stale tables return `null` instead of data. After this call, fire `/api/research/online` to fill in any stale sections.
 
 **Which tables are always returned with real data:** `symbols`, `historical_prices`, `company_profile`. All other tables return real data only if within their freshness threshold; otherwise `null`.
 
@@ -459,21 +459,22 @@ Fast initial load — returns all research data from the local database without 
 }
 ```
 
-Each key is either the table's data array or `null` if stale. The frontend should treat `null` as a loading placeholder and refresh that section from the corresponding individual endpoint or from `/research/online`.
+Each key is either the table's data array or `null` if stale. The frontend should treat `null` as a loading placeholder and refresh that section from the corresponding individual endpoint or from `/api/research/online`.
 
 **Error Responses:**
 
 | Status | Meaning |
 |--------|---------|
 | 400 | No ticker provided |
-| 404 | Ticker not found in local database |
 | 500 | Database error |
 
-**Frontend Notes:** Use this as the first request when a user navigates to a company research page — it returns instantly since it's all local DB reads. Follow up with `/research/online` (or individual endpoints) to refresh any stale sections. This two-step pattern (local first, online second) keeps the page feeling fast.
+**Note on unknown tickers:** If the ticker doesn't exist in the local database, the endpoint returns `200` with all tables as `null` — no 404. Check whether the always-fetched tables (`symbols`, `historical_prices`, `company_profile`) came back with data to determine if the ticker is known locally.
+
+**Frontend Notes:** Use this as the first request when a user navigates to a company research page — it returns instantly since it's all local DB reads. Follow up with `/api/research/online` (or individual endpoints) to refresh any stale sections. This two-step pattern (local first, online second) keeps the page feeling fast.
 
 ---
 
-### `GET /research/online?ticker=<TICKER>`
+### `GET /api/research/online?ticker=<TICKER>`
 
 The "everything" endpoint — returns all research data for a company in a single call. Checks freshness for all tables and updates any that are stale. This is what you'd call when a user navigates to a full company research page.
 
@@ -574,7 +575,7 @@ The "everything" endpoint — returns all research data for a company in a singl
 
 ### Individual Research Endpoints
 
-The same data as `/research/online` but broken out per-table. Each checks and refreshes only its own data. Use these for targeted views or lazy-loading.
+The same data as `/api/research/online` but broken out per-table. Each checks and refreshes only its own data. Use these for targeted views or lazy-loading.
 
 All individual research endpoints require `?ticker=string` and share the same error responses:
 
@@ -586,7 +587,7 @@ All individual research endpoints require `?ticker=string` and share the same er
 
 ---
 
-#### `GET /research/summary?ticker=<TICKER>`
+#### `GET /api/research/summary?ticker=<TICKER>`
 
 Minimal company info. Useful for search result cards or compact displays.
 
@@ -603,7 +604,7 @@ Minimal company info. Useful for search result cards or compact displays.
 
 ---
 
-#### `GET /research/company_profile?ticker=<TICKER>`
+#### `GET /api/research/company_profile?ticker=<TICKER>`
 
 Returns a single object (not an array).
 
@@ -621,13 +622,13 @@ Returns a single object (not an array).
 
 ---
 
-#### `GET /research/financial_metrics?ticker=<TICKER>`
+#### `GET /api/research/financial_metrics?ticker=<TICKER>`
 
-Returns a single object with all financial metrics. See the full field list in the `/research/online` response above. Includes `"success": true` alongside the data fields.
+Returns a single object with all financial metrics. See the full field list in the `/api/research/online` response above. Includes `"success": true` alongside the data fields.
 
 ---
 
-#### `GET /research/insider_trades?ticker=<TICKER>`
+#### `GET /api/research/insider_trades?ticker=<TICKER>`
 
 **Query Params:** `?ticker=string` (required), `?qty=int` (optional, limits results)
 
@@ -653,7 +654,7 @@ Returns a single object with all financial metrics. See the full field list in t
 
 ---
 
-#### `GET /research/historical_prices?ticker=<TICKER>`
+#### `GET /api/research/historical_prices?ticker=<TICKER>`
 
 ```json
 {
@@ -671,7 +672,7 @@ Returns a single object with all financial metrics. See the full field list in t
 
 ---
 
-#### `GET /research/stock_splits?ticker=<TICKER>`
+#### `GET /api/research/stock_splits?ticker=<TICKER>`
 
 ```json
 {
@@ -689,7 +690,7 @@ Returns a single object with all financial metrics. See the full field list in t
 
 ---
 
-#### `GET /research/news?ticker=<TICKER>`
+#### `GET /api/research/news?ticker=<TICKER>`
 
 **Query Params:** `?ticker=string` (optional), `?qty=int` (optional, default 10)
 
@@ -717,7 +718,7 @@ If no ticker is provided, returns global cached news without triggering an updat
 
 ## Screeners
 
-### `GET /screeners`
+### `GET /api/screeners`
 
 Market screener data — day gainers, losers, most active stocks, etc. Auto-refreshes hourly. Returns results grouped by screener name.
 
@@ -772,7 +773,7 @@ Market screener data — day gainers, losers, most active stocks, etc. Auto-refr
 
 ## Scoreboard
 
-### `GET /scoreboard`
+### `GET /api/scoreboard`
 
 Rankings for all users based on their most recent balance snapshots.
 
@@ -796,13 +797,13 @@ Rankings for all users based on their most recent balance snapshots.
 }
 ```
 
-**Frontend Notes:** Data comes from the most recent balance snapshot per user, updated daily by the daemon and on each user login. Portfolios are fully visible since this is a competition, not a real brokerage. Drill into any user's details with `/user/portfolio?username=<n>` and `/user/balance_snapshots?username=<n>`.
+**Frontend Notes:** Data comes from the most recent balance snapshot per user, updated daily by the daemon and on each user login. Portfolios are fully visible since this is a competition, not a real brokerage. Drill into any user's details with `/api/user/portfolio?username=<n>` and `/api/user/balance_snapshots?username=<n>`.
 
 ---
 
 ## Market Overview
 
-### `GET /market_overview`
+### `GET /api/market_overview`
 
 Regional ETF performance data for a global markets "at a glance" widget. Checks freshness and updates if stale (1-hour threshold).
 
@@ -842,7 +843,7 @@ Regional ETF performance data for a global markets "at a glance" widget. Checks 
 
 Four endpoints: a combined all-in-one search plus dedicated sub-routes for companies, users, and news.
 
-### `GET /search?q=<query>`
+### `GET /api/search?q=<query>`
 
 Combined search across companies, users, and news in one call. Makes a single Yahoo Finance API call and fans out results to all three pipelines, so it's more efficient than calling the sub-routes individually.
 
@@ -901,7 +902,7 @@ Combined search across companies, users, and news in one call. Makes a single Ya
 
 ---
 
-### `GET /search/companies?q=<query>`
+### `GET /api/search/companies?q=<query>`
 
 Company-only search. Supports a `local` mode for fast datalist population on keystrokes — bypasses Yahoo Finance entirely and queries only the local database.
 
@@ -936,7 +937,7 @@ Company-only search. Supports a `local` mode for fast datalist population on key
 
 ---
 
-### `GET /search/users?q=<query>`
+### `GET /api/search/users?q=<query>`
 
 User search by username.
 
@@ -965,7 +966,7 @@ Returns `{"success": true, "data": []}` if no match.
 
 ---
 
-### `GET /search/news?q=<query>`
+### `GET /api/search/news?q=<query>`
 
 News search by headline or related ticker.
 
@@ -983,6 +984,7 @@ News search by headline or related ticker.
       "publisher": "Reuters",
       "link": "https://...",
       "providerPublishTime": 1712880000,
+      "thumbnail": "https://...",
       "relatedTickers": ["AAPL"],
       "search_type": "news"
     }
@@ -1000,66 +1002,66 @@ Returns `{"success": true, "data": []}` if no results.
 
 | Section | Endpoint |
 |---------|----------|
-| User summary card | `GET /user/summary` |
-| Market overview widget | `GET /market_overview` |
-| Screener tabs | `GET /screeners` |
-| News feed | `GET /research/news` (no ticker) |
+| User summary card | `GET /api/user/summary` |
+| Market overview widget | `GET /api/market_overview` |
+| Screener tabs | `GET /api/screeners` |
+| News feed | `GET /api/research/news` (no ticker) |
 
 ### Research / Company Page
 
 | Section | Endpoint |
 |---------|----------|
-| Fast initial load | `GET /research/local?ticker=X` (local DB, no API) |
-| Fill stale sections | `GET /research/online?ticker=X` (all-in-one) |
-| OR lazy-load sections | Individual `/research/*` endpoints |
+| Fast initial load | `GET /api/research/local?ticker=X` (local DB, no API) |
+| Fill stale sections | `GET /api/research/online?ticker=X` (all-in-one) |
+| OR lazy-load sections | Individual `/api/research/*` endpoints |
 
 ### Profile Page
 
 | Section | Endpoint |
 |---------|----------|
-| User card | `GET /user/summary?username=X` |
-| Holdings table + pie chart | `GET /user/portfolio?username=X` |
-| Value history chart | `GET /user/balance_snapshots?username=X` |
+| User card | `GET /api/user/summary?username=X` |
+| Holdings table + pie chart | `GET /api/user/portfolio?username=X` |
+| Value history chart | `GET /api/user/balance_snapshots?username=X` |
 
 ### Trade Page
 
 | Section | Endpoint |
 |---------|----------|
-| Order preview form | `GET /trade?ticker=X` |
-| Execute order | `POST /trade` |
+| Order preview form | `GET /api/trade?ticker=X` |
+| Execute order | `POST /api/trade` |
 | Confirmation | Read the POST response |
 
 ### Transaction History
 
 | Section | Endpoint |
 |---------|----------|
-| Transaction list | `GET /user/transactions` |
+| Transaction list | `GET /api/user/transactions` |
 
 ### Scoreboard
 
 | Section | Endpoint |
 |---------|----------|
-| Rankings table | `GET /scoreboard` |
-| Drill into user | `GET /user/portfolio?username=X` |
+| Rankings table | `GET /api/scoreboard` |
+| Drill into user | `GET /api/user/portfolio?username=X` |
 
 ### Search
 
 | Section | Endpoint |
 |---------|----------|
-| Combined results page | `GET /search?q=X` |
-| Search-as-you-type datalist | `GET /search/companies?q=X&local=true` |
-| Company-only results | `GET /search/companies?q=X` |
-| User-only results | `GET /search/users?q=X` |
-| News-only results | `GET /search/news?q=X` |
+| Combined results page | `GET /api/search?q=X` |
+| Search-as-you-type datalist | `GET /api/search/companies?q=X&local=true` |
+| Company-only results | `GET /api/search/companies?q=X` |
+| User-only results | `GET /api/search/users?q=X` |
+| News-only results | `GET /api/search/news?q=X` |
 
 ---
 
 ## Known Quirks & Gotchas
 
-1. **Slow first requests:** If data is stale, the backend fetches from Yahoo Finance synchronously before responding. The first hit to `/research/online` for a new ticker can take several seconds. Show a loading state.
+1. **Slow first requests:** If data is stale, the backend fetches from Yahoo Finance synchronously before responding. The first hit to `/api/research/online` for a new ticker can take several seconds. Show a loading state.
 
 2. **Yahoo API circuit breaker:** The backend has a circuit breaker with exponential backoff. If Yahoo is down or rate-limits the server, data fetches are skipped silently. The frontend won't see errors — it'll get slightly stale data. There's no public endpoint to check API health status.
 
-3. **No pagination on transaction history:** `/user/transactions` returns all records. Implement client-side pagination or request this be added server-side.
+3. **No pagination on transaction history:** `/api/user/transactions` returns all records. Implement client-side pagination or request this be added server-side.
 
-4. **Screener `broken` key:** If malformed screener records exist, they appear under a `"broken"` key in the `/screeners` response. Filter this out in your UI.
+4. **Screener `broken` key:** If malformed screener records exist, they appear under a `"broken"` key in the `/api/screeners` response. Filter this out in your UI.

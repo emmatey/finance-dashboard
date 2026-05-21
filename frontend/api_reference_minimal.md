@@ -1,83 +1,3 @@
-Features
-    Auth -
-        Register
-        Login
-        Logout
-
-    Homepage - Requires login
-        Screeners
-        Regional ETFs
-        Latest News
-        User summary card
-        [
-            User Balance
-            User Portfolio Value
-            User Ranking
-        ]
-
-    Research -
-        Company Summary (symbol, name, price)
-        Company description
-        Company financial metrics
-        Company insider trades + insider sentiment score
-        Company price history
-        Company news
-    
-    Profile - 
-            As a line chart with three modes
-        [
-            User grand total - mode 1
-            User portfolio value - mode 2
-            User balance - mode 3
-            User balance snapshot history
-        ]
-        User "portfolio view" (holdings/qty/price/cost basis)
-            as a table
-            and as a pie chart
-     
-    Transaction History - Requires login
-        - Chronological history of transactions
-        - Pagination
-    
-    Scoreboard -
-        User rankings summary
-        Navigate to portfolios of users as described in /profile page
-        Will show things like holdings and balance history
-            Not obfuscated like in a real finance app because its a paper trading competition game.
-    
-    Trade -
-        Company search
-        User cash available
-        Qty
-        Company price
-        Ticker
-        Tx type
-        Abridged financial metrics?
-
-    Preview Order -
-        Symbol
-        Action
-        Qty
-        Trade value
-    
-    Transact -
-        Write to db from preview
-
-    Quote - 
-        Company financial metrics
-        Company historical prices
-        redirect to trade
-        redirect to research
-
-    Search -
-        local=true mode for fast datalist suggestions (db only, no API)
-        On search navigates to a new search page which is 
-            a union of db results and yq.search() results
-        SEARCH HEADERS
-            Companies
-            Users
-            News
-
 RESPONSE CONVENTIONS
     errors
     {
@@ -103,21 +23,21 @@ RESOURCES
 
     AUTH
         login
-            to   - POST {username: str, password: str}
+            to   - POST /api/auth/login  {username: str, password: str}
             from - {success: bool, message: str}
         logout
-            to   - POST
+            to   - POST /api/auth/logout
             from - {success: bool}
         register
-            to   - POST {username: str, password: str}
+            to   - POST /api/auth/register  {username: str, password: str}
             from - {success: bool}
         me - login required
-            to   - GET
+            to   - GET /api/auth/me
             from - {success: true, username: str}
 
     USER 
         summary
-            to   - GET ?username=str (optional, defaults to logged in user)
+            to   - GET /api/user/summary  ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
                 username: str,
@@ -129,7 +49,7 @@ RESOURCES
                 rank: int
             }
         portfolio
-            to   - GET ?username=str (optional, defaults to logged in user)
+            to   - GET /api/user/portfolio  ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
                 data: [{
@@ -146,7 +66,7 @@ RESOURCES
             }
             empty portfolio returns { success: true, data: [] }
         transactions - login required
-            to   - GET ?username=str (optional, defaults to logged in user)
+            to   - GET /api/user/transactions  ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
                 data: [{
@@ -161,7 +81,7 @@ RESOURCES
                 }]
             }
         balance_snapshots - login required
-            to   - GET ?username=str (optional, defaults to logged in user)
+            to   - GET /api/user/balance_snapshots  ?username=str (optional, defaults to logged in user)
             from - {
                 success: true,
                 data: [{
@@ -175,7 +95,7 @@ RESOURCES
             empty returns { success: true, data: [] }
 
     SCOREBOARD
-        to   - GET
+        to   - GET /api/scoreboard
         from - {
             success: true,
             data: [{
@@ -194,7 +114,7 @@ RESOURCES
                RESEARCH/ONLINE route does a bulk update and serves everything.
 
         research/local
-            to   - GET ?ticker=str
+            to   - GET /api/research/local  ?ticker=str
             from - {
                 success: true,
                 <table_name>: data | null,
@@ -203,9 +123,10 @@ RESOURCES
             stale tables return null instead of data.
             always-fetched: symbols, historical_prices, company_profile.
             fresh tables return actual data; stale tables return null.
-            400 - no ticker, 404 - ticker not in local db, 500 - db error
+            unknown ticker returns success: true with all tables as null.
+            400 - no ticker, 500 - db error
         research/online
-            to   - GET ?ticker=str
+            to   - GET /api/research/online  ?ticker=str
             from - {
                 success: true,
                 stock_splits: [{}],
@@ -216,7 +137,7 @@ RESOURCES
                 insider_trades: [{}]
             }
         summary
-            to   - GET ?ticker=str
+            to   - GET /api/research/summary  ?ticker=str
             from - {
                 success: true,
                 ticker: str,
@@ -226,7 +147,7 @@ RESOURCES
                 last_price: float
             }
         company_profile
-            to   - GET ?ticker=str
+            to   - GET /api/research/company_profile  ?ticker=str
             from - {
                 success: true,
                 ticker: str,
@@ -237,7 +158,7 @@ RESOURCES
                 last_updated: str
             }
         insider_trades
-            to   - GET ?ticker=str ?qty=int (optional)
+            to   - GET /api/research/insider_trades  ?ticker=str  ?qty=int (optional)
             from - {
                 success: true,
                 data: [{
@@ -252,7 +173,7 @@ RESOURCES
                 }]
             }
         historical_prices
-            to   - GET ?ticker=str
+            to   - GET /api/research/historical_prices  ?ticker=str
             from - {
                 success: true,
                 data: [{
@@ -263,7 +184,7 @@ RESOURCES
                 }]
             }
         financial_metrics
-            to   - GET ?ticker=str
+            to   - GET /api/research/financial_metrics  ?ticker=str
             from - {
                 success: true,
                 ticker: str,
@@ -295,7 +216,7 @@ RESOURCES
                 insider_sentiment: float | null
             }
         stock_splits
-            to   - GET ?ticker=str
+            to   - GET /api/research/stock_splits  ?ticker=str
             from - {
                 success: true,
                 data: [{
@@ -306,7 +227,7 @@ RESOURCES
                 }]
             }
         news
-            to   - GET ?ticker=str (optional) ?qty=int (optional, default 10)
+            to   - GET /api/research/news  ?ticker=str (optional)  ?qty=int (optional, default 10)
             from - {
                 success: true,
                 data: [{
@@ -320,7 +241,7 @@ RESOURCES
             }
 
     SCREENERS
-        to   - GET
+        to   - GET /api/screeners
         from - {
             success: true,
             screener_name: [{
@@ -343,7 +264,7 @@ RESOURCES
                         volume_spike_bearish
 
     MARKET_OVERVIEW
-        to   - GET
+        to   - GET /api/market_overview
         from - {
             success: true,
             data: [{
@@ -358,7 +279,7 @@ RESOURCES
                  China, Gold, Copper, Oil
 
     TRADE
-        to   - GET ?ticker=str
+        to   - GET /api/trade  ?ticker=str
         from - {
             success: true,
             ticker: str,
@@ -377,7 +298,7 @@ RESOURCES
             qty_owned: float,
             holding_value: float
         }
-        to   - POST {ticker: str, qty: float, transaction_type: str (buy|sell)}
+        to   - POST /api/trade  {ticker: str, qty: float, transaction_type: str (buy|sell)}
         from - {
             success: bool,
             ticker: str,
@@ -389,7 +310,7 @@ RESOURCES
 
     SEARCH
         /search
-            to   - GET ?q=str
+            to   - GET /api/search  ?q=str
             from - {
                 success: true,
                 companies: [{
@@ -422,13 +343,13 @@ RESOURCES
                 }]
             }
         /search/companies
-            to   - GET ?q=str ?limit=int (optional, default 20) ?local=bool (optional, default false)
+            to   - GET /api/search/companies  ?q=str  ?limit=int (optional, default 20)  ?local=bool (optional, default false)
             from - { success: true, data: [{ same company shape as above }] }
         /search/users
-            to   - GET ?q=str
+            to   - GET /api/search/users  ?q=str
             from - { success: true, data: [{ same user shape as above }] }
             no match returns { success: true, data: [] }
         /search/news
-            to   - GET ?q=str ?limit=int (optional, default 10)
+            to   - GET /api/search/news  ?q=str  ?limit=int (optional, default 10)
             from - { success: true, data: [{ same news shape as above }] }
             no match returns { success: true, data: [] }
