@@ -915,26 +915,34 @@ class APIDataIO(DbManager):
             logger.warning(f"Screener parameters {invalid_screeners} are invalid...skipping")
 
         placeholders = ", ".join("?" for _ in safe_screener_names)
-        safe_screener_names.append(str(limit)) 
+        safe_screener_names.append(str(limit))
         sql = f"""
-            SELECT 
-                sr.screener_name AS screener_name,
-                sr.rank AS rank,
-                s.ticker AS ticker,
-                s.company_name AS company_name,
-                s.last_price AS current_price,
-                fm.prev_close AS prev_close,
-                (((s.last_price - fm.prev_close) / fm.prev_close) * 100.00) AS price_change_pct,
-                fm.market_cap AS market_cap,
-                fm.todays_volume AS todays_volume,
-                fm.three_month_avg_volume AS three_month_avg_volume,
-                (((CAST(fm.todays_volume AS REAL) - fm.three_month_avg_volume) / fm.three_month_avg_volume) * 100.00) AS volume_change_pct
-            FROM screener_results AS sr
-            JOIN symbols AS s ON sr.symbol_id = s.id
-            JOIN financial_metrics AS fm ON s.id = fm.symbol_id
-            WHERE sr.screener_name in ({placeholders})
-            ORDER BY sr.rank
-            LIMIT ?
+            WITH ranked AS (
+                SELECT
+                    sr.screener_name AS screener_name,
+                    sr.rank AS rank,
+                    s.ticker AS ticker,
+                    s.company_name AS company_name,
+                    s.last_price AS current_price,
+                    fm.prev_close AS prev_close,
+                    (((s.last_price - fm.prev_close) / fm.prev_close) * 100.00) AS price_change_pct,
+                    fm.market_cap AS market_cap,
+                    fm.todays_volume AS todays_volume,
+                    fm.three_month_avg_volume AS three_month_avg_volume,
+                    (((CAST(fm.todays_volume AS REAL) - fm.three_month_avg_volume) / fm.three_month_avg_volume) * 100.00) AS volume_change_pct,
+                    ROW_NUMBER() OVER (PARTITION BY sr.screener_name ORDER BY sr.rank) AS row_num
+                FROM screener_results AS sr
+                JOIN symbols AS s ON sr.symbol_id = s.id
+                JOIN financial_metrics AS fm ON s.id = fm.symbol_id
+                WHERE sr.screener_name IN ({placeholders})
+            )
+            SELECT
+                screener_name, rank, ticker, company_name, current_price,
+                prev_close, price_change_pct, market_cap, todays_volume,
+                three_month_avg_volume, volume_change_pct
+            FROM ranked
+            WHERE row_num <= ?
+            ORDER BY screener_name, rank
         """
         rows = self.select_query(sql, tuple(safe_screener_names))
     
