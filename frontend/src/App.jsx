@@ -22,14 +22,10 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<LogIn />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/auth" element={<TODO />} />
           <Route path="/search" element={<Search />} />
           <Route path="/research" element={<Research />} />
           <Route path="/user/:username" element={<User />} />
-          <Route path="/scoreboard" element={<Scoreboard />} />
-          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/trade" element={<ProtectedRoute><Trade /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
