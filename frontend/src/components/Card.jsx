@@ -1,0 +1,1 @@
+// Stub for a default card component.

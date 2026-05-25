@@ -10,10 +10,10 @@ export default function LogIn() {
     
     // Redirect to homepage
 
-    
+
     return (
         <>
-        <p>login</p>
+        <p>Login page here</p>
         </>
     )
 }
