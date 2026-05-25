@@ -5,7 +5,12 @@ import Header from './Header.jsx'
 import Footer from './Footer.jsx'
 
 export default function LogIn() {
+    // Hit log in route
+        // 
+    
+    // Redirect to homepage
 
+    
     return (
         <>
         <p>login</p>
