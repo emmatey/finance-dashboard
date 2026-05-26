@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import Landing from './pages/Landing.jsx'
-import Home from './pages/Home.jsx'
+import Login from './pages/Login.jsx'
+import Logout from './pages/Logout.jsx'
 import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
+import User from './pages/User.jsx'
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth()
@@ -17,7 +19,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<TODO />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/logout" element={<Logout />} />
           <Route path="/search" element={<Search />} />
           <Route path="/research" element={<Research />} />
           <Route path="/user/:username" element={<User />} />

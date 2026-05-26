@@ -9,7 +9,6 @@ export default function Landing() {
             <div className='row mt-4'>
                 <h1>Welcome to finance-dashboard</h1>
             </div>
-            <ScreenerCard />
         </div>
         <Footer />
         </>

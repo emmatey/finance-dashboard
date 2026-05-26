@@ -9,7 +9,7 @@ export default function Header() {
 
     return (
         <header>
-            <span className="header-logo" onClick={() => navigate('/home')}>
+            <span className="header-logo" onClick={() => navigate('/')}>
                 Finance Dashboard
             </span>
             <div className="header-right">

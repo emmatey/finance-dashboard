@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
             .catch(() => setUser(null))
     }, [])
 
+    // Logged in status stored in flask Session.
     const login = (username) => setUser(username)
     const logout = () => {
         fetch('/api/auth/logout', { method: 'POST' })
