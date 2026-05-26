@@ -7,8 +7,8 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         fetch('/api/auth/me')
-            .then(res => res.ok ? res.json() : null)
-            .then(data => setUser(data ? data.username : null))
+            .then(res => res.json())
+            .then(data => setUser(data?.username ?? null))
             .catch(() => setUser(null))
     }, [])
 

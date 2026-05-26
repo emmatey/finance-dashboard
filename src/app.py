@@ -197,10 +197,12 @@ def login():
                     "message": f"User {username} logged in."}), 200
 
 @app.route("/api/auth/me", methods=["GET"])
-@helpers.login_required
 def me():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": True, "username": None}), 200
     cc = CommonQueries()
-    username = cc.get_username_from_user_id(session["user_id"])
+    username = cc.get_username_from_user_id(user_id)
     return jsonify({"success": True, "username": username}), 200
 
 @app.route("/api/auth/logout", methods=["POST"])
