@@ -4,11 +4,6 @@ import Landing from './pages/Landing.jsx'
 import Home from './pages/Home.jsx'
 import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
-import User from './pages/User.jsx'
-import Scoreboard from './pages/Scoreboard.jsx'
-import Trade from './pages/Trade.jsx'
-import Register from './pages/Register.jsx'
-import LogIn from './components/LogIn.jsx'
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth()

@@ -1,7 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
-import SearchBody from '../components/SearchBody.jsx'
 
 export default function Search() {
     const [searchParams] = useSearchParams()

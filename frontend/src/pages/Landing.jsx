@@ -1,6 +1,5 @@
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
-import ScreenerCard from '../components/ScreenerCard.jsx'
 
 export default function Landing() {
     return (
