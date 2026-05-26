@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Header() {
     const navigate = useNavigate()
-    const {user, login, logout} = useAuth();
+    const {user, logout} = useAuth();
 
     return (
         <header>
