@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import '../styles/colors.css'
 import {
     unpackFetchResponse,
     formatCurrencyUSD,
