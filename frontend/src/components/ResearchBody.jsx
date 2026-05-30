@@ -314,7 +314,7 @@ export default function ResearchBody({ ticker }) {
                                         ['3-mo Avg Vol', formatLargeNumber(metrics.three_month_avg_volume)],
                                     ].map(([label, value]) => (
                                         <div key={label} className="col border-bottom pb-1">
-                                            <div className="text-muted metric-label">{label}</div>
+                                            <div className="text-muted">{label}</div>
                                             <div className="fw-semibold small">{value}</div>
                                         </div>
                                     ))}

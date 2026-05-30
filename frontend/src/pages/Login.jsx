@@ -1,6 +1,3 @@
-import Header from '../components/Header.jsx'
-import Footer from '../components/Footer.jsx'
-import LogIn from '../components/LogIn.jsx';
 import { useState } from "react"
 
 export default function Login() {
@@ -13,12 +10,12 @@ export default function Login() {
         };
     return (
         <>
-        <div className="card">
+        <div>
         <form>
-            <div className="input-group">
-                <input type="text" className="form-control"></input>
-                <input type="text" className="form-control"></input>
-                <button type='submit' className="btn-primary" onClick={login}>Log In!</button>
+            <div>
+                <input type="text"></input>
+                <input type="text"></input>
+                <button type='submit' onClick={login}>Log In!</button>
             </div>
         </form>
         </div>

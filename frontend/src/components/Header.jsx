@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 import SearchBar from './SearchBar.jsx'
-import '../styles/Header.css'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Header() {
@@ -20,9 +19,8 @@ export default function Header() {
                 :
                 (<button
                     type='button'
-                    className='btn btn-primary' 
                     onClick={() => navigate('/login')}
-                    > 
+                    >
                     Log In
                 </button>)}
             </div>

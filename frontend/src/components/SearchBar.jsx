@@ -83,9 +83,8 @@ export default function SearchBar() {
         <>
         <div>
             <form onSubmit={handleSubmit}>
-                <div className='input-group'>
+                <div>
                     <input
-                        className='form-control'
                         id='search'
                         type='search'
                         placeholder='Search...'
@@ -93,7 +92,7 @@ export default function SearchBar() {
                         onKeyUp={handleKeyUp}
                         onInput={handleInput}
                     />
-                    <button className='btn btn-primary'>Search</button>
+                    <button>Search</button>
                 </div>
                 <datalist id='offlineSuggest'>
                 {dataList.map((i, index) => (
