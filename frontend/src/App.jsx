@@ -19,8 +19,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/logout" element={<Logout />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/search" element={<Search />} />
           <Route path="/research" element={<Research />} />
           <Route path="/user/:username" element={<User />} />
