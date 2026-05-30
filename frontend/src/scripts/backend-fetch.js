@@ -30,3 +30,40 @@ export async function searchOffline(query) {
         'news': newsData
     }
 }
+
+export async function logIn(username, password) {
+    /* 
+        Attempts to log user in.
+
+        Returns: Bool
+    */
+    const safeUsername = String(username).trim();
+    const safePassword = String(password).trim();
+    const url = '/api/auth/login';
+
+    try{
+        const response = await fetch(url, {
+            method:"POST",
+            headers: { "Content-Type": "application/json" },
+            body:JSON.stringify({
+                username: safeUsername,
+                password: safePassword
+            })
+        });
+        
+        const responseBody = await response.json();
+        if (response.status === 400) {
+            console.error(responseBody);
+            throw new Error(`Server responded with status: ${response.status}`);
+        } else if (response.status === 401) {
+            console.log(responseBody);
+            return (false);
+        } else {
+            return (true);
+        }
+
+    } catch (error) {
+        console.error(error.message);
+        return(false);
+    }
+}
