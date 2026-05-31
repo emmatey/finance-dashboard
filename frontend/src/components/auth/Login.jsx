@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { logIn } from "../../scripts/backend-fetch";
 
 export default function Login({ onSetMode }) {
@@ -14,7 +14,7 @@ export default function Login({ onSetMode }) {
         if (status == false) {
             setwrong(true)
         } else if (status == true) {
-            
+            useNavigate()
         };
     }
 

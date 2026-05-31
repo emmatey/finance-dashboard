@@ -1,23 +1,28 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
+
 import Landing from './pages/Landing.jsx'
+import Home from './pages/Home.jsx'
 import Auth from './pages/Auth.jsx'
 import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
 
+
 function ProtectedRoute({ children }) {
   const { user } = useAuth()
   if (user === undefined) return null  // still checking session, render nothing
-  return user ? children : <Navigate to="/login" replace />
+  return user ? children : <Navigate to="/auth" replace />
 }
 
 export default function App() {
+  const user = useAuth()
+
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={ user ? <Home /> : <Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/search" element={<Search />} />
           <Route path="/research" element={<Research />} />
