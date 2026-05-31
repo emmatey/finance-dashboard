@@ -19,7 +19,7 @@ export default function Header() {
                 :
                 (<button
                     type='button'
-                    onClick={() => navigate('/login')}
+                    onClick={() => navigate('/auth?mode=login')}
                     >
                     Log In
                 </button>)}

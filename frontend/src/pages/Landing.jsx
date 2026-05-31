@@ -7,7 +7,7 @@ export default function Landing() {
         <Header />
         <div>
             <div>
-                <h1>Welcome to finance-dashboard</h1>
+                <h1>Welcome to finance-dashboard, you are NOT logged in!</h1>
             </div>
         </div>
         <Footer />
