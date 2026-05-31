@@ -9,12 +9,6 @@ import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
 
 
-function ProtectedRoute({ children }) {
-  const { user } = useAuth()
-  if (user === undefined) return null  // still checking session, render nothing
-  return user ? children : <Navigate to="/auth" replace />
-}
-
 export default function App() {
   const user = useAuth()
 

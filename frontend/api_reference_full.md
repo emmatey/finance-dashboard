@@ -74,15 +74,6 @@ All success responses include `"success": true`.
 
 All monetary values and quantities are floats. Quantities can be fractional (partial shares are supported). Any numeric field may be `null` if the upstream data source didn't provide it.
 
-### Timestamps
-
-The API uses two timestamp formats depending on the source:
-
-- **Unix timestamps** (integers): Used for `providerPublishTime` in news and transaction datetimes in some contexts
-- **ISO datetime strings**: Used for `last_updated` fields, `split_date`, `transaction_datetime`
-
-The frontend should be prepared to handle both.
-
 ### Caching Behavior
 
 Most data-returning endpoints check a freshness threshold before responding. If data is stale, the backend fetches from Yahoo Finance synchronously before returning. This means **the first request for a new or stale ticker can take several seconds**. Show a loading state. Subsequent requests will be fast until the threshold expires.
