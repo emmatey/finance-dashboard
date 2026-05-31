@@ -8,14 +8,14 @@ export default function Header() {
 
     return (
         <header>
-            <span className="header-logo" onClick={() => navigate('/')}>
+            <span onClick={() => navigate('/')}>
                 Finance Dashboard
             </span>
-            <div className="header-right">
+            <div>
                 <SearchBar />
-                {user 
-                ? 
-                (<button className="header-user-btn" aria-label="User"/>)
+                {user
+                ?
+                (<button aria-label="User"/>)
                 :
                 (<button
                     type='button'
