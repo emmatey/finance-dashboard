@@ -1,7 +1,7 @@
-import Header from '../components/Header.jsx'
-import Footer from '../components/Footer.jsx'
+import Header from '../Header.jsx'
+import Footer from '../Footer.jsx'
 
-export default function Register() {
+export default function Register({ onSetMode }) {
     return (
         <>
             <Header />
