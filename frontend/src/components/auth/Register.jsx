@@ -1,16 +1,14 @@
 import Header from '../Header.jsx'
 import Footer from '../Footer.jsx'
+import { useNavigate } from 'react-router-dom'
 import { useState } from 'react';
 
 export default function Register({ onSetMode }) {
     const [statusCode, setStatusCode] = useState(null);
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-
-    const statusCodeMap = {
-        400: <small>Invalid username or password. add json body here? bla bla</small>,
-        409: <small>Username in use already</small>
-    };
+    const [errorStr, setErrorStr] = useState("");
+    const navigate = useNavigate()
 
     async function handleRegister() {
         const safeUsername = String(username).trim();
@@ -28,13 +26,14 @@ export default function Register({ onSetMode }) {
             });
 
             const responseBody = await response.json();
-            console.log(responseBody);
-            console.log(response.statusCode);
-            
+            if (!responseBody['success']) {
+                setErrorStr(responseBody?.message)
+            } else {
+                navigate("/")
+            };
 
         } catch (error) {
             console.error(error.message);
-            return(false);
         }
     }
 
@@ -45,11 +44,10 @@ export default function Register({ onSetMode }) {
                 <h2>Register</h2>
                 <label htmlFor="username"> Username </label>
                 <input type="text" id="username" onChange={(e) => {setUsername(e.target.value)}}/>
-                {statusCodeMap[statusCode] ? statusCodeMap[statusCode] : null}
 
                 <label htmlFor="password"> Password </label>
                 <input type="password" id="password" onChange={(e) => {setPassword(e.target.value)}}/>
-                {statusCodeMap[statusCode] ? statusCodeMap[statusCode] : null}
+                {errorStr ?? null}
 
                 <button type="button" onClick={handleRegister}> Register </button>
             </form>
