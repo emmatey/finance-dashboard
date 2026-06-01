@@ -6,10 +6,10 @@ import Landing from '../components/home/Landing.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Home() {
-    const user, logout = useAuth();
+    const {user, logout} = useAuth();
     return (
         <>
-        {user ? <HomeBody /> : <Landing />}
+        {user ? <HomeBody username='user'/> : <Landing />}
         </>
     )
 }

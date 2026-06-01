@@ -4,6 +4,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Change from "../components/auth/Change.jsx"
 import Login from "../components/auth/Login.jsx"
 import Register from "../components/auth/Register.jsx";
+import Header from "../components/Header.jsx";
+import Footer from "../components/Footer.jsx";
 
 
 export default function Auth() {
@@ -18,12 +20,14 @@ export default function Auth() {
 
     return (
         <>
+        <Header />
         {mode === 'login' ? <Login onSetMode={setMode}/> : null}
 
         {mode === 'change' ? <Change onSetMode={setMode}/> : null}
 
         {mode === 'register' ? <Register onSetMode={setMode}/> : null}
+        <Footer />
         </>
-    )
+    )   
 }
 

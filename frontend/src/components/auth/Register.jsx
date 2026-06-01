@@ -36,7 +36,7 @@ export default function Register({ onSetMode }) {
     return (
         <>
         <div>
-            <form>
+            <form onSubmit={(e) => e.preventDefault}>
                 <h2>Register</h2>
                 <label htmlFor="username"> Username </label>
                 <input type="text" id="username" onChange={(e) => {setUsername(e.target.value)}}/>
@@ -45,7 +45,7 @@ export default function Register({ onSetMode }) {
                 <input type="password" id="password" onChange={(e) => {setPassword(e.target.value)}}/>
                 {errorStr || null}
 
-                <button type="button" onClick={handleRegister}> Register </button>
+                <button type="submit" onClick={handleRegister}> Register </button>
             </form>
         </div>
         </>
