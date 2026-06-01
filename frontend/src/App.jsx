@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
 import Landing from './pages/Landing.jsx'
@@ -9,19 +9,25 @@ import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
 
 
-export default function App() {
-  const user = useAuth()
+function AppRoutes() {
+  const { user } = useAuth()
 
+  return (
+    <Routes>
+      <Route path="/" element={user ? <Home /> : <Landing />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/search" element={<Search />} />
+      <Route path="/research" element={<Research />} />
+      <Route path="/user/:username" element={<User />} />
+    </Routes>
+  )
+}
+
+export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={ user ? <Home /> : <Landing />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/research" element={<Research />} />
-          <Route path="/user/:username" element={<User />} />
-        </Routes>
+        <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
   )

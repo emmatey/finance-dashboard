@@ -9,7 +9,10 @@ export function AuthProvider({ children }) {
         fetch('/api/auth/me')
             .then(res => res.json())
             .then(data => setUser(data?.username ?? null))
-            .catch((error) => console.error(error))
+            .catch((error) => {
+                console.error(error);
+                setUser(null);
+            })
     }, [])
 
     const logout = () => {
