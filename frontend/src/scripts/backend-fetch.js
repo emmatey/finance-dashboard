@@ -64,6 +64,6 @@ export async function logIn(username, password) {
 
     } catch (error) {
         console.error(error.message);
-        return(false);
+        return null;
     }
 }
