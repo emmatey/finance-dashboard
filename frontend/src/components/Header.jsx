@@ -15,7 +15,12 @@ export default function Header() {
                 <SearchBar />
                 {user
                 ?
-                (<button aria-label="User"/>)
+                (
+                <div>
+                <button aria-label='logout' onClick={logout}> Log Out </button>
+                <button aria-label="User"> {user} </button>
+                </div>
+                )
                 :
                 (<button
                     type='button'
