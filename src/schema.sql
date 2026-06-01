@@ -21,7 +21,7 @@ CREATE TABLE 'fresh_report' (
     symbol_id INTEGER NOT NULL,
     table_name TEXT NOT NULL,
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (symbol_id, table_name)
+    PRIMARY KEY (symbol_id, table_name),
     FOREIGN KEY (symbol_id) REFERENCES symbols(id)
 );
 

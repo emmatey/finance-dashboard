@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import Change from "../components/auth/Change.jsx"
 import Login from "../components/auth/Login.jsx"
@@ -7,7 +7,14 @@ import Register from "../components/auth/Register.jsx";
 
 
 export default function Auth() {
-    const [mode, setMode] = useState('login');
+    const validModes = ['login', 'change', 'register'];
+    const [searchParams] = useSearchParams();
+    const searchParamMode = searchParams.get("mode");
+    const initialState = validModes.includes(searchParamMode) ? searchParamMode : 'login';
+
+    const [mode, setMode] = useState(initialState);
+    
+
 
     return (
         <>
