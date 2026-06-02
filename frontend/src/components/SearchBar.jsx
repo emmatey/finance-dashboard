@@ -1,7 +1,27 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchOnline, searchOffline } from '../scripts/backend-fetch.js'
+import { unpackFetchResponse } from '../scripts/utils.js'
+
+async function searchOffline(query) {
+    const safeQuery = String(query).trim();
+
+    const [companies, users, news] = await Promise.all([
+        fetch(`/api/search/companies?q=${safeQuery}&local=true`),
+        fetch(`/api/search/users?q=${safeQuery}`),
+        fetch(`/api/search/news?q=${safeQuery}&local=true`)
+    ]);
+
+    const companiesData = await unpackFetchResponse(companies);
+    const usersData = await unpackFetchResponse(users);
+    const newsData = await unpackFetchResponse(news);
+
+    return {
+        'companies': companiesData,
+        'users': usersData,
+        'news': newsData
+    }
+}
 
 async function buildDataListObjects(event) {
     /*

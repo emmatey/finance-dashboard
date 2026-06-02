@@ -1,7 +1,36 @@
 import { useState } from "react"
 import { useNavigate } from 'react-router-dom';
-import { logIn } from "../../scripts/backend-fetch";
 import { useAuth } from "../../context/AuthContext";
+
+async function logIn(username, password) {
+    const safeUsername = String(username).trim();
+    const safePassword = String(password).trim();
+
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: safeUsername,
+                password: safePassword
+            })
+        });
+
+        const responseBody = await response.json();
+        if (response.status === 400) {
+            console.error(responseBody);
+            throw new Error(`Server responded with status: ${response.status}`);
+        } else if (response.status === 401) {
+            console.log(responseBody);
+            return false;
+        } else {
+            return true;
+        }
+    } catch (error) {
+        console.error(error.message);
+        return null;
+    }
+}
 
 export default function Login({ onSetMode }) {
     const[username, setUsername] = useState("");
