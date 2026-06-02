@@ -1,10 +1,12 @@
 import { useState } from "react"
 import { useNavigate } from 'react-router-dom';
 import { logIn } from "../../scripts/backend-fetch";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Login({ onSetMode }) {
     const[username, setUsername] = useState("");
     const[password, setPassword] = useState("");
+    const {setUser} = useAuth();
     // used to trigger elements which are in response to user entering incorrect login info.
     const[wrong, setWrong] = useState(false);
     const[loading, setLoading] = useState(false);
@@ -20,6 +22,7 @@ export default function Login({ onSetMode }) {
             } else if (status === false) {
                 setWrong(true);
             } else {
+                setUser(username);
                 navigate('/');
             }
         } finally {

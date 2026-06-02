@@ -8,6 +8,7 @@ export default function Landing() {
         <div>
             <div>
                 <h1>Welcome to finance-dashboard, you are NOT logged in!</h1>
+                <small>This is landing.jsx</small>
             </div>
         </div>
         <Footer />

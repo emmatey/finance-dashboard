@@ -6,8 +6,8 @@ export default function HomeBody({username}) {
         <>
         <Header />
         <div>
-            <div>
-                <h1>`Hi {username || null}, Welcome to finance-dashboard, you ARE logged in!`</h1>
+            <div className='card'>
+                <h1>Hi {username || null}, Welcome to finance-dashboard, you ARE logged in!</h1>
             </div>
         </div>
         <Footer />
