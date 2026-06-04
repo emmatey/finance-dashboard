@@ -12,7 +12,7 @@ export default function ScreenerFrame() {
             const response = await fetch("/api/screeners", {
                 method: "GET"
             });
-            const screenerJson = parseResponse(response);
+            const screenerJson = await parseResponse(response);
             return screenerJson;
         } catch (error) {
             console.error(error.message);
