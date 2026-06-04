@@ -16,7 +16,13 @@ export default function ScreenerCard({ title, data }) {
                 { headers.map((header) => (<th>{header}</th>)) }
                 </tr>
                 
-              
+                { data.map((obj) => (
+                    <tr>
+                        {headers.map((header) => (
+                            <td>{obj?.[header] || null} </td>
+                        ))}
+                    </tr>
+                )) }
             </table>
         </div>
         </>
