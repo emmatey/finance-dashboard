@@ -88,27 +88,20 @@ export function getSentimentColorClass(score) {
     return 'text-warning'
 }
 
-export async function unpackFetchResponse(response) {
-    /*
-        Validates and deserializes a fetch Response object to JSON.
-        Throws if the argument is not a Response or if the server returned an error status.
-    */
+export async function parseResponse(response) {
     if (!(response instanceof Response)) {
         throw new Error("response parameter must be a Response object.")
     }
     if (!response.ok) {
-        console.error(response.statusText)
-        throw new Error(`Server responded with status: ${response.status}`);
+        let body
+        try { body = await response.json() } catch (_) {}
+        console.error(body)
+        throw new Error(`Server responded with status: ${response.status}`)
     }
-
-    let data = {}
-    try {
-        data = await response.json();
-    } catch (error) {
-        console.error(`The response object provided. /n'${response}'/m is not compatable with JSON format.e`, error)
-        console.error("Response status was:", response.status)
-        data = {}
+    const body = await response.json()
+    if (body?.success === false) {
+        console.error(body)
+        throw new Error(body.message ?? 'Request failed')
     }
-
-    return data;
+    return body
 }

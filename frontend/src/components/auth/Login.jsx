@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../context/AuthContext";
+import { parseResponse } from "../../scripts/utils";
 
 async function logIn(username, password) {
     const safeUsername = String(username).trim();
@@ -16,16 +17,12 @@ async function logIn(username, password) {
             })
         });
 
-        const responseBody = await response.json();
-        if (response.status === 400) {
-            console.error(responseBody);
-            throw new Error(`Server responded with status: ${response.status}`);
-        } else if (response.status === 401) {
-            console.log(responseBody);
+        if (response.status === 401) {
             return false;
-        } else {
-            return true;
         }
+
+        await parseResponse(response);
+        return true;
     } catch (error) {
         console.error(error.message);
         return null;

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { unpackFetchResponse } from '../scripts/utils.js'
+import { parseResponse } from '../scripts/utils.js'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
 
 async function searchOnline(query) {
     const safeQuery = String(query).trim();
     const response = await fetch(`/api/search?q=${safeQuery}`);
-    const data = await unpackFetchResponse(response);
+    const data = await parseResponse(response);
     return data;
 }
 

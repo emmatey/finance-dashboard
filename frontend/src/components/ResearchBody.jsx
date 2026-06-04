@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-    unpackFetchResponse,
+    parseResponse,
     formatCurrencyUSD,
     formatPercent,
     formatNumber,
@@ -156,7 +156,7 @@ export default function ResearchBody({ ticker }) {
         async function load() {
             try {
                 const localRes = await fetch(`/api/research/local?ticker=${ticker}`)
-                const local = await unpackFetchResponse(localRes)
+                const local = await parseResponse(localRes)
                 if (!cancelled) setData(local)
             } catch {
                 // ticker may not be in DB yet — continue to online
@@ -164,7 +164,7 @@ export default function ResearchBody({ ticker }) {
 
             try {
                 const onlineRes = await fetch(`/api/research/online?ticker=${ticker}`)
-                const online = await unpackFetchResponse(onlineRes)
+                const online = await parseResponse(onlineRes)
                 if (!cancelled) setData(online)
             } catch (err) {
                 if (!cancelled) setError(err.message)

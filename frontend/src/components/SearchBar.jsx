@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { unpackFetchResponse } from '../scripts/utils.js'
+import { parseResponse } from '../scripts/utils.js'
 
 async function searchOffline(query) {
     const safeQuery = String(query).trim();
@@ -12,9 +12,9 @@ async function searchOffline(query) {
         fetch(`/api/search/news?q=${safeQuery}&local=true`)
     ]);
 
-    const companiesData = await unpackFetchResponse(companies);
-    const usersData = await unpackFetchResponse(users);
-    const newsData = await unpackFetchResponse(news);
+    const companiesData = await parseResponse(companies);
+    const usersData = await parseResponse(users);
+    const newsData = await parseResponse(news);
 
     return {
         'companies': companiesData,
