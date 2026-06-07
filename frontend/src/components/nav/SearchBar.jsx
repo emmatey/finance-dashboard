@@ -7,6 +7,7 @@ export default function SearchBar() {
     const [companyListItems, setCompanyListItems] = useState([]);
     const [userlistItems, setUserListItems] = useState([]);
     const [newsListItems, setNewsListItems] = useState([]);
+    const [listIsOpen, setListIsOpen] = useState(false);
 
     async function searchOffline(query) {
         const safeQuery = String(query).trim();
@@ -32,22 +33,24 @@ export default function SearchBar() {
         const query = event.target.value;
         const { companies, users, news } = await searchOffline(query);
         
-        //const companyNamesPlusTickers = companies["data"].map()
+        const companyNamesPlusTickers = companies["data"].map((item) => (`${item?.ticker} - ${item?.company_name}`));
+        const userNames = users["data"].map((item) => (``))
         const newsHeadlines = news["data"].map((item) => (item?.title || null));
 
 
-        //setCompanyListItems(companies);
-        //setUserListItems(users);
+        setCompanyListItems(companyNamesPlusTickers);
+        setUserListItems(users);
         setNewsListItems(newsHeadlines);
     }
 
     return (
         <>
-            {console.log(companyListItems)}
-            <input id='searchBar' list='searchList' type='text' onKeyUp={handleKeyUp}></input>
-            <datalist id='searchList'>
-                {newsListItems.map(((item) => (<option value={item}>{item}</option>)))}
-            </datalist>
+            {console.log(userlistItems)}
+            <div>
+                <input id='searchBar' list='searchList' type='text' onKeyUp={handleKeyUp}></input>
+
+                { listIsOpen ?  : null}
+            </div>
         </>
     );
 }   
