@@ -109,7 +109,7 @@ export async function parseResponse(response) {
         throw new Error(`Server responded with status: ${response.status}`);
     }
 
-    // 4. Handle API-level business logic failures
+    // 4. Handle API-level business logiparseResc failures
     if (body?.success === false) {
         console.error("API Logic Failure:", body);
         throw new Error(body.message ?? 'Request failed');

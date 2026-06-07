@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import SearchBar from './SearchBar.jsx'
+import SearchBar from '../components/nav/SearchBar.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Header() {
