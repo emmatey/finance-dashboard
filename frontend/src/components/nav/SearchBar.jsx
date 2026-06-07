@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseResponse } from '../../scripts/utils'
+import SearchListItem from './SearchListItem';
+import SearchListHeader from './SearchListHeader';
 
 
 export default function SearchBar() {
@@ -31,25 +33,41 @@ export default function SearchBar() {
 
     async function handleKeyUp(event) {
         const query = event.target.value;
-        const { companies, users, news } = await searchOffline(query);
-        
-        const companyNamesPlusTickers = companies["data"].map((item) => (`${item?.ticker} - ${item?.company_name}`));
-        const userNames = users["data"].map((item) => (``))
-        const newsHeadlines = news["data"].map((item) => (item?.title || null));
+        if (!query.trim()) {
+            setListIsOpen(false);
+            setCompanyListItems([]);
+            return;
+        }
 
+        const { companies, users, news } = await searchOffline(query);
+
+        const companyNamesPlusTickers = companies["data"].map((item) => (`${item?.ticker} - ${item?.company_name}`));
+        const userNames = users["data"].map((item) => (``));
+        const newsHeadlines = news["data"].map((item) => (item?.title || null));
 
         setCompanyListItems(companyNamesPlusTickers);
         setUserListItems(users);
         setNewsListItems(newsHeadlines);
+        setListIsOpen(true);
     }
 
     return (
         <>
-            {console.log(userlistItems)}
             <div>
-                <input id='searchBar' list='searchList' type='text' onKeyUp={handleKeyUp}></input>
+                <input id='searchBar' type='text' onKeyUp={handleKeyUp} />
 
-                { listIsOpen ?  : null}
+                {listIsOpen && (
+                    <ul>
+                        {companyListItems.length > 0 && (
+                            <>
+                                <SearchListHeader label="Companies" />
+                                {companyListItems.map((item, i) => (
+                                    <SearchListItem key={i} text={item} onClick={() => ()} />
+                                ))}
+                            </>
+                        )}
+                    </ul>
+                )}
             </div>
         </>
     );
