@@ -218,7 +218,7 @@ def logout():
         session.clear()
         return jsonify({"success": True}), 200
     except Exception:
-        logger.exception("Sesison unable to be cleared.")
+        logger.exception("Session unable to be cleared.")
         return jsonify({"success": False,
                         "message": "Session unable to be cleared..."}), 500
 
@@ -1319,7 +1319,7 @@ def search():
     if query is None:
         return jsonify({
             "success": False,
-            "message": "Query paramater 'q' i.e. your search term, is required."
+            "message": "Query parameter 'q' i.e. your search term, is required."
         }), 400
     
     results = {}
