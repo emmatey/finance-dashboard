@@ -6,9 +6,9 @@ import SearchListHeader from './SearchListHeader';
 
 
 export default function SearchBar() {
-    const [companyListItems, setCompanyListItems] = useState([]);
-    const [userListItems, setUserListItems] = useState([]);
-    const [newsListItems, setNewsListItems] = useState([]);
+    const [companyData, setCompanyData] = useState([]);
+    const [userData, setUserData] = useState([]);
+    const [newsData, setNewsData] = useState([]);
     const [listIsOpen, setListIsOpen] = useState(false);
 
     async function searchOffline(query) {
@@ -20,9 +20,9 @@ export default function SearchBar() {
             fetch(`/api/search/news?q=${safeQuery}&local=true`)
         ]);
 
-        const companiesData = await parseResponse(companies);
-        const usersData = await parseResponse(users);
-        const newsData = await parseResponse(news);
+        const companiesData = (await parseResponse(companies)).data;
+        const usersData = (await parseResponse(users)).data;
+        const newsData = (await parseResponse(news)).data;
 
         return {
             'companies': companiesData,
@@ -35,58 +35,68 @@ export default function SearchBar() {
         const query = event.target.value;
         if (!query.trim()) {
             setListIsOpen(false);
-            setCompanyListItems([]);
+            setCompanyData([]);
             return;
         }
+        setTimeout(async () => {
+            try {
+                const { companies, users, news } = await searchOffline(query);
+                setCompanyData(companies);
+                setUserData(users);
+                setNewsData(news);
+                if (companies.length > 0 || users.length > 0 || news.length > 0) {
+                    setListIsOpen(true);
+                }
 
-        const { companies, users, news } = await searchOffline(query);
-
-        const companyNamesPlusTickers = companies["data"].map((item) => (`${item?.ticker} - ${item?.company_name}`));
-        const userNames = users["data"].map((item) => (`${item?.username} - Rank: ${item?.rank}`));
-        const newsHeadlines = news["data"].map((item) => (item?.title || null));
-
-        setCompanyListItems(companyNamesPlusTickers);
-        setUserListItems(userNames);
-        setNewsListItems(newsHeadlines);
-        setListIsOpen(true);
+            } catch (err) {
+                console.error(err);
+            };
+        }, 200)
     }
 
     return (
-        <>
-            <div>
-                <input id='searchBar' type='text' onKeyUp={handleKeyUp} />
-
-                {listIsOpen && (
-                    <ul>
-                        {companyListItems.length > 0 && (
-                            <>
-                                <SearchListHeader label="Companies" />
-                                {companyListItems.map((item, i) => (
-                                    <SearchListItem key={i} text={item} />
-                                ))}
-                            </>
-                        )}
-
-                        {userListItems.length > 0 && (
-                            <>
-                                <SearchListHeader label="Users" />
-                                {userListItems.map((item, i) => (
-                                    <SearchListItem key={i} text={item} />
-                                ))}
-                            </>
-                        )}
-
-                        {newsListItems.length > 0 && (
-                            <>
-                                <SearchListHeader label="News" />
-                                {newsListItems.map((item, i) => (
-                                    <SearchListItem key={i} text={item} />
-                                ))}
-                            </>
-                        )}
-                    </ul>
-                )}
-            </div>
-        </>
+        <div>
+            <input id='searchBar' type='text' onKeyUp={handleKeyUp} />
+            {listIsOpen && (
+                <ul>
+                    {companyData.length > 0 && (
+                        <>
+                            <SearchListHeader label="Companies" />
+                            {companyData.map((item) => (
+                                <SearchListItem
+                                    key={item.id}
+                                    text={`${item?.ticker} - ${item?.company_name}`}
+                                    onClick={() => { }}
+                                />
+                            ))}
+                        </>
+                    )}
+                    {userData.length > 0 && (
+                        <>
+                            <SearchListHeader label="Users" />
+                            {userData.map((item) => (
+                                <SearchListItem
+                                    key={item.user_id}
+                                    text={`${item?.username} - Rank: ${item?.rank}`}
+                                    onClick={() => { }}
+                                />
+                            ))}
+                        </>
+                    )}
+                    {newsData.length > 0 && (
+                        <>
+                            <SearchListHeader label="News" />
+                            {newsData.map((item) => (
+                                <SearchListItem
+                                    key={item.id}
+                                    text={item?.title}
+                                    onClick={() => { }}
+                                />
+                            ))}
+                        </>
+                    )}
+                </ul>
+            )}
+        </div>
     );
-}   
+} 

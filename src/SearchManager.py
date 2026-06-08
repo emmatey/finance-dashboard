@@ -27,7 +27,7 @@ class SearchManager(CommonQueries):
         """
         safe_query = f"%{str(query).strip()}%"
         sql = """
-        SELECT s.ticker, s.company_name, s.quote_type, s.exchange, cp.sector, cp.industry
+        SELECT s.id, s.ticker, s.company_name, s.quote_type, s.exchange, cp.sector, cp.industry
         FROM symbols AS s
         LEFT JOIN company_profile AS cp ON s.id = cp.symbol_id
         WHERE s.ticker LIKE ?
@@ -174,6 +174,7 @@ class SearchManager(CommonQueries):
         safe_query = f"%{str(query).strip()}%"
         news_sql = """
         SELECT
+            n.id,
             n.uuid,
             n.title,
             n.publisher,
@@ -301,7 +302,5 @@ class SearchManager(CommonQueries):
         if user_data:
             for user in user_data:
                 user["search_type"] = "user"
-                if user.get("user_id") is not None:
-                    del user["user_id"]
         
         return user_data
