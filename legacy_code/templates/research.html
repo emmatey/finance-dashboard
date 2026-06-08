@@ -38,7 +38,7 @@
                     <hr>
                     <div class="d-flex justify-content-center" id="priceHistoryBtnParent">
                         <div class="btn-group gap-2">
-                            <button type="button" class="btn btn-primary btn-sm btn-success" id="year" value="31536000">1yr</button> <!-- 'value' props are time peroid in seconds -->
+                            <button type="button" class="btn btn-primary btn-sm btn-success" id="year" value="31536000">1yr</button> <!-- 'value' props are time period in seconds -->
                             <button type="button" class="btn btn-primary btn-sm" id="month" value="2592000">1mo</button>
                             <button type="button" class="btn btn-primary btn-sm" id="week" value="604800">1wk</button>
                         </div>
@@ -186,7 +186,7 @@
             }
         );
 
-        // Add event listners.
+        // Add event listeners.
         buttonContainer.addEventListener("click", (event) => {
             // Clear 'selected' class from all buttons.
             for (let btn of buttons) {

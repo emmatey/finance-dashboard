@@ -611,7 +611,7 @@ class YahooQueryService:
                 safe_input.append(str(i).strip())
         else:
             raise ValueError(
-                "yq_screener_get_screeners 'screeners' paramater must be a str, or list of strs which represent screener names.\n\
+                "yq_screener_get_screeners 'screeners' parameter must be a str, or list of strs which represent screener names.\n\
                 https://yahooquery.dpguthrie.com/guide/screener/#get_screeners")
     
         # Call get_screeners

@@ -228,7 +228,7 @@ def logout():
 def user_summary():
     """
     Returns a summary of a user profile. Including username, value of
-    cash balance, rank, value of holdings, and the datetime this data was caputured.
+    cash balance, rank, value of holdings, and the datetime this data was captured.
     
     Query Parameter:
         ?username=<username>
@@ -512,7 +512,7 @@ def trade():
         if not ticker:
             return jsonify({
                 "success": False,
-                "message": "No 'ticker' query paramater provided..."
+                "message": "No 'ticker' query parameter provided..."
             }), 400
         else:
             ticker = ticker.strip().upper()
@@ -695,7 +695,7 @@ def research_local():
     except Exception:
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
-    # 'symbol' is stock ticker, 'symbols' is table containg data about ticker like price and name and exchange.
+    # 'symbol' is stock ticker, 'symbols' is table containing data about ticker like price and name and exchange.
     all_tables = [t for t in fresh_report if t != "symbol"] + ["symbols"]
     # If table not 
     results = {t: fetched.get(t, None) for t in all_tables}
@@ -710,7 +710,7 @@ def research_online():
     Serves a flat list of dicts with a "table_name" k:v pair to differentiate.
     Checks yahooquery API for all data not found in DB, or considered "stale". 
 
-    Query Paramater:
+    Query Parameter:
         ?ticker=str
 
     Returns:
@@ -799,7 +799,7 @@ def research_online():
     if not ticker:
         return jsonify({
             "success": False,
-            "message": "No 'ticker' query paramater provided..."
+            "message": "No 'ticker' query parameter provided..."
         }), 400
     else:
         ticker = ticker.strip().upper()
@@ -1401,7 +1401,7 @@ def search_companies():
     if query is None:
         return jsonify({
             "success": False,
-            "message": "Query paramater 'q' i.e. your search term, is required."
+            "message": "Query parameter 'q' i.e. your search term, is required."
         }), 400
     
     local = request.args.get("local")
@@ -1440,7 +1440,7 @@ def search_users():
     if query is None:
         return jsonify({
             "success": False,
-            "message": "Query paramater 'q' i.e. your search term, is required."
+            "message": "Query parameter 'q' i.e. your search term, is required."
         }), 400
 
     res = None
@@ -1501,7 +1501,7 @@ def search_news():
     if query is None:
         return jsonify({
             "success": False,
-            "message": "Query paramater 'q' i.e. your search term, is required."
+            "message": "Query parameter 'q' i.e. your search term, is required."
         }), 400
 
     local = request.args.get("local")

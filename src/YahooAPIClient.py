@@ -109,7 +109,7 @@ yq_client = YahooAPIClient()
 def yq_exception_handler(client_instance=yq_client):
     """
     Catches and logs exceptions.
-    Sets api status to 'UP' on sucesses.
+    Sets api status to 'UP' on successes.
     Retries 3 times for connection error or timeout exceptions.
     """
     def decorator(func):

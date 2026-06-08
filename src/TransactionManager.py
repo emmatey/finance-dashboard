@@ -11,7 +11,7 @@ class TransactionManager(CommonQueries):
 
     Data flow:
         Fetch current price > show user their current holdings of the given stock as well as price data >
-        on confirm fetch price agian > write tx to database
+        on confirm fetch price again > write tx to database
 
         Note: Price update daemon will be updating all holding prices in the background, no need to manually do this here.
     """

@@ -91,7 +91,7 @@ class APIDataIO(DbManager):
         """
         # yq_ticker_stock_splits() method returns [] on errors.
         if not stock_split_data or not isinstance(stock_split_data[0], tuple):
-            logger.warning(f"No data recieved param:{stock_split_data}")
+            logger.warning(f"No data received param:{stock_split_data}")
             return None
 
         sql = """
@@ -115,7 +115,7 @@ class APIDataIO(DbManager):
         """
         # yq_ticker_historical_prices() method returns None on errors.
         if not price_data or not isinstance(price_data[0], tuple):
-            logger.warning(f"No data recieved param:{price_data}")
+            logger.warning(f"No data received param:{price_data}")
             return None
 
         sql = """
@@ -581,9 +581,9 @@ class APIDataIO(DbManager):
                 symbols = [symbols]
             elif isinstance(symbols, list):
                 if not all(isinstance(i, str) for i in symbols):
-                    raise ValueError("Symbols paramater must be a string or a list of strings")
+                    raise ValueError("Symbols parameter must be a string or a list of strings")
             else:
-                raise ValueError("Symbols paramater must be a string or a list of strings")
+                raise ValueError("Symbols parameter must be a string or a list of strings")
 
             symbols_upper = [str(s).upper().strip() for s in symbols]
             placeholders = ", ".join(['?' for _ in symbols_upper])
