@@ -294,7 +294,7 @@ def user_summary():
 @app.route("/api/user/portfolio", methods=["GET"])
 def portfolio_view():
     """
-    Retreieves a summary of user holdings.
+    Retrieves a summary of user holdings.
     Returned as a list of objects which each represent one holding.
     If no query parameter is provided, the logged in user will be used.
 
