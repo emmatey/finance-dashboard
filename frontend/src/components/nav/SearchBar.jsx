@@ -7,7 +7,7 @@ import SearchListHeader from './SearchListHeader';
 
 export default function SearchBar() {
     const [companyListItems, setCompanyListItems] = useState([]);
-    const [userlistItems, setUserListItems] = useState([]);
+    const [userListItems, setUserListItems] = useState([]);
     const [newsListItems, setNewsListItems] = useState([]);
     const [listIsOpen, setListIsOpen] = useState(false);
 
@@ -42,11 +42,11 @@ export default function SearchBar() {
         const { companies, users, news } = await searchOffline(query);
 
         const companyNamesPlusTickers = companies["data"].map((item) => (`${item?.ticker} - ${item?.company_name}`));
-        const userNames = users["data"].map((item) => (``));
+        const userNames = users["data"].map((item) => (`${item?.username} - Rank: ${item?.rank}`));
         const newsHeadlines = news["data"].map((item) => (item?.title || null));
 
         setCompanyListItems(companyNamesPlusTickers);
-        setUserListItems(users);
+        setUserListItems(userNames);
         setNewsListItems(newsHeadlines);
         setListIsOpen(true);
     }
@@ -62,7 +62,25 @@ export default function SearchBar() {
                             <>
                                 <SearchListHeader label="Companies" />
                                 {companyListItems.map((item, i) => (
-                                    <SearchListItem key={i} text={item} onClick={() => ()} />
+                                    <SearchListItem key={i} text={item} />
+                                ))}
+                            </>
+                        )}
+
+                        {userListItems.length > 0 && (
+                            <>
+                                <SearchListHeader label="Users" />
+                                {userListItems.map((item, i) => (
+                                    <SearchListItem key={i} text={item} />
+                                ))}
+                            </>
+                        )}
+
+                        {newsListItems.length > 0 && (
+                            <>
+                                <SearchListHeader label="News" />
+                                {newsListItems.map((item, i) => (
+                                    <SearchListItem key={i} text={item} />
                                 ))}
                             </>
                         )}
