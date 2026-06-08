@@ -1,6 +1,6 @@
 import '../../styles/utilities.css';
 
-export default function SearchListItem({ text, setComponentRegistry }) {
+export default function SearchListItem({ object, type }) {
     // One parent function which takes 
         // three functions for onclick go here, one for each type
         // of list item

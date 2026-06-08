@@ -1,15 +1,15 @@
 import requests
 
-url = "http://localhost:5000"
+url = "http://localhost:5000/api"
 s = requests.Session()
 
-#response = s.post(f'{url}/auth/register', 
+#response = s.post(f'{url}/auth/register',
 #    json={"username": "emma", "password": "123Pass"})
 
-#response = s.post(f'{url}/auth/login', 
+#response = s.post(f'{url}/auth/login',
 #                  json={"username": "emma", "password": "123Pass"})
 
-response = s.get(f'{url}/research?ticker=GRND')
+response = s.get(f'{url}/research/online?ticker=GRND')
 
 #response = s.get(f'{url}/screeners')
 

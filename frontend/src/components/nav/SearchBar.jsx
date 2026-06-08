@@ -15,46 +15,47 @@ export default function SearchBar() {
                 Does this in order to show a "suggestions" datalist while user types.
             
             - Sorts list items in datalist.
-                Insert headers for category boundaries. 
-                This requires a registry of component ids.
 
             - Toggles visibility of data list.
 
     */
 
-    const [componentRegistry, setComponentRegistry] = useState({
-        'companies': [],
-        'users': [],
-        'news': []
-    });
+    const [companyResults, setCompanyResults] = useState([]);
+    const [userResults, setUserResults] = useState([]);
+    const [newsResults, setNewsResults] = useState([]);
 
     async function searchOffline(query) {
         const safeQuery = String(query).trim();
         // Hit 'local' routes that check DB first, prior to using online api.
+        try {
+            const [companies, users, news] = await Promise.all([
+                fetch(`/api/search/companies?q=${safeQuery}&local=true`),
+                fetch(`/api/search/users?q=${safeQuery}`),
+                fetch(`/api/search/news?q=${safeQuery}&local=true`)
+            ]);
+            setCompanyResults(parseResponse(companies).data);
+            setUserResults (parseResponse(users).data);
+            setNewsResults (parseResponse(news).data);
 
-        const searchResponses = await Promise.all([
-            fetch(`/api/search/companies?q=${safeQuery}&local=true`),
-            fetch(`/api/search/users?q=${safeQuery}`),
-            fetch(`/api/search/news?q=${safeQuery}&local=true`)
-        ]);
+            console.log(companyResults);
+            console.log(userResults);
+            console.log(newsResults);
 
-        promises.map((promise) => (parseResponse(promise)));
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     async function handleKeyUp(event) {
         const query = event.target.value;
-        if (!query.trim()) {
-            setListIsOpen(false);
-            setCompanyData([]);
+        if (!query.length) {
+            setCompanyResults([]);
+            setUserResults([]);
+            setNewsResults([]);
             return;
         }
         setTimeout(async () => {
-            try {
-                const results = await searchOffline(query);
-                setSearchResults(results);
-            } catch (err) {
-                console.error(err);
-            };
+            await searchOffline(query);
         }, 200)
     }
 
@@ -62,23 +63,23 @@ export default function SearchBar() {
         <div>
             <input id='searchBar' type='text' onKeyUp={handleKeyUp} />
             {
-                componentRegistry.companies.length > 0
+                companyResults.length > 0
                 ||
-                componentRegistry.news.length > 0
+                newsResults.length > 0
                 ||
-                componentRegistry.users.length > 0
+                userResults.length > 0
                 &&
                 (<ul>
-                    {componentRegistry.companies.length > 0 && (
-                        <SearchListHeader text={"Companies"}/>
-                        componentRegistry.map((item) => (
-                        <SearchListItem />))
-                        )
-                    }
+                    {companyResults.length > 0 && (
+                        <div>
+                            <SearchListHeader text={"Companies"} />
+                            { companyResults.map((result) => (<SearchListItem object={result} type={company} />)) }
+                        </div>
+                    )}
 
-                    {componentRegistry.users.length > 0 && <SearchListHeader text={"Users"}/>}
+                    {componentRegistry.users.length > 0 && <SearchListHeader text={"Users"} />}
 
-                    {componentRegistry.news.length > 0 && <SearchListHeader text={"News"}/>}
+                    {componentRegistry.news.length > 0 && <SearchListHeader text={"News"} />}
                 </ul>)
             }
         </div>
