@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../styles/utilities.css';
 
 export default function SearchListItem({ object, type, image }) {
@@ -12,13 +12,13 @@ export default function SearchListItem({ object, type, image }) {
             Function:
                 Parse object passed and render text, an image, b
     */
+    let navigate = useNavigate();
     let text = "...";
 
     let onClick = undefined;
     if (type === 'company') {
         onClick = () => (
-            console.log("clicked me!")
-            // redirect to research
+            navigate(`/research?ticker=${object.ticker}`)
         )
         let exchange = false;
         exchange = String(object.exchange).toLocaleLowerCase();
@@ -28,23 +28,17 @@ export default function SearchListItem({ object, type, image }) {
             text = `${object.ticker}: ${object.exchange} - ${object.company_name}`;
         }
     } else if (type === 'user') {
-        onClick = () => (
-            console.log("clicked me!")
-            // redirect to user page with username as url
-        )
+        onClick = () => navigate(`/user/${object.username}`)
         text = `Rank: ${object.rank} - Username: ${object.username}`;
     } else if (type === 'news') {
-        onClick = () => (
-            console.log("clicked me!")
-            // Redirect to external news story. popup
-        )
+        onClick = () => window.open(object.link, '_blank')
         text = `${object.publisher}: ${object.title}`;
     } else {
         throw new TypeError("Invalid 'type' prop in SearchListItem component.")
     };
 
     return (
-        <li className="card" onClick={onClick} style={{ cursor: 'pointer', listStyle: 'none' }}>
+        <li className="card" onMouseDown={onClick} style={{ cursor: 'pointer', listStyle: 'none' }}>
             {text}
         </li>
     );
