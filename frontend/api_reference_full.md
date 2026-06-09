@@ -859,6 +859,7 @@ Combined search across companies, users, and news in one call. Makes a single Ya
   "users": [
     {
       "username": "emma",
+      "user_id": 1,
       "snap_datetime": "2026-04-12 00:00:00",
       "portfolio_value": 4523.50,
       "cash_balance": 5476.50,
@@ -924,6 +925,8 @@ Company-only search. Supports a `local` mode for fast datalist population on key
 }
 ```
 
+**Note on `id`:** When `?local=true`, each result also includes `"id": int` — the `symbols` table primary key. Not present in online results (which are built from Yahoo Finance data). Use as a React key when rendering local search suggestions.
+
 **Frontend Notes:** Use `?local=true` for search-as-you-type datalist suggestions — it's instant since it's just a `LIKE` query against the local DB. Switch to the full search (no `local`) for the results page where freshness matters more than speed.
 
 ---
@@ -942,6 +945,7 @@ User search by username.
   "data": [
     {
       "username": "emma",
+      "user_id": 1,
       "snap_datetime": "2026-04-12 00:00:00",
       "portfolio_value": 4523.50,
       "cash_balance": 5476.50,
@@ -984,6 +988,8 @@ News search by headline or related ticker.
 ```
 
 Returns `{"success": true, "data": []}` if no results.
+
+**Note on `id`:** When `?local=true`, each result also includes `"id": int` — the `news` table primary key. Not present in online results. `uuid` is always present regardless of mode and is the preferred React key.
 
 ---
 

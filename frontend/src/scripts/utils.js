@@ -99,8 +99,8 @@ export async function parseResponse(response) {
     // 2. Safely try to parse the JSON once
     try { 
         body = await response.json(); 
-    } catch (_) {
-        // Leave body as undefined if parsing fails (e.g., empty response or raw text)
+    } catch (error) {
+        console.error(error);
     }
 
     // 3. Handle HTTP errors (4xx, 5xx)

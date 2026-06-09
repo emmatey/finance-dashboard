@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { parseResponse } from '../../scripts/utils'
 import SearchListItem from './SearchListItem';
@@ -23,6 +23,13 @@ export default function SearchBar() {
     const [companyResults, setCompanyResults] = useState([]);
     const [userResults, setUserResults] = useState([]);
     const [newsResults, setNewsResults] = useState([]);
+    const [dataListVisible, setDataListVisible] = useState(false);
+    const timeoutRef = useRef(null);
+
+    // Clears timer on dismount.
+    useEffect(() => {
+        return () => clearTimeout(timeoutRef.current);
+    }, []);
 
     async function searchOffline(query) {
         const safeQuery = String(query).trim();
@@ -33,15 +40,17 @@ export default function SearchBar() {
                 fetch(`/api/search/users?q=${safeQuery}`),
                 fetch(`/api/search/news?q=${safeQuery}&local=true`)
             ]);
-            setCompanyResults(parseResponse(companies).data);
-            setUserResults (parseResponse(users).data);
-            setNewsResults (parseResponse(news).data);
 
-            console.log(companyResults);
-            console.log(userResults);
-            console.log(newsResults);
+            setCompanyResults((await parseResponse(companies))?.data || []);
+            setUserResults((await parseResponse(users))?.data || []);
+            setNewsResults((await parseResponse(news))?.data || [])
+            setDataListVisible(true);
 
         } catch (error) {
+            setDataListVisible(false);
+            setCompanyResults([]);
+            setUserResults([]);
+            setNewsResults([]);
             console.error(error);
         }
     }
@@ -49,37 +58,54 @@ export default function SearchBar() {
     async function handleKeyUp(event) {
         const query = event.target.value;
         if (!query.length) {
+            setDataListVisible(false);
             setCompanyResults([]);
             setUserResults([]);
             setNewsResults([]);
             return;
         }
-        setTimeout(async () => {
-            await searchOffline(query);
-        }, 200)
+
+        timeoutRef && clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+            searchOffline(query);
+        }, 300)
     }
 
     return (
         <div>
-            <input id='searchBar' type='text' onKeyUp={handleKeyUp} />
+            <input 
+                id='searchBar' 
+                type='text' 
+                onKeyUp={handleKeyUp} 
+                onBlur={() => setDataListVisible(false)} 
+                onFocus={() => setDataListVisible(true)} 
+            />
             {
-                companyResults.length > 0
-                ||
-                newsResults.length > 0
-                ||
-                userResults.length > 0
+                dataListVisible
+                &&
+                (companyResults.length > 0 || newsResults.length > 0 || userResults.length > 0)
                 &&
                 (<ul>
                     {companyResults.length > 0 && (
                         <div>
                             <SearchListHeader text={"Companies"} />
-                            { companyResults.map((result) => (<SearchListItem object={result} type={company} />)) }
+                            {companyResults.map((result) => (<SearchListItem key={result.ticker} object={result} type={'company'} />))}
                         </div>
                     )}
 
-                    {componentRegistry.users.length > 0 && <SearchListHeader text={"Users"} />}
+                    {userResults.length > 0 && (
+                        <div>
+                            <SearchListHeader text={"Users"} />
+                            {userResults.map((result) => (<SearchListItem key={result.user_id} object={result} type={'user'} />))}
+                        </div>
+                        )}
 
-                    {componentRegistry.news.length > 0 && <SearchListHeader text={"News"} />}
+                    {newsResults.length > 0 && ( 
+                        <div>
+                            <SearchListHeader text={"News"} />
+                            {newsResults.map((result) => (<SearchListItem key={result.uuid} object={result} type={'news'} />))}
+                        </div>
+                    )}
                 </ul>)
             }
         </div>

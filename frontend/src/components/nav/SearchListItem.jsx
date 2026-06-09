@@ -5,9 +5,13 @@ export default function SearchListItem({ object, type }) {
         // three functions for onclick go here, one for each type
         // of list item
 
+    function onClick() {
+        let a = 1;
+    }
+
     return (
         <li className="card" onClick={onClick} style={{ cursor: 'pointer', listStyle: 'none' }}>
-            {text}
+            test
         </li>
     );
 }

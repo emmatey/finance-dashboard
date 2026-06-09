@@ -324,6 +324,7 @@ RESOURCES
                 }],
                 users: [{
                     username: str,
+                    user_id: int,
                     snap_datetime: str,
                     portfolio_value: float,
                     cash_balance: float,
@@ -344,12 +345,14 @@ RESOURCES
             }
         /search/companies
             to   - GET /api/search/companies  ?q=str  ?limit=int (optional, default 20)  ?local=bool (optional, default false)
-            from - { success: true, data: [{ same company shape as above }] }
+            from - { success: true, data: [{ same company shape as above, + id: int when local=true }] }
+            note - id (symbols table PK) is only present when ?local=true; use as React key
         /search/users
             to   - GET /api/search/users  ?q=str
-            from - { success: true, data: [{ same user shape as above }] }
+            from - { success: true, data: [{ same user shape as above, user_id: int }] }
             no match returns { success: true, data: [] }
         /search/news
             to   - GET /api/search/news  ?q=str  ?limit=int (optional, default 10)
-            from - { success: true, data: [{ same news shape as above }] }
+            from - { success: true, data: [{ same news shape as above, + id: int when local=true }] }
+            note - id (news table PK) is only present when ?local=true; uuid is always present and preferred as React key
             no match returns { success: true, data: [] }

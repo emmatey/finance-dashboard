@@ -3,15 +3,9 @@ import requests
 url = "http://localhost:5000/api"
 s = requests.Session()
 
-#response = s.post(f'{url}/auth/register',
-#    json={"username": "emma", "password": "123Pass"})
+#response = s.get(f'{url}/research/online?ticker=GRND')
 
-#response = s.post(f'{url}/auth/login',
-#                  json={"username": "emma", "password": "123Pass"})
-
-response = s.get(f'{url}/research/online?ticker=GRND')
-
-#response = s.get(f'{url}/screeners')
+response = s.get(f'{url}/search/news?q=grind&local=true')
 
 print(f"Status Code: {response.status_code}\n")
 
