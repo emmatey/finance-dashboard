@@ -17,7 +17,6 @@ export default function SearchBar() {
             - Sorts list items in datalist.
 
             - Toggles visibility of data list.
-
     */
 
     const [companyResults, setCompanyResults] = useState([]);
@@ -64,7 +63,6 @@ export default function SearchBar() {
             setNewsResults([]);
             return;
         }
-
         timeoutRef && clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
             searchOffline(query);
