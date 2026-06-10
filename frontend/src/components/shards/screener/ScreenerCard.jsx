@@ -1,6 +1,6 @@
-import Header from "../Header";
-import Footer from "../Footer";
-import { parseResponse } from "../../scripts/utils";
+import Header from "../../Header";
+import Footer from "../../Footer";
+import { parseResponse } from "../../../scripts/utils";
 import { useEffect, useState } from "react";
 
 export default function ScreenerCard({ title, data }) {

@@ -1,6 +1,6 @@
 import Header from '../Header.jsx'
 import Footer from '../Footer.jsx'
-import ScreenerShard from '../screener/ScreenerShard.jsx'
+import ScreenerShard from '../shards/screener/ScreenerShard.jsx'
 
 export default function HomeBody({ username }) {
     return (

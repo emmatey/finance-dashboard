@@ -1,7 +1,7 @@
-import Header from "../Header";
-import Footer from "../Footer";
+import Header from "../../Header";
+import Footer from "../../Footer";
 import ScreenerCard from "./ScreenerCard";
-import { parseResponse } from "../../scripts/utils";
+import { parseResponse } from "../../../scripts/utils";
 import { useEffect, useState } from "react";
 
 export default function ScreenerShard() {
