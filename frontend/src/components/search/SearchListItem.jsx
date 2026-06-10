@@ -35,7 +35,7 @@ export default function SearchListItem({ object, type }) {
     };
 
     return (
-        <li className="card" onMouseDown={onClick} style={{ cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <li className="card" onMouseDown={onClick} style={{ cursor: 'pointer', listStyle: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {type === "company" && <img className="thumbnail" src='/images/searchBar/companyIcon.svg'/>}
                 {type === "user" && <img className="thumbnail" src='/images/searchBar/userIcon.svg'/>}
