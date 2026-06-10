@@ -6,28 +6,32 @@ import '../../../styles/colors.css'
 
 export default function TransactionHistoryShard({ username }) {
     const [historyObjects, setHistoryObjects] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     async function fetchHistory() {
         const safeQuery = String(username).trim();
-        const url = '/api/user/transactions';
-        const queryParamurl = `/api/user/transactions?username=${safeQuery}`;
         try {
-            const response = await fetch(username ? queryParamurl : url);
-            setHistoryObjects(await parseResponse(response));
+            const response = await fetch(`/api/user/transactions?username=${encodeURIComponent(safeQuery)}`);
+            return await parseResponse(response);
         } catch (error) {
             console.error(error);
-            setHistoryObjects([]);
+            return [];
         }
     }
 
     useEffect(() => {
-        fetchHistory().then(setHistoryObjects);
+        if (username === undefined) {
+            setLoading(true);
+        } else if (username) {
+            setLoading(false);
+            fetchHistory().then(setHistoryObjects);
+        }
     }, [username]);
 
     console.log(historyObjects)
     return (
         <div className='card'>
-            placeholder
+        
         </div>
     )
 }

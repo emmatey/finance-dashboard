@@ -10,7 +10,7 @@ export default function SearchBody({ query }) {
     async function searchOnline(query) {
         const safeQuery = String(query).trim();
         try {
-            const response = await fetch(`/api/search?q=${safeQuery}`);
+            const response = await fetch(`/api/search?q=${encodeURIComponent(safeQuery)}`);
             return await parseResponse(response);
         } catch (error) {
             setResults([]);

@@ -155,7 +155,7 @@ export default function ResearchBody({ ticker }) {
 
         async function load() {
             try {
-                const localRes = await fetch(`/api/research/local?ticker=${ticker}`)
+                const localRes = await fetch(`/api/research/local?ticker=${encodeURIComponent(ticker)}`)
                 const local = await parseResponse(localRes)
                 if (!cancelled) setData(local)
             } catch {
@@ -163,7 +163,7 @@ export default function ResearchBody({ ticker }) {
             }
 
             try {
-                const onlineRes = await fetch(`/api/research/online?ticker=${ticker}`)
+                const onlineRes = await fetch(`/api/research/online?ticker=${encodeURIComponent(ticker)}`)
                 const online = await parseResponse(onlineRes)
                 if (!cancelled) setData(online)
             } catch (err) {

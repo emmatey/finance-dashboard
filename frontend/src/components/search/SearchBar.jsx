@@ -38,9 +38,9 @@ export default function SearchBar() {
         // Hit 'local' routes that check DB first, prior to using online api.
         try {
             const [companies, users, news] = await Promise.all([
-                fetch(`/api/search/companies?q=${query}&local=true`),
-                fetch(`/api/search/users?q=${query}`),
-                fetch(`/api/search/news?q=${query}&local=true`)
+                fetch(`/api/search/companies?q=${encodeURIComponent(query)}&local=true`),
+                fetch(`/api/search/users?q=${encodeURIComponent(query)}`),
+                fetch(`/api/search/news?q=${encodeURIComponent(query)}&local=true`)
             ]);
 
             setCompanyResults((await parseResponse(companies))?.data || []);
@@ -77,7 +77,7 @@ export default function SearchBar() {
     function handleSubmit(event) {
         event.preventDefault();
         setDataListVisible(false);
-        navigate(`/search?q=${query}`);
+        navigate(`/search?q=${encodeURIComponent(query)}`);
     }
 
     return (
