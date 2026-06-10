@@ -19,25 +19,28 @@ export default function SearchBar() {
             - Toggles visibility of data list.
     */
 
+    let navigate = useNavigate();
+
+    const [query, setQuery] = useState("");
     const [companyResults, setCompanyResults] = useState([]);
     const [userResults, setUserResults] = useState([]);
     const [newsResults, setNewsResults] = useState([]);
-    const [dataListVisible, setDataListVisible] = useState(false);
     const timeoutRef = useRef(null);
-
+    
+    const [dataListVisible, setDataListVisible] = useState(false);
+    
     // Clears timer on dismount.
     useEffect(() => {
         return () => clearTimeout(timeoutRef.current);
     }, []);
 
-    async function searchOffline(query) {
-        const safeQuery = String(query).trim();
+    async function searchOffline() {
         // Hit 'local' routes that check DB first, prior to using online api.
         try {
             const [companies, users, news] = await Promise.all([
-                fetch(`/api/search/companies?q=${safeQuery}&local=true`),
-                fetch(`/api/search/users?q=${safeQuery}`),
-                fetch(`/api/search/news?q=${safeQuery}&local=true`)
+                fetch(`/api/search/companies?q=${query}&local=true`),
+                fetch(`/api/search/users?q=${query}`),
+                fetch(`/api/search/news?q=${query}&local=true`)
             ]);
 
             setCompanyResults((await parseResponse(companies))?.data || []);
@@ -55,7 +58,9 @@ export default function SearchBar() {
     }
 
     async function handleKeyUp(event) {
-        const query = event.target.value;
+        const query = String(event.target.value).trim();
+        setQuery(query);
+
         if (!query.length) {
             setDataListVisible(false);
             setCompanyResults([]);
@@ -69,15 +74,23 @@ export default function SearchBar() {
         }, 300)
     }
 
+    function handleSubmit() {
+        const url = `/search?q=${query}`;
+        navigate(url);
+    }
+
     return (
-        <div style={{ position: 'relative' }}>
-            <input
-                id='searchBar'
-                type='text'
-                onKeyUp={handleKeyUp}
-                onBlur={() => setDataListVisible(false)}
-                onFocus={() => setDataListVisible(true)}
-            />
+        <form style={{ position: 'relative' }} method='GET' name='searchForm' onSubmit={handleSubmit} >
+            <div>
+                <input
+                    id='searchBar'
+                    type='text'
+                    onKeyUp={handleKeyUp}
+                    onBlur={() => setDataListVisible(false)}
+                    onFocus={() => setDataListVisible(true)}
+                />
+                <button disabled={ query ? false : true } type='submit'> Search! </button>
+            </div>
             {
                 dataListVisible
                 &&
@@ -106,7 +119,6 @@ export default function SearchBar() {
                     )}
                 </ul>)
             }
-            <button type=''> Search! </button>
-        </div>
+        </form>
     );
 } 

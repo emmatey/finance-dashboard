@@ -1,21 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { parseResponse } from '../scripts/utils.js'
+import { parseResponse } from '../../scripts/utils.js'
+import '../../styles/utilities.css'
 
-
-function SearchBody({ query }) {
-    const [results, setResults] = useState([]);
+export default function SearchBody({ query }) {
+    const [results, setResults] = useState(null);
 
     async function searchOnline(query) {
         const safeQuery = String(query).trim();
         try {
             const response = await fetch(`/api/search?q=${safeQuery}`);
+            return await parseResponse(response);
         } catch (error) {
             setResults([]);
             console.error(error);
         }
-        const data = await parseResponse(response);
-        return data;
     }
 
     useEffect(() => {
@@ -27,7 +25,7 @@ function SearchBody({ query }) {
     if (!results) return <p>Loading...</p>;
 
     return (
-        <div>
+        <div className='card'>
             <ul>
                 {(results.companies ?? []).map((c) => (
                     <li key={c.ticker}>{c.ticker}: {c.company_name} - {c.exchange}</li>
