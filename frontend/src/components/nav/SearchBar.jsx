@@ -70,13 +70,13 @@ export default function SearchBar() {
     }
 
     return (
-        <div>
-            <input 
-                id='searchBar' 
-                type='text' 
-                onKeyUp={handleKeyUp} 
-                onBlur={() => setDataListVisible(false)} 
-                onFocus={() => setDataListVisible(true)} 
+        <div style={{ position: 'relative' }}>
+            <input
+                id='searchBar'
+                type='text'
+                onKeyUp={handleKeyUp}
+                onBlur={() => setDataListVisible(false)}
+                onFocus={() => setDataListVisible(true)}
             />
             {
                 dataListVisible

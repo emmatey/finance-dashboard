@@ -1,16 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import '../../styles/utilities.css';
 
-export default function SearchListItem({ object, type, image }) {
+export default function SearchListItem({ object, type }) {
     /*
         A custom data list item.
             Props:
                 object - The JSON object passed from <SearchBar /> which contains info
                     about a search result.
                 type - 'company' or 'user' or 'news'. Decides onClick behavior. 
-                image - A link to an image to display.
-            Function:
-                Parse object passed and render text, an image, b
     */
     let navigate = useNavigate();
     let text = "...";
@@ -38,8 +35,13 @@ export default function SearchListItem({ object, type, image }) {
     };
 
     return (
-        <li className="card" onMouseDown={onClick} style={{ cursor: 'pointer', listStyle: 'none' }}>
-            {text}
+        <li className="card" onMouseDown={onClick} style={{ cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {type === "company" && <img className="thumbnail" src='/images/searchBar/companyIcon.svg'/>}
+                {type === "user" && <img className="thumbnail" src='/images/searchBar/userIcon.svg'/>}
+                {type === "news" && <img className="thumbnail" src='/images/searchBar/newsIcon.svg'/>}
+            </div>
+            <span>{text}</span>
         </li>
     );
 }
