@@ -8,3 +8,11 @@ LONG TERM FEATURES
 - Daemons
     Every 60 seconds the prices will be updated.(global events)
     Every 24 hours all users will have balance snapshot taken. (global events)
+
+UI Shards - The fragments of the ui which are conditionally rendered in the "Home"
+    page. They will be controled by a side pannel. Self contained pages like auth and search 
+    do not have shards.
+- Screeners: Show a separate card for each of the screener categories
+    Data should be scrollable
+
+- 
