@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { parseResponse } from '../../scripts/utils.js'
+import SearchListItem from './SearchListItem'
+import SearchListHeader from './SearchListHeader'
 import '../../styles/utilities.css'
 
 export default function SearchBody({ query }) {
@@ -27,15 +29,30 @@ export default function SearchBody({ query }) {
     return (
         <div className='card'>
             <ul>
-                {(results.companies ?? []).map((c) => (
-                    <li key={c.ticker}>{c.ticker}: {c.company_name} - {c.exchange}</li>
-                ))}
-                {(results.users ?? []).map((u) => (
-                    <li key={u.user_id}>User: {u.username} - Rank: {u.rank ?? 'N/A'}</li>
-                ))}
-                {(results.news ?? []).map((n) => (
-                    <li key={n.uuid}>News: {n.title} ({n.publisher})</li>
-                ))}
+                {(results.companies ?? []).length > 0 && (
+                    <div>
+                        <SearchListHeader text={"Companies"} />
+                        {results.companies.map((object) => (
+                            <SearchListItem key={object.ticker} object={object} type='company' />
+                        ))}
+                    </div>
+                )}
+                {(results.users ?? []).length > 0 && (
+                    <div>
+                        <SearchListHeader text={"Users"} />
+                        {results.users.map((object) => (
+                            <SearchListItem key={object.user_id} object={object} type='user' />
+                        ))}
+                    </div>
+                )}
+                {(results.news ?? []).length > 0 && (
+                    <div>
+                        <SearchListHeader text={"News"} />
+                        {results.news.map((object) => (
+                            <SearchListItem key={object.uuid} object={object} type='news' />
+                        ))}
+                    </div>
+                )}
             </ul>
         </div>
     );

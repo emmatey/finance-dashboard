@@ -34,8 +34,22 @@ export default function SearchListItem({ object, type }) {
         throw new TypeError("Invalid 'type' prop in SearchListItem component.")
     };
 
+    function handleMouseOver(event) {
+        const el = event.currentTarget;
+        el.style.background = 'var(--grey-1)';
+        if (type === 'company') el.style.borderColor = 'var(--green-5)';
+        else if (type === 'user')    el.style.borderColor = 'var(--color-accent-warm)';
+        else if (type === 'news')    el.style.borderColor = 'var(--color-primary)';
+    }
+
+    function handleMouseLeave(event) {
+        const el = event.currentTarget;
+        el.style.background = 'var(--color-surface)';
+        el.style.borderColor = 'var(--color-border)';
+    }
+
     return (
-        <li className="card" onMouseDown={onClick} style={{ cursor: 'pointer', listStyle: 'none' }}>
+        <li className="card" onMouseDown={onClick} onMouseOver={handleMouseOver} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer', listStyle: 'none' }}>
             <div>
                 {type === "company" && <img className="thumbnail" src='/images/searchBar/companyIcon.svg'/>}
                 {type === "user" && <img className="thumbnail" src='/images/searchBar/userIcon.svg'/>}

@@ -26,9 +26,9 @@ export default function SearchBar() {
     const [userResults, setUserResults] = useState([]);
     const [newsResults, setNewsResults] = useState([]);
     const timeoutRef = useRef(null);
-    
+
     const [dataListVisible, setDataListVisible] = useState(false);
-    
+
     // Clears timer on dismount.
     useEffect(() => {
         return () => clearTimeout(timeoutRef.current);
@@ -58,7 +58,7 @@ export default function SearchBar() {
     }
 
     async function handleKeyUp(event) {
-        const query = String(event.target.value).trim();
+        const query = String(event.target.closest('input').value).trim();
         setQuery(query);
 
         if (!query.length) {
@@ -74,51 +74,54 @@ export default function SearchBar() {
         }, 300)
     }
 
-    function handleSubmit() {
-        const url = `/search?q=${query}`;
-        navigate(url);
+    function handleSubmit(event) {
+        event.preventDefault();
+        setDataListVisible(false);
+        navigate(`/search?q=${query}`);
     }
 
     return (
-        <form style={{ position: 'relative' }} method='GET' name='searchForm' onSubmit={handleSubmit} >
-            <div>
-                <input
-                    id='searchBar'
-                    type='text'
-                    onKeyUp={handleKeyUp}
-                    onBlur={() => setDataListVisible(false)}
-                    onFocus={() => setDataListVisible(true)}
-                />
-                <button disabled={ query ? false : true } type='submit'> Search! </button>
-            </div>
-            {
-                dataListVisible
-                &&
-                (companyResults.length > 0 || newsResults.length > 0 || userResults.length > 0)
-                &&
-                (<ul>
-                    {companyResults.length > 0 && (
-                        <div>
-                            <SearchListHeader text={"Companies"} />
-                            {companyResults.map((result) => (<SearchListItem key={result.ticker} object={result} type={'company'} />))}
-                        </div>
-                    )}
-
-                    {userResults.length > 0 && (
-                        <div>
-                            <SearchListHeader text={"Users"} />
-                            {userResults.map((result) => (<SearchListItem key={result.user_id} object={result} type={'user'} />))}
-                        </div>
+        <div style={{ position: 'relative' }}>
+            <form name='searchForm' onSubmit={handleSubmit} >
+                <div>
+                    <input
+                        id='searchBar'
+                        type='text'
+                        onKeyUp={handleKeyUp}
+                        onBlur={() => setDataListVisible(false)}
+                        onFocus={() => setDataListVisible(true)}
+                    />
+                    <button disabled={query ? false : true} type='submit'> Search! </button>
+                </div>
+                {
+                    dataListVisible
+                    &&
+                    (companyResults.length > 0 || newsResults.length > 0 || userResults.length > 0)
+                    &&
+                    (<ul>
+                        {companyResults.length > 0 && (
+                            <div>
+                                <SearchListHeader text={"Companies"} />
+                                {companyResults.map((result) => (<SearchListItem key={result.ticker} object={result} type={'company'} />))}
+                            </div>
                         )}
 
-                    {newsResults.length > 0 && ( 
-                        <div>
-                            <SearchListHeader text={"News"} />
-                            {newsResults.map((result) => (<SearchListItem key={result.uuid} object={result} type={'news'} />))}
-                        </div>
-                    )}
-                </ul>)
-            }
-        </form>
+                        {userResults.length > 0 && (
+                            <div>
+                                <SearchListHeader text={"Users"} />
+                                {userResults.map((result) => (<SearchListItem key={result.user_id} object={result} type={'user'} />))}
+                            </div>
+                        )}
+
+                        {newsResults.length > 0 && (
+                            <div>
+                                <SearchListHeader text={"News"} />
+                                {newsResults.map((result) => (<SearchListItem key={result.uuid} object={result} type={'news'} />))}
+                            </div>
+                        )}
+                    </ul>)
+                }
+            </form>
+        </div>
     );
 } 
