@@ -3,6 +3,7 @@
         "appcontext",
         "dbio",
         "etfs",
+        "jsonify",
         "upserts",
         "yahooquery"
     ]

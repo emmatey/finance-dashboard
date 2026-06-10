@@ -89,33 +89,31 @@ export function getSentimentColorClass(score) {
 }
 
 export async function parseResponse(response) {
-    // 1. Defend against bad inputs
+    /*
+        Catch errors and jsonify objects returned from backend.
+        Parse and strip 'success' tag.
+    */
     if (!(response instanceof Response)) {
         throw new Error("response parameter must be a Response object.");
     }
 
     let body;
-    
-    // 2. Safely try to parse the JSON once
     try { 
         body = await response.json(); 
     } catch (error) {
         console.error(error);
     }
 
-    // 3. Handle HTTP errors (4xx, 5xx)
     if (!response.ok) {
         console.error("Server Error Payload:", body);
         throw new Error(`Server responded with status: ${response.status}`);
     }
 
-    // 4. Handle API-level business logiparseResc failures
     if (body?.success === false) {
         console.error("API Logic Failure:", body);
         throw new Error(body.message ?? 'Request failed');
     }
 
-    // 5. Cleanly strip 'success' without mutating, and return the rest
     if (body && 'success' in body) {
         const { success, ...cleanBody } = body;
         return cleanBody;

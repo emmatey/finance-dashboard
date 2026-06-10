@@ -26,7 +26,7 @@ export default function SearchListItem({ object, type }) {
         }
     } else if (type === 'user') {
         onClick = () => navigate(`/user/${object.username}`)
-        text = `Rank: ${object.rank} - Username: ${object.username}`;
+        text = `User: ${object.username} - Rank: ${object.rank ?? 'N/A'}`;
     } else if (type === 'news') {
         onClick = () => window.open(object.link, '_blank')
         text = `${object.publisher}: ${object.title}`;

@@ -106,6 +106,7 @@ export default function SearchBar() {
                     )}
                 </ul>)
             }
+            <button type=''> Search! </button>
         </div>
     );
 } 
