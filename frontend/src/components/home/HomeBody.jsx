@@ -1,6 +1,6 @@
 import Header from '../Header.jsx'
 import Footer from '../Footer.jsx'
-import ScreenerFrame from '../screener/ScreenerFrame.jsx'
+import ScreenerShard from '../screener/ScreenerShard.jsx'
 
 export default function HomeBody({ username }) {
     return (
@@ -10,7 +10,7 @@ export default function HomeBody({ username }) {
             <div className='card'>
                 <h1>Hi {username || null}, Welcome to finance-dashboard, you ARE logged in!</h1>
             </div>
-            <ScreenerFrame />
+            <ScreenerShard />
         </div>
         <Footer />
         </>

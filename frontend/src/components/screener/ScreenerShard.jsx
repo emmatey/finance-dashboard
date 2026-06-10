@@ -4,7 +4,7 @@ import ScreenerCard from "./ScreenerCard";
 import { parseResponse } from "../../scripts/utils";
 import { useEffect, useState } from "react";
 
-export default function ScreenerFrame() {
+export default function ScreenerShard() {
     const [screenerData, setScreenerData] = useState({});
 
     async function fetchScreenerData() {
