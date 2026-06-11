@@ -4,7 +4,8 @@ import '../../../styles/utilities.css'
 import '../../../styles/colors.css'
 
 export default function TradeShard( {queryProp} ) {
-    const [query, setQuery] = useState(queryProp || "");
+    const safeQueryProp = String(queryProp ?? "").trim();
+    const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
     const timeoutRef = useRef(null);
@@ -22,10 +23,10 @@ export default function TradeShard( {queryProp} ) {
     // Transact
         // 1. Callback
 
-    function getTrade() {
+    async function getTrade( getQuery ) {
         // Makes a GET request to the '/api/trade' route.
         try {
-            const tickerInfoResponse = await fetch(`/api/trade?ticker=${query}`);
+            const tickerInfoResponse = await fetch(`/api/trade?ticker=${getQuery}`);
             const tickerInfoJson = setTickerInfoJson((await parseResponse(tickerInfoResponse)?.data || []));
         } catch (error) {
             setLoading(false);
@@ -36,11 +37,15 @@ export default function TradeShard( {queryProp} ) {
 
     function postTrade() {
         // Makes a POST request to the '/api/trade' route.
-
+        
     }
 
     function handleSearchSubmit() {
+        setQuery(String(event.target.closest('input').value).trim())
+        getTrade();
+        timeoutRef.current = setTimeout(() => {
 
+        }, 60000)
     }
 
     function handleTransactSubmit() {
@@ -49,9 +54,7 @@ export default function TradeShard( {queryProp} ) {
 
     // Refreshes price data on a timer.
     useEffect(() => {
-        if (!query) {
 
-        }
         return(<></>)
     }, [query])
 
@@ -65,7 +68,28 @@ export default function TradeShard( {queryProp} ) {
             <form name='tradeSearchForm' onSubmit={handleSearchSubmit} >
                 <input type='text'/>
                 <button type='submit'> Search </button>
-        
+            </form>
+
+            {
+            loading ? <h4> Loading... </h4> :
+            <ul>
+                {}
+            </ul>
+            }
+
+            <form name='tradeTransactForm' onSubmit={handleTransactSubmit}>
+                <select name='txType'>
+                    <option value='buy'>Buy</option>
+                    <option value='sell'>Sell</option>
+                </select>
+                <div>
+                    <input type='number' name='qty' placeholder='Qty' min='0.1' step='0.1' />
+                    <select name='qtyUnit'>
+                        <option value='shares'>Shares</option>
+                        <option value='dollars'>Dollars</option>
+                    </select>
+                </div>
+                <button type='submit'>Submit</button>
             </form>
         </div>
     )

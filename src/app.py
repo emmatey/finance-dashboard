@@ -1,6 +1,7 @@
 import helpers
 import logging
 import sys
+from decimal import Decimal, InvalidOperation
 
 # External Libraries
 from flask import Flask, g, jsonify, request, session
@@ -589,13 +590,26 @@ def trade():
                 "message": "No 'ticker' value provided in request body..."
             }), 400
         
-        qty = request_body.get('qty')
-        if not qty:
+        qty_raw = request_body.get('qty')
+        if not qty_raw:
             return jsonify({
                 "success": False,
                 "message": "No 'qty' value provided in request body..."
             }), 400
-        qty = float(qty)
+        try:
+            # enforces 1/10th of a share being the smallest fraction allowed.
+            exponent = Decimal(str(qty_raw)).as_tuple().exponent
+            if not isinstance(exponent, int) or exponent < -1:
+                return jsonify({
+                    "success": False,
+                    "message": "qty cannot have more than 1 decimal place"
+                }), 400
+        except InvalidOperation:
+            return jsonify({
+                "success": False,
+                "message": "qty must be a valid number"
+            }), 400
+        qty = float(qty_raw)
 
         transaction_type = request_body.get("transaction_type", "").lower().strip()
         if transaction_type not in ["buy", "sell"]:
