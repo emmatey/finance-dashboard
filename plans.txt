@@ -1,5 +1,5 @@
 LONG TERM FEATURES
-    - Populate buy/sell 2ndary cards with data about user holdngs and current price
+    - Populate buy/sell 2ndary cards with data about user holdings and current price
     - Animations to fade in/out red/green on price moves.
     - Refresh price button on research and index that shows when last price was fetched.
     - Deposit/withdraw cash routes
@@ -24,3 +24,20 @@ Groups:
     User ranking leaderboard
 
     Transact (buy/sell)
+
+    Today's plan: 6/11
+        My goal for today is to make progress on the transaction component.
+        This component will be complex, but considered a shard because its 
+        not its own page. Perhaps it should be? Im not sure why it wouldn't be if <search /> is.
+
+        I guess rather or not something will be a shard or a page is gonna be based on
+        rather or not I want the left navigation bar to be there. I want a minimal top nav
+        and then there to be a panel on the left which controls which shards are rendered.
+
+        I believe my choice to make it a shard is the ideal one.
+        Now, what state does it need? what routes does it need to call?
+
+        Desc: The transaction shard will be the place where users can buy and sell
+        all assets. Currently there's no mechanism to deposit or withdraw cash.
+
+        
