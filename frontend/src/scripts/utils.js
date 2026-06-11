@@ -97,7 +97,7 @@ export async function parseResponse(response) {
         throw new Error("response parameter must be a Response object.");
     }
 
-    let body;
+    let body = null;
     try { 
         body = await response.json(); 
     } catch (error) {
