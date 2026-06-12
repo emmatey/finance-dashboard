@@ -5,6 +5,7 @@ import '../../../styles/colors.css'
 
 export default function TradeShard({ queryProp }) {
     const safeQueryProp = String(queryProp ?? "").trim();
+    const [currentQuery, setCurrentQuery] = useState(safeQueryProp);
     const [loading, setLoading] = useState(false);
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
     // GET Returns data to populate the order preview screen.
@@ -20,29 +21,11 @@ export default function TradeShard({ queryProp }) {
 
     // Transact
     // 1. Callback
-    async function runTask(func, param, interval) {
-        let isRunning = true;
-        // edit this to use a useEffect with a dependency on the query that calls the cleanup callback on return
-        // or use a use ref to store the callback which stops the loop
-        async function run() {
-            if (isRunning) {
-                await func(param);
-                setTimeout(() => (
-                    run()
-                ), interval)
-            }
-        }
-
-        run();
-
-        return () => (isRunning = false)
-    }
-
-    async function getTrade(query) {
+    async function getTrade() {
         // Makes a GET request to the '/api/trade' route.
         try {
             setLoading(true);
-            const tickerInfoResponse = await fetch(`/api/trade?ticker=${query}`);
+            const tickerInfoResponse = await fetch(`/api/trade?ticker=${currentQuery}`);
             const tickerJson = await parseResponse(tickerInfoResponse) || {}
             setTickerInfoJson(tickerJson);
             setLoading(false);
@@ -60,19 +43,38 @@ export default function TradeShard({ queryProp }) {
 
     async function handleSearchSubmit(event) {
         event.preventDefault();
-        // change this to query the event.queryselector
-        const query = String(document.getElementsByName('searchInput')[0].value).trim();
-        return runTask(getTrade, query, 60000);
+        runTask(getTrade, currentQuery, 60000);
     }
 
     function handleTransactSubmit(event) {
         event.preventDefault();
     }
+
+    function handleSearchChange(event) {
+        const query = String(event.target.value).trim();
+        setCurrentQuery(query);
+    }
     
+    // Updates data about current company every 60 seconds.
+    useEffect(() => {
+       let timerId = null; 
+
+       async function tick() {
+            await getTrade();
+            timerId = setTimeout(() => {
+                tick();
+            }, 60000)
+       }
+
+       tick();
+
+       return () => {clearTimeout(timerId)}
+    }, [currentQuery]);
+
     return (
         <div className='card'>
             <form name='tradeSearchForm' onSubmit={handleSearchSubmit} >
-                <input name='searchInput' type='text' />
+                <input name='searchInput' type='text' onChange={handleSearchChange} />
                 <button type='submit'> Search </button>
             </form>
 
