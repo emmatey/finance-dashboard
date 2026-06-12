@@ -8,30 +8,34 @@ export default function TradeShard({ queryProp }) {
     const [currentQuery, setCurrentQuery] = useState(safeQueryProp);
     const [loading, setLoading] = useState(false);
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
-    // GET Returns data to populate the order preview screen.
-    // POST Executes a buy or sell transaction.
+    const [dataList, setDataList] = useState([]);
+    const [dataListVisible, setDataListVisible] = useState(false);
 
-    // Preview
-    // 1. request to trade url to get data on selected ticker
-    // Ticker will come in from two places, as a prop, or as a value of an internal el
-    // check for prop first, if not check input element next.
-    // 2. Start a timer on the age of the data. 60s?
-    // 2a. If the data gets older than that, refresh it. The state shown to the user will be
-    // the price of the order in the ledger. 
 
-    // Transact
-    // 1. Callback
     async function getTrade() {
         // Makes a GET request to the '/api/trade' route.
         try {
             setLoading(true);
-            const tickerInfoResponse = await fetch(`/api/trade?ticker=${currentQuery}`);
+            const tickerInfoResponse = await fetch(`/api/trade?ticker=${encodeURIComponent(currentQuery)}`);
             const tickerJson = await parseResponse(tickerInfoResponse) || {}
             setTickerInfoJson(tickerJson);
             setLoading(false);
         } catch (error) {
             setLoading(false);
             setTickerInfoJson({});
+            console.error(error);
+        }
+    }
+
+    async function getSearch(query) {
+        // Make a GET request to the '/api/search' route.
+        try {
+            const companies = await fetch(`/api/search/companies?q=${encodeURIComponent(query)}`);
+            const res = await parseResponse(companies);
+            const data = res?.data || [];
+            setDataList(data.map((obj) => ([obj.company_name, obj.ticker])));
+        } catch (error) {
+            setDataList([]);
             console.error(error);
         }
     }
@@ -43,39 +47,71 @@ export default function TradeShard({ queryProp }) {
 
     async function handleSearchSubmit(event) {
         event.preventDefault();
-        runTask(getTrade, currentQuery, 60000);
+        getSearch();
+    }
+
+    function handleSearchChange(event) {
+        const query = String(event.target.value).trim();
+        setCurrentQuery(query);
+        getSearch(query);
+        setDataListVisible(true);
+    }
+
+    function handleSuggestionSelect(ticker) {
+        setCurrentQuery(ticker);
+        setDataListVisible(false);
     }
 
     function handleTransactSubmit(event) {
         event.preventDefault();
     }
 
-    function handleSearchChange(event) {
-        const query = String(event.target.value).trim();
-        setCurrentQuery(query);
-    }
-    
     // Updates data about current company every 60 seconds.
-    useEffect(() => {
-       let timerId = null; 
-
-       async function tick() {
-            await getTrade();
-            timerId = setTimeout(() => {
-                tick();
-            }, 60000)
-       }
-
-       tick();
-
-       return () => {clearTimeout(timerId)}
-    }, [currentQuery]);
+    //useEffect(() => {
+    //   let timerId = null; 
+    //
+    //   async function tick() {
+    //        await getTrade();
+    //        timerId = setTimeout(() => {
+    //            tick();
+    //        }, 60000)
+    //   }
+    //
+    //   tick();
+    //
+    //   return () => {clearTimeout(timerId)}
+    //}, [currentQuery]);
 
     return (
         <div className='card'>
             <form name='tradeSearchForm' onSubmit={handleSearchSubmit} >
-                <input name='searchInput' type='text' onChange={handleSearchChange} />
-                <button type='submit'> Search </button>
+                <div>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <input
+                            name='searchInput'
+                            type='text'
+                            value={currentQuery}
+                            onChange={handleSearchChange}
+                            onClick={() => setDataListVisible(true)}
+                            onBlur={() => setDataListVisible(false)}
+                            autoComplete="off"
+                        />
+                        {dataList.length > 0 && dataListVisible &&
+                            <ul style={{ position: 'absolute', top: '100%', left: 0, width: '100%', padding: 0, margin: 0 }}>
+                                {dataList.map((arr) => (
+                                    <li
+                                        key={arr[1]}
+                                        className='card'
+                                        onMouseDown={() => handleSuggestionSelect(arr[1])}
+                                    >
+                                        {`${arr[1]} - ${arr[0]}`}
+                                    </li>
+                                ))}
+                            </ul>
+                        }
+                    </div>
+                    <button type='submit'> Search </button>
+                </div>
             </form>
 
             {
