@@ -122,6 +122,11 @@ export async function parseResponse(response) {
     return body;
 }
 
+export function getRandomAccentColor() {
+    const colors = ['var(--blue-3)', 'var(--yellow-4)', 'var(--red-3)', 'var(--green-3)'];
+    return colors[getRandomIntInclusive(0, colors.length - 1)];
+}
+
 export function getRandomIntInclusive(min, max) {
     /* 
         https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#examples

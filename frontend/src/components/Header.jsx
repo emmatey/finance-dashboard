@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { getRandomIntInclusive } from '../scripts/utils.js'
+import { getRandomAccentColor } from '../scripts/utils.js'
 
 import SearchBar from '../components/search/SearchBar.jsx'
 
@@ -13,18 +13,7 @@ export default function Header() {
 
     function handleMouseOver(event) {
         const span = event.currentTarget.querySelector('span');
-        const val = getRandomIntInclusive(1, 4);
-        if (val === 1) {
-            span.style.color = 'var(--blue-3)';
-        } else if (val === 2) {
-            span.style.color = 'var(--yellow-4)';
-        } else if (val === 3) {
-            span.style.color = 'var(--red-3)';
-        } else if (val === 4) {
-            span.style.color = 'var(--green-3)';
-        } else {
-            throw new Error("invalid 'val' var in header.jsx");
-        };
+        span.style.color = getRandomAccentColor();
     }
 
     function handleMouseLeave(event) {

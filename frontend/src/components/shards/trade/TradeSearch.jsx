@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { parseResponse } from '../../../scripts/utils.js'
-import { getRandomIntInclusive } from '../../../scripts/utils.js'
+import { parseResponse, getRandomAccentColor } from '../../../scripts/utils.js'
 import '../../../styles/utilities.css'
 import '../../../styles/colors.css'
 
@@ -38,19 +37,7 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading, tick
     }
 
     function handleSuggestionMouseOver(event) {
-        const el = event.target;
-        const val = getRandomIntInclusive(1, 4);
-        if (val === 1) {
-            el.style.background = 'var(--blue-3)';
-        } else if (val === 2) {
-            el.style.background = 'var(--yellow-4)';
-        } else if (val === 3) {
-            el.style.background = 'var(--red-3)';
-        } else if (val === 4) {
-            el.style.background = 'var(--green-3)';
-        } else {
-            throw new Error("invalid 'val' var in header.jsx");
-        };
+        event.target.style.background = getRandomAccentColor();
     }
 
     function handleSuggestionMouseLeave(event) {
