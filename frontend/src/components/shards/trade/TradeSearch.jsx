@@ -9,7 +9,7 @@ import '../../../styles/colors.css'
 // result are owned by the parent shard so the order form can read them too.
 export default function TradeSearch({ activeQuery, setActiveQuery, loading, tickerInfoJson }) {
     const [pendingQuery, setPendingQuery] = useState("");
-    const [dataList, setDataList] = useState([]);
+    const [dataList, setDataList] = useState([]); // [[company_name, ticker], ...]
     const [dataListVisible, setDataListVisible] = useState(false);
 
     async function getDataListItemsFromSearchRoute(query) {
@@ -61,7 +61,7 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading, tick
     function handleSuggestionSelect(query) {
         setDataListVisible(false);
         setActiveQuery(query);
-        setPendingQuery(query);
+        setPendingQuery("");
     }
 
     // https://developer.mozilla.org/en-US/docs/Web/API/FocusEvent/relatedTarget

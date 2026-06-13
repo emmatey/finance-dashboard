@@ -5,10 +5,7 @@ import TradeOrderForm from './TradeOrderForm.jsx'
 import '../../../styles/utilities.css'
 import '../../../styles/colors.css'
 
-// Assembles the trade shard from two children that share the same backend
-// result: TradeSearch (search bar + results panel) drives `activeQuery`, and
-// the polling fetch below produces `tickerInfoJson`. Both pieces are owned
-// here so TradeOrderForm can read the active ticker/result as well.
+
 export default function TradeShard({ queryProp }) {
     const safeQueryProp = String(queryProp ?? "").trim();
     const [activeQuery, setActiveQuery] = useState(safeQueryProp || "");
@@ -25,16 +22,19 @@ export default function TradeShard({ queryProp }) {
                     console.log(`Ticker ${query} not found.`);
                     setTickerInfoJson(null);
                     setLoading(false);
-                    break;
+                    // Keep activeQuery set so "No info found..." renders.
+                    return false;
                 default:
                     const tickerJson = await parseResponse(tickerInfoResponse) || {};
                     setTickerInfoJson(tickerJson);
                     setLoading(false);
+                    return true;
             };
         } catch (error) {
             setLoading(false);
             setTickerInfoJson({ "error": `${error}` });
             console.error(error);
+            return false;
         }
     }
 
@@ -48,10 +48,15 @@ export default function TradeShard({ queryProp }) {
 
         let timerId = null;
         async function tick() {
-            await getTickerInfoFromTradeRoute(activeQuery);
-            timerId = setTimeout(() => {
-                tick();
-            }, 60000)
+            // Only reschedule the next poll when the fetch succeeds. A 404
+            // (ticker not found) or any error returns false, which stops the
+            // loop so we don't keep polling a missing/broken ticker.
+            const ok = await getTickerInfoFromTradeRoute(activeQuery);
+            if (ok) {
+                timerId = setTimeout(() => {
+                    tick();
+                }, 60000)
+            }
         }
 
         tick();
