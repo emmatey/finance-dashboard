@@ -1,4 +1,4 @@
-A shard is a component which is rendered, in combination with other shards, conditionally based on user input to the left panel nav on the homepage.
+A shard is a component which is rendered in combination with other shards conditionally based on user input to the left panel on the homepage.
 
 A shard can import children but the <...Shard /> component is 
 what will be called by a higher level controller component to 
