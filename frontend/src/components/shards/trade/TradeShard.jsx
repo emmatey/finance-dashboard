@@ -114,7 +114,7 @@ export default function TradeShard({ queryProp }) {
 
         return () => { clearTimeout(timerId) }
     }, [activeQuery]);
-
+    // https://developer.mozilla.org/en-US/docs/Web/API/FocusEvent/relatedTarget
     return (
         <div className='card'>
             <form name='tradeSearchForm' onSubmit={handleSearchSubmit} >
