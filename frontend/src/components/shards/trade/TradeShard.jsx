@@ -6,37 +6,45 @@ import '../../../styles/colors.css'
 
 export default function TradeShard({ queryProp }) {
     const safeQueryProp = String(queryProp ?? "").trim();
-    const [currentQuery, setCurrentQuery] = useState(safeQueryProp);
+    const timeoutRef = useRef(null);
+    const [pendingQuery, setPendingQuery] = useState("");
+    const [activeQuery, setActiveQuery] = useState(safeQueryProp);
     const [loading, setLoading] = useState(false);
-    const [tickerInfoJson, setTickerInfoJson] = useState(null);
+    const [tickerInfoJson, setTickerInfoJson] = useState({});
     const [dataList, setDataList] = useState([]);
     const [dataListVisible, setDataListVisible] = useState(false);
 
 
-    async function getTrade() {
+    async function getTickerInfoFromTradeRoute(query) {
         // Makes a GET request to the '/api/trade' route.
-        if (!currentQuery) {
-            console.warn("no query provided on getTrade call.")
-            return
-        };
-
         try {
             setLoading(true);
-            const tickerInfoResponse = await fetch(`/api/trade?ticker=${encodeURIComponent(currentQuery)}`);
-            const tickerJson = await parseResponse(tickerInfoResponse) || {}
-            setTickerInfoJson(tickerJson);
-            setLoading(false);
+            const tickerInfoResponse = await fetch(`/api/trade?ticker=${encodeURIComponent(query)}`);
+            switch (tickerInfoResponse.status) {
+                case 404:
+                    console.log(`Ticker ${activeQuery} not found.`);
+                    console.warn('Clearing activeQuery state');
+                    console.warn('Clearing tickerInfoJson state');
+                    setTickerInfoJson({});
+                    setActiveQuery("");
+                    break;
+                default:
+                    const tickerJson = await parseResponse(tickerInfoResponse) || {};
+                    setTickerInfoJson(tickerJson);
+                    setLoading(false);
+            };
         } catch (error) {
             setLoading(false);
-            setTickerInfoJson({});
+            setTickerInfoJson({"error": `${error}`});
+            setActiveQuery("");
             console.error(error);
         }
     }
 
-    async function getSearch(query) {
-        // Make a GET request to the '/api/search' route.
+    async function getDataListItemsFromSearchRoute(query) {
+        // Make a GET request to the '/api/search/companies' route in order to populate the datalist.
         try {
-            const companies = await fetch(`/api/search/companies?q=${encodeURIComponent(query)}`);
+            const companies = await fetch(`/api/search/companies?q=${encodeURIComponent(query)}&local=true`);
             const res = await parseResponse(companies);
             const data = res?.data || [];
             setDataList(data.map((obj) => ([obj.company_name, obj.ticker])));
@@ -46,30 +54,18 @@ export default function TradeShard({ queryProp }) {
         }
     }
 
-    function postTrade() {
-        // Makes a POST request to the '/api/trade' route.
-
-    }
-
     async function handleSearchSubmit(event) {
         event.preventDefault();
-        getSearch();
+        const query = String(event.target.value).trim();
+        setActiveQuery(query);
+        setPendingQuery("");
     }
 
     function handleSearchChange(event) {
         const query = String(event.target.value).trim();
-        setCurrentQuery(query);
-        getSearch(query);
+        setPendingQuery(query);
+        getDataListItemsFromSearchRoute(query);
         setDataListVisible(true);
-    }
-
-    function handleSuggestionSelect(ticker) {
-        setCurrentQuery(ticker);
-        setDataListVisible(false);
-    }
-
-    function handleTransactSubmit(event) {
-        event.preventDefault();
     }
 
     function handleSuggestionMouseOver(event) {
@@ -93,21 +89,31 @@ export default function TradeShard({ queryProp }) {
         el.style.background = 'var(--color-surface)';
     }
 
+    function handleSuggestionSelect(event) {
+        setDataListVisible(false);
+        handleSearchSubmit(event);
+    }
+
+    function handleSubmitTradeOrder() {
+        // Makes a POST request to the '/api/trade' route.
+
+    }
+
     // Updates data about current company every 60 seconds.
     useEffect(() => {
-       let timerId = null; 
-    
-       async function tick() {
-            await getTrade();
+        let timerId = null;
+
+        async function tick() {
+            await getTickerInfoFromTradeRoute(activeQuery);
             timerId = setTimeout(() => {
                 tick();
             }, 60000)
-       }
-    
-       tick();
-    
-       return () => {clearTimeout(timerId)}
-    }, [currentQuery]);
+        }
+
+        tick();
+
+        return () => { clearTimeout(timerId) }
+    }, [activeQuery]);
 
     return (
         <div className='card'>
@@ -117,7 +123,7 @@ export default function TradeShard({ queryProp }) {
                         <input
                             name='searchInput'
                             type='text'
-                            value={currentQuery}
+                            value={pendingQuery}
                             onChange={handleSearchChange}
                             onClick={() => setDataListVisible(true)}
                             onBlur={() => setDataListVisible(false)}
@@ -130,7 +136,7 @@ export default function TradeShard({ queryProp }) {
                                         // arr = [name, ticker]
                                         key={arr[1]}
                                         className='card'
-                                        onMouseDown={() => handleSuggestionSelect(arr[1])}
+                                        onMouseDown={handleSuggestionSelect}
                                         onMouseOver={handleSuggestionMouseOver}
                                         onMouseLeave={handleSuggestionMouseLeave}
                                     >
@@ -159,7 +165,7 @@ export default function TradeShard({ queryProp }) {
                     </ul>
             }
 
-            <form name='tradeTransactForm' onSubmit={handleTransactSubmit}>
+            <form name='tradeTransactForm' onSubmit={handleSubmitTradeOrder}>
                 <select name='txType'>
                     <option value='buy'>Buy</option>
                     <option value='sell'>Sell</option>
