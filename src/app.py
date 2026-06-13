@@ -518,10 +518,16 @@ def trade():
         else:
             ticker = ticker.strip().upper()
 
-        rdc.update_research_data_subset(ticker=ticker,
-                                tables_to_update=["financial_metrics"],
-                                yqs_instance=yqs,
-                                db_io_instance=io)
+        try:
+            rdc.update_research_data_subset(ticker=ticker,
+                                    tables_to_update=["financial_metrics"],
+                                    yqs_instance=yqs,
+                                    db_io_instance=io)
+        except helpers.TickerNotFoundError:
+            return jsonify({
+                "success": False,
+                "message": f"Ticker {ticker} not found."
+            }), 404
         if not cc.symbol_exists_in_db(ticker):
             return jsonify({
                 "success": False,

@@ -140,6 +140,9 @@ class ResearchDataCoordinator(CommonQueries):
 
         Collects all required Yahoo Finance modules for stale tables, makes a single
         API call, then dispatches to the appropriate setter functions via the registry.
+        Each table's fresh_report ledger row is stamped only after its data is
+        successfully written, so a request that fails or crashes mid-update leaves the
+        unfinished tables stale and the next request retries them — no rollback needed.
         After all updates complete, runs any registered post-processing functions
         unconditionally — these compute derived metrics from already-stored data.
 
@@ -161,42 +164,28 @@ class ResearchDataCoordinator(CommonQueries):
             Exception: Re-raises any exception that occurs during individual table
                        updates after logging the error.
         """
-        def _claim_fresh_report(fresh_report):
+        def _record_fresh(symbol, table):
             """
-            Write current UTC timestamp to fresh_report table for all stale tables.
-            Acts as a job claim — blocks parallel requests from doing the same work.
-            Returns the list of table names claimed, for use in rollback.
+            Stamp the fresh_report ledger for a single table once its data has
+            been written, recording the time the data actually landed.
+
+            Called only after a successful table update — never optimistically —
+            so a request that fails or crashes mid-update leaves the table stale
+            and the next request retries it. By this point upsert_symbols has run,
+            so symbol_id always resolves.
             """
+            symbol_id = self.get_symbol_id(symbol)
+            if symbol_id is None:
+                logger.error(f"Cannot record freshness for {symbol}/{table}: symbol_id not found after upsert.")
+                return
             now = strftime('%Y-%m-%d %H:%M:%S', gmtime())
-            symbol_id = self.get_symbol_id(fresh_report["symbol"])
-            tables_to_claim = [table for table, fresh in fresh_report.items() if fresh is False]
-            if not tables_to_claim:
-                return []
             fresh_sql = """
             INSERT INTO fresh_report (symbol_id, table_name, last_updated)
             VALUES (?, ?, ?)
             ON CONFLICT(symbol_id, table_name)
             DO UPDATE SET last_updated = excluded.last_updated
             """
-            table_tuples = [(symbol_id, table, now) for table in tables_to_claim]
-            self.bulk_query(fresh_sql, table_tuples)
-            return tables_to_claim
-
-        def _rollback_fresh_report(symbol, claimed_tables):
-            """
-            Delete claimed rows on failure so the next request will retry.
-            """
-            if not claimed_tables:
-                return
-            symbol_id = self.get_symbol_id(symbol)
-            placeholders = ", ".join("?" for _ in claimed_tables)
-            rollback_sql = f"""
-            DELETE FROM fresh_report
-            WHERE symbol_id = ?
-            AND table_name IN ({placeholders})
-            """
-            self.modify_query(rollback_sql, (symbol_id, *claimed_tables))
-            logger.info(f"Rolled back fresh_report claim for {symbol}: {claimed_tables}")
+            self.modify_query(fresh_sql, (symbol_id, table, now))
 
         # Validate before touching the DB
         symbol = fresh_report.get('symbol')
@@ -207,80 +196,72 @@ class ResearchDataCoordinator(CommonQueries):
         if not yqs_instance or not db_io_instance:
             raise ValueError("research_data_update_orchestrator requires YahooQueryService and APIDataIO instances.")
 
-        # Claim the job — write now to block duplicate requests
-        claimed_tables = _claim_fresh_report(fresh_report=fresh_report)
-        if not claimed_tables:
+        # Determine which tables are stale. ('symbol' holds a string, not False,
+        # so it is naturally excluded.)
+        stale_tables = [table for table, fresh in fresh_report.items() if fresh is False]
+        if not stale_tables:
             logger.debug(f"Nothing stale for {symbol}, skipping.")
             return
 
-        try:
-            # Collect modules required by stale tables
-            modules_set = set()
-            for table, status in fresh_report.items():
-                if status is False:
-                    required_modules = self.research_registry.get(table, {}).get('modules')
-                    if required_modules:
-                        for m in required_modules:
-                            modules_set.add(m)
+        # Collect modules required by stale tables
+        modules_set = set()
+        for table in stale_tables:
+            required_modules = self.research_registry.get(table, {}).get('modules')
+            if required_modules:
+                for m in required_modules:
+                    modules_set.add(m)
 
-            # Always get price if anything is stale so upsert_symbol can be called.
-            modules_set.add("price")
+        # Always get price if anything is stale so upsert_symbol can be called.
+        modules_set.add("price")
 
-            # Call API once for all required modules.
-            logger.info(f"Fetching {len(modules_set)} modules for {symbol}... {modules_set}")
-            modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
-            if isinstance(modules.get(symbol), str) and "Quote not found" in modules[symbol]:
-                logger.error(f"Ticker {symbol} not found on Yahoo Finance.")
-                raise TickerNotFoundError(f"Ticker {symbol} not found on Yahoo Finance.")
-            if not modules:
-                logger.error(f"API failed to fetch modules for {symbol}")
-                raise RuntimeError(f"API failed to fetch modules for {symbol}")
+        # Call API once for all required modules.
+        logger.info(f"Fetching {len(modules_set)} modules for {symbol}... {modules_set}")
+        modules = yqs_instance.yq_ticker_fetch_modules(symbol, list(modules_set))
+        if isinstance(modules.get(symbol), str) and "Quote not found" in modules[symbol]:
+            logger.error(f"Ticker {symbol} not found on Yahoo Finance.")
+            raise TickerNotFoundError(f"Ticker {symbol} not found on Yahoo Finance.")
+        if not modules:
+            logger.error(f"API failed to fetch modules for {symbol}")
+            raise RuntimeError(f"API failed to fetch modules for {symbol}")
 
-            # Upsert symbol using already-fetched modules (no extra API call)
-            db_io_instance.upsert_symbols(modules)
+        # Upsert symbol using already-fetched modules (no extra API call)
+        db_io_instance.upsert_symbols(modules)
 
-            # Call refresh functions for stale tables
-            any_updated = False
-            for table, status in fresh_report.items():
-                # fresh_report always contains {"symbol": <str>} — skip it
-                if table == "symbol":
-                    continue
-                if status is False:
-                    api_func = self.research_registry[table]['api']
-                    in_func = self.research_registry[table]['i']
-                    modules_required = self.research_registry[table]['modules']
+        # Call refresh functions for stale tables. Stamp the fresh_report ledger
+        # after each table's data lands, so partial progress is preserved if a
+        # later table fails.
+        any_updated = False
+        for table in stale_tables:
+            api_func = self.research_registry[table]['api']
+            in_func = self.research_registry[table]['i']
+            modules_required = self.research_registry[table]['modules']
 
-                    if not api_func or not in_func:
-                        logger.error(f"Incomplete registry registration for table '{table}'")
-                        raise RuntimeError(f"Incomplete registry registration for table '{table}'")
+            if not api_func or not in_func:
+                logger.error(f"Incomplete registry registration for table '{table}'")
+                raise RuntimeError(f"Incomplete registry registration for table '{table}'")
 
-                    if modules_required:
-                        data = api_func(yqs_instance, modules)
-                        in_func(db_io_instance, data)
-                    else:
-                        data = api_func(yqs_instance, symbol)
-                        in_func(db_io_instance, data)
+            if modules_required:
+                data = api_func(yqs_instance, modules)
+                in_func(db_io_instance, data)
+            else:
+                data = api_func(yqs_instance, symbol)
+                in_func(db_io_instance, data)
 
-                    any_updated = True
+            _record_fresh(symbol, table)
+            any_updated = True
 
-            # Run post-processing unconditionally if anything was updated.
-            # These compute derived metrics from already-stored data.
-            if any_updated:
-                # Write true completion time now that work is done
-                _claim_fresh_report(fresh_report=fresh_report)
-                for table, funcs in self.research_registry.items():
-                    post_func = funcs.get('post')
-                    if post_func:
-                        try:
-                            logger.debug(f"Running post-processing for {table}.")
-                            post_func(self, symbol)
-                        except Exception as e:
-                            logger.error(f"Post-processing failed for {table}, symbol {symbol}: {e}")
-                            raise
-
-        except Exception:
-            _rollback_fresh_report(symbol=symbol, claimed_tables=claimed_tables)
-            raise
+        # Run post-processing unconditionally if anything was updated.
+        # These compute derived metrics from already-stored data.
+        if any_updated:
+            for table, funcs in self.research_registry.items():
+                post_func = funcs.get('post')
+                if post_func:
+                    try:
+                        logger.debug(f"Running post-processing for {table}.")
+                        post_func(self, symbol)
+                    except Exception as e:
+                        logger.error(f"Post-processing failed for {table}, symbol {symbol}: {e}")
+                        raise
 
     def update_research_data_subset(self,
                             ticker: str,
