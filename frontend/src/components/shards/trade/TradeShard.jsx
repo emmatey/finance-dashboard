@@ -8,9 +8,9 @@ export default function TradeShard({ queryProp }) {
     const safeQueryProp = String(queryProp ?? "").trim();
     const timeoutRef = useRef(null);
     const [pendingQuery, setPendingQuery] = useState("");
-    const [activeQuery, setActiveQuery] = useState(safeQueryProp);
+    const [activeQuery, setActiveQuery] = useState(safeQueryProp || "");
     const [loading, setLoading] = useState(false);
-    const [tickerInfoJson, setTickerInfoJson] = useState({});
+    const [tickerInfoJson, setTickerInfoJson] = useState(null);
     const [dataList, setDataList] = useState([]);
     const [dataListVisible, setDataListVisible] = useState(false);
 
@@ -23,10 +23,8 @@ export default function TradeShard({ queryProp }) {
             switch (tickerInfoResponse.status) {
                 case 404:
                     console.log(`Ticker ${activeQuery} not found.`);
-                    console.warn('Clearing activeQuery state');
-                    console.warn('Clearing tickerInfoJson state');
-                    setTickerInfoJson({});
-                    setActiveQuery("");
+                    setTickerInfoJson(null);
+                    setLoading(false);
                     break;
                 default:
                     const tickerJson = await parseResponse(tickerInfoResponse) || {};
@@ -35,8 +33,7 @@ export default function TradeShard({ queryProp }) {
             };
         } catch (error) {
             setLoading(false);
-            setTickerInfoJson({"error": `${error}`});
-            setActiveQuery("");
+            setTickerInfoJson({ "error": `${error}` });
             console.error(error);
         }
     }
@@ -56,9 +53,7 @@ export default function TradeShard({ queryProp }) {
 
     async function handleSearchSubmit(event) {
         event.preventDefault();
-        const query = String(event.target.value).trim();
-        setActiveQuery(query);
-        setPendingQuery("");
+        setActiveQuery(pendingQuery);
     }
 
     function handleSearchChange(event) {
@@ -89,9 +84,10 @@ export default function TradeShard({ queryProp }) {
         el.style.background = 'var(--color-surface)';
     }
 
-    function handleSuggestionSelect(event) {
+    function handleSuggestionSelect(query) {
         setDataListVisible(false);
-        handleSearchSubmit(event);
+        setActiveQuery(query);
+        setPendingQuery(query);
     }
 
     function handleSubmitTradeOrder() {
@@ -101,8 +97,13 @@ export default function TradeShard({ queryProp }) {
 
     // Updates data about current company every 60 seconds.
     useEffect(() => {
-        let timerId = null;
+        if (!activeQuery) {
+            setTickerInfoJson(null);
+            setLoading(false);
+            return;
+        };
 
+        let timerId = null;
         async function tick() {
             await getTickerInfoFromTradeRoute(activeQuery);
             timerId = setTimeout(() => {
@@ -125,7 +126,7 @@ export default function TradeShard({ queryProp }) {
                             type='text'
                             value={pendingQuery}
                             onChange={handleSearchChange}
-                            onClick={() => setDataListVisible(true)}
+                            onClick={pendingQuery ? () => setDataListVisible(true) : () => setDataListVisible(false)}
                             onBlur={() => setDataListVisible(false)}
                             autoComplete="off"
                         />
@@ -136,7 +137,7 @@ export default function TradeShard({ queryProp }) {
                                         // arr = [name, ticker]
                                         key={arr[1]}
                                         className='card'
-                                        onMouseDown={handleSuggestionSelect}
+                                        onMouseDown={() => handleSuggestionSelect(arr[1])}
                                         onMouseOver={handleSuggestionMouseOver}
                                         onMouseLeave={handleSuggestionMouseLeave}
                                     >
@@ -151,18 +152,25 @@ export default function TradeShard({ queryProp }) {
             </form>
 
             {
-                loading ? <h4> Loading... </h4> :
-                    <ul>
-                        {
-                            !tickerInfoJson
-                                ?
+                loading ?
+                    (<h4> Loading... </h4>)
+                    :
+                    !activeQuery ?
+                        (null)
+                        :
+                        !tickerInfoJson ?
+                            <ul>
                                 <li>No info found...</li>
-                                :
-                                Object.entries(tickerInfoJson).map(([k, v]) => (
-                                    <li key={k}>{k}: {String(v)}</li>
-                                ))
-                        }
-                    </ul>
+                            </ul>
+                            :
+                            <ul>
+                                {Object.entries(tickerInfoJson).map(
+                                    ([k, v]) => (
+                                        <li
+                                            key={k}>{k}: {String(v)}
+                                        </li>
+                                    ))}
+                            </ul>
             }
 
             <form name='tradeTransactForm' onSubmit={handleSubmitTradeOrder}>

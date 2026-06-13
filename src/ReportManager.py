@@ -1,6 +1,7 @@
 import datetime
 import logging
 from CommonQueries import CommonQueries
+from helpers import TickerNotFoundError
 from collections import deque, defaultdict
 from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import Dict, List, Union, Any
@@ -269,7 +270,7 @@ class ReportManager(CommonQueries):
             None on success, or early None if ticker not found in DB or no trade data exists.
 
         Raises:
-            ValueError: If ticker not found in DB.
+            TickerNotFoundError: If ticker not found in DB.
         """
         buy_str = "Purchase at price"
         sell_str = "Sale at price"
@@ -283,7 +284,7 @@ class ReportManager(CommonQueries):
         if not ticker_id:
             error_str = f"Ticker {ticker} not found in DB..."
             logger.error(error_str)
-            raise ValueError(error_str)
+            raise TickerNotFoundError(error_str)
         
         insiders_sql = f"""
         SELECT shares, filer_name, transaction_text

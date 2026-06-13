@@ -172,12 +172,17 @@ class ResearchDataCoordinator(CommonQueries):
             Called only after a successful table update — never optimistically —
             so a request that fails or crashes mid-update leaves the table stale
             and the next request retries it. By this point upsert_symbols has run,
-            so symbol_id always resolves.
+            so symbol_id normally resolves; if it does not (e.g. an invalid ticker
+            whose upsert stored nothing) the stamp is skipped.
+
+            Returns:
+                True if the ledger was stamped, False if symbol_id could not be
+                resolved and the table was left stale.
             """
             symbol_id = self.get_symbol_id(symbol)
             if symbol_id is None:
                 logger.error(f"Cannot record freshness for {symbol}/{table}: symbol_id not found after upsert.")
-                return
+                return False
             now = strftime('%Y-%m-%d %H:%M:%S', gmtime())
             fresh_sql = """
             INSERT INTO fresh_report (symbol_id, table_name, last_updated)
@@ -186,6 +191,7 @@ class ResearchDataCoordinator(CommonQueries):
             DO UPDATE SET last_updated = excluded.last_updated
             """
             self.modify_query(fresh_sql, (symbol_id, table, now))
+            return True
 
         # Validate before touching the DB
         symbol = fresh_report.get('symbol')
@@ -247,8 +253,8 @@ class ResearchDataCoordinator(CommonQueries):
                 data = api_func(yqs_instance, symbol)
                 in_func(db_io_instance, data)
 
-            _record_fresh(symbol, table)
-            any_updated = True
+            if _record_fresh(symbol, table):
+                any_updated = True
 
         # Run post-processing unconditionally if anything was updated.
         # These compute derived metrics from already-stored data.
