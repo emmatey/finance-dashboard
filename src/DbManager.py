@@ -9,6 +9,13 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
+def _fmt_params(params) -> str:
+    if len(params) <= 10:
+        return repr(params)
+    return f"{repr(params[:10])[:-1]}, ... (+{len(params) - 10} more)"
+
+
 class DbManager:
     """
     Base data access for managing SQLite connections and query execution.
@@ -120,6 +127,7 @@ class DbManager:
 
         try:
             logger.debug(f"Executing SELECT Query: {query}")
+            logger.debug(f"Params: {_fmt_params(placeholders)}")
             cur.execute(query, placeholders)
             rows = cur.fetchall()
             return rows
@@ -150,6 +158,7 @@ class DbManager:
 
         try:
             logger.debug(f"Executing MODIFY Query: {query}")
+            logger.debug(f"Params: {_fmt_params(placeholders)}")
             cur.execute(query, placeholders)
             row_count = cur.rowcount
             con.commit()
@@ -173,6 +182,7 @@ class DbManager:
         cur = con.cursor()
         try:
             logger.debug(f"Executing Query: {query}")
+            logger.debug(f"Params: {_fmt_params(data_list)}")
             cur.executemany(query, data_list)
             con.commit()
             logger.info(f"Bulk Query Success: {cur.rowcount} rows affected.")
