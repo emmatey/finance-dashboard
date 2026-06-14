@@ -298,7 +298,7 @@ RESOURCES
             qty_owned: float,
             holding_value: float
         }
-        to   - POST /api/trade  {ticker: str, qty: float, transaction_type: str (buy|sell)}
+        to   - POST /api/trade request body:{ticker: str, qty: float, transaction_type: str (buy|sell)}
         from - {
             success: bool,
             ticker: str,
