@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { parseResponse } from '../../../scripts/utils.js'
+import { parseResponse } from '../../../../scripts/utils.js'
 import TradeSearch from './TradeSearch.jsx'
 import TradeOrderForm from './TradeOrderForm.jsx'
-import '../../../styles/utilities.css'
-import '../../../styles/colors.css'
+import '../../../../styles/utilities.css'
+import '../../../../styles/colors.css'
 
 
 export default function TradeShard({ queryProp }) {
@@ -65,17 +65,20 @@ export default function TradeShard({ queryProp }) {
     }, [activeQuery]);
 
     return (
-        <div className='card'>
-            <TradeSearch
-                activeQuery={activeQuery}
-                setActiveQuery={setActiveQuery}
-                loading={loading}
-                tickerInfoJson={tickerInfoJson}
-            />
-            <TradeOrderForm
-                activeQuery={activeQuery}
-                tickerInfoJson={tickerInfoJson}
-            />
-        </div>
+        <div style={{ display: 'flex' }}>
+            <div className='card'>
+                <TradeSearch
+                    activeQuery={activeQuery}
+                    setActiveQuery={setActiveQuery}
+                    loading={loading}
+                    tickerInfoJson={tickerInfoJson}
+                />
+            </div>
+            <div className='card'>
+                <TradeOrderForm
+                    tickerInfoJson={tickerInfoJson}
+                />
+            </div>
+        </div >
     )
 }

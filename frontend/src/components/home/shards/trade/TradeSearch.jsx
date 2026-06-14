@@ -3,9 +3,7 @@ import { parseResponse, getRandomAccentColor } from '../../../../scripts/utils.j
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
-// Search bar with autocomplete suggestions plus the results panel that
-// displays info about the active ticker. The active query and its backend
-// result are owned by the parent shard so the order form can read them too.
+
 export default function TradeSearch({ activeQuery, setActiveQuery, loading, tickerInfoJson }) {
     const [pendingQuery, setPendingQuery] = useState("");
     const [dataList, setDataList] = useState([]); // [[company_name, ticker], ...]

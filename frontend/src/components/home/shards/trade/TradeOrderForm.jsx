@@ -1,9 +1,7 @@
-import '../../../styles/utilities.css'
-import '../../../styles/colors.css'
+import '../../../../styles/utilities.css'
+import '../../../../styles/colors.css'
 
-// Buy/sell order submission form. Reads the active query and its backend
-// result (owned by the parent shard) so an order can be placed against the
-// ticker currently shown in the search results panel.
+
 export default function TradeOrderForm({ activeQuery, tickerInfoJson }) {
     function handleSubmitTradeOrder(event) {
         event.preventDefault();
