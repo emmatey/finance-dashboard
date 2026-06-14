@@ -129,11 +129,11 @@ class DbManager:
         cur = con.cursor()
 
         try:
-            logger.debug(f"Executing SELECT Query: {query}")
             logger.debug(f"Params: {_fmt_data(placeholders)}")
+            logger.debug(f"Executing SELECT Query: {query}")
             cur.execute(query, placeholders)
             rows = cur.fetchall()
-            logger.debug(f"Result: {len(rows)} rows | Data: {_fmt_data(rows)}")
+            logger.debug(f"Result: {len(rows)} rows | Data: {_fmt_data(rows)}\n")
             return rows
 
         except Exception:
@@ -161,12 +161,12 @@ class DbManager:
         cur = con.cursor()
 
         try:
-            logger.debug(f"Executing MODIFY Query: {query}")
             logger.debug(f"Params: {_fmt_data(placeholders)}")
+            logger.debug(f"Executing MODIFY Query: {query}")
             cur.execute(query, placeholders)
             row_count = cur.rowcount
             con.commit()
-            logger.debug(f"Result: {row_count} rows affected")
+            logger.debug(f"Result: {row_count} rows affected\n")
             return row_count
 
         except Exception:
@@ -186,11 +186,11 @@ class DbManager:
         con = self.get_db()
         cur = con.cursor()
         try:
-            logger.debug(f"Executing Query: {query}")
             logger.debug(f"Params: {_fmt_data(data_list)}")
+            logger.debug(f"Executing Query: {query}")
             cur.executemany(query, data_list)
             con.commit()
-            logger.debug(f"Result: {cur.rowcount} rows affected")
+            logger.debug(f"Result: {cur.rowcount} rows affected\n")
             logger.info(f"Bulk Query Success: {cur.rowcount} rows affected.")
             return cur.rowcount
         except Exception:
