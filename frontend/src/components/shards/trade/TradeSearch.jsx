@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { parseResponse, getRandomAccentColor } from '../../../scripts/utils.js'
 import '../../../styles/utilities.css'
 import '../../../styles/colors.css'
@@ -10,6 +10,7 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading, tick
     const [pendingQuery, setPendingQuery] = useState("");
     const [dataList, setDataList] = useState([]); // [[company_name, ticker], ...]
     const [dataListVisible, setDataListVisible] = useState(false);
+    const debounceRef = useRef(null);
 
     async function getDataListItemsFromSearchRoute(query) {
         // Make a GET request to the '/api/search/companies' route in order to populate the datalist.
@@ -32,8 +33,12 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading, tick
     function handleSearchChange(event) {
         const query = String(event.target.value).trim();
         setPendingQuery(query);
-        getDataListItemsFromSearchRoute(query);
-        setDataListVisible(true);
+
+        debounceRef && clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            getDataListItemsFromSearchRoute(query);
+            setDataListVisible(true);
+        }, 300)
     }
 
     function handleSuggestionMouseOver(event) {
