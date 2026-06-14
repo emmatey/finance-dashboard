@@ -10,10 +10,13 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def _fmt_params(params) -> str:
-    if len(params) <= 10:
-        return repr(params)
-    return f"{repr(params[:10])[:-1]}, ... (+{len(params) - 10} more)"
+LOG_FULL_DATA = False  # set True to log complete param lists and result sets without truncation
+
+
+def _fmt_data(data) -> str:
+    if LOG_FULL_DATA or not hasattr(data, '__len__') or len(data) <= 10:
+        return repr(data)
+    return f"{repr(data[:10])[:-1]}, ... (+{len(data) - 10} more)"
 
 
 class DbManager:
@@ -127,9 +130,10 @@ class DbManager:
 
         try:
             logger.debug(f"Executing SELECT Query: {query}")
-            logger.debug(f"Params: {_fmt_params(placeholders)}")
+            logger.debug(f"Params: {_fmt_data(placeholders)}")
             cur.execute(query, placeholders)
             rows = cur.fetchall()
+            logger.debug(f"Result: {len(rows)} rows | Data: {_fmt_data(rows)}")
             return rows
 
         except Exception:
@@ -158,10 +162,11 @@ class DbManager:
 
         try:
             logger.debug(f"Executing MODIFY Query: {query}")
-            logger.debug(f"Params: {_fmt_params(placeholders)}")
+            logger.debug(f"Params: {_fmt_data(placeholders)}")
             cur.execute(query, placeholders)
             row_count = cur.rowcount
             con.commit()
+            logger.debug(f"Result: {row_count} rows affected")
             return row_count
 
         except Exception:
@@ -182,9 +187,10 @@ class DbManager:
         cur = con.cursor()
         try:
             logger.debug(f"Executing Query: {query}")
-            logger.debug(f"Params: {_fmt_params(data_list)}")
+            logger.debug(f"Params: {_fmt_data(data_list)}")
             cur.executemany(query, data_list)
             con.commit()
+            logger.debug(f"Result: {cur.rowcount} rows affected")
             logger.info(f"Bulk Query Success: {cur.rowcount} rows affected.")
             return cur.rowcount
         except Exception:
