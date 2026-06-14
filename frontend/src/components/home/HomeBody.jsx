@@ -1,8 +1,6 @@
 import Header from '../Header.jsx'
 import Footer from '../Footer.jsx'
-import ScreenerShard from '../shards/screener/ScreenerShard.jsx'
-import TransactionHistoryShard from '../shards/transactionHistory/TransactionHistoryShard.jsx'
-import TradeShard from '../shards/trade/TradeShard.jsx'
+import TradeShard from '../home/shards/trade/TradeSearch.jsx'
 
 export default function HomeBody({ username }) {
     return (

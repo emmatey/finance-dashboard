@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { parseResponse, getRandomAccentColor } from '../../../scripts/utils.js'
-import '../../../styles/utilities.css'
-import '../../../styles/colors.css'
+import { parseResponse, getRandomAccentColor } from '../../../../scripts/utils.js'
+import '../../../../styles/utilities.css'
+import '../../../../styles/colors.css'
 
 // Search bar with autocomplete suggestions plus the results panel that
 // displays info about the active ticker. The active query and its backend
