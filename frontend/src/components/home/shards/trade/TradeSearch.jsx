@@ -26,6 +26,7 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading, tick
     async function handleSearchSubmit(event) {
         event.preventDefault();
         setActiveQuery(pendingQuery);
+        setPendingQuery("");
     }
 
     function handleSearchChange(event) {

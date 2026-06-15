@@ -6,9 +6,8 @@ import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
 
-export default function TradeShard({ queryProp }) {
-    const safeQueryProp = String(queryProp ?? "").trim();
-    const [activeQuery, setActiveQuery] = useState(safeQueryProp || "");
+export default function TradeShard() {
+    const [activeQuery, setActiveQuery] = useState("");
     const [loading, setLoading] = useState(false);
 
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
@@ -19,6 +18,7 @@ export default function TradeShard({ queryProp }) {
         'txUnit': null
     });
 
+    const [showInputScreen, setShowInputScreen] = useState(true);
     const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
     const [showSummaryScreen, setShowSummaryScreen] = useState(false);
 
@@ -32,6 +32,7 @@ export default function TradeShard({ queryProp }) {
                     console.log(`Ticker ${query} not found.`);
                     setTickerInfoJson(null);
                     setLoading(false);
+                    setIsInvalidTicker(true);
                     // Keep activeQuery set so "No info found..." renders.
                     return false;
                 default:
@@ -55,12 +56,6 @@ export default function TradeShard({ queryProp }) {
             setLoading(false);
             return;
         };
-
-        if (!tickerInfoJson) {
-            setTickerInfoJson(null);
-            setLoading(false);
-            return;
-        }
 
         let timerId = null;
         async function tick() {
@@ -96,6 +91,7 @@ export default function TradeShard({ queryProp }) {
             <div className='card'>
                 <TradeOrderForm
                     tickerInfoJson={tickerInfoJson}
+                    setPendingOrder={setPendingOrder}
                 />
             </div>
         </div >

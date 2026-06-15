@@ -1,12 +1,12 @@
 import { parseResponse } from '../../../../scripts/utils';
 import { adjustPendingOrder } from '../../../../scripts/utils';
+import { useState } from 'react';
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
-import { useState } from 'react';
 
 
 export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
-    const [txType, setTxType] = useState(null);
+    const [txType, setTxType] = useState("buy");
     const [txQty, setTxQty] = useState(0);
     const [txUnit, setTxUnit] = useState('shares');
 
@@ -17,8 +17,13 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
         ticker = tickerInfoJson.ticker;
     };
 
-    function handleSubmit() {
-        const [txDollarQty, txShareQty] = adjustPendingOrder(txType, txQty, currentPrice)
+    function handleSubmit(event) {
+        event.preventDefault()
+
+        // Block submission if there's no valid quantity or active price
+        if (!txQty || !currentPrice) return;
+
+        const [txDollarQty, txShareQty] = adjustPendingOrder(txUnit, Number(txQty), currentPrice)
         setPendingOrder({
             'txType': txType,
             'txShareQty': txShareQty,
@@ -29,27 +34,30 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
 
     return (
         <form name='tradeTransactForm' onSubmit={handleSubmit}>
-            <select name='txType' onChange={(e) => (setTxType(e.target.value))}>
+            <select name='txType' value={txType} onChange={(e) => setTxType(e.target.value)}>
                 <option value='buy'>Buy</option>
                 <option value='sell'>Sell</option>
             </select>
+
             <div>
-                {
-                    (txUnit === 'shares')
-                    &&
-                    <input type='number' name='qtyInput' placeholder='Qty' onChange={(e) => setTxQty(e.target.value)} min='0.1' step='0.1' />
-                }
-                {
-                    (txUnit === 'dollars')
-                    &&
-                    <input type='number' name='qtyInput' placeholder='Qty' onChange={(e) => setTxQty(e.target.value)} min='1' step='1' />
-                }
-                <select name='qtyUnit' onChange={(e) => (setTxUnit(e.target.value))}>
+                <input
+                    type='number'
+                    name='qtyInput'
+                    placeholder={txUnit === 'shares' ? 'Qty of Shares' : 'Amount in USD'}
+                    value={txQty} // Controlled component connection
+                    onChange={(e) => setTxQty(e.target.value)}
+                    min={txUnit === 'shares' ? '0.1' : '1'}
+                    step={txUnit === 'shares' ? '0.1' : '1'}
+                />
+
+                <select name='qtyUnit' value={txUnit} onChange={(e) => setTxUnit(e.target.value)}>
                     <option value='shares'>Shares</option>
                     <option value='dollars'>Dollars</option>
                 </select>
             </div>
-            <button type='submit'>Submit</button>
+
+            {/* Disable button if there's no active ticker info available */}
+            <button type='submit' disabled={!tickerInfoJson}>Submit</button>
         </form>
-    )
+    );
 }
