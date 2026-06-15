@@ -5,22 +5,6 @@ import { useState } from 'react';
 
 
 export default function TradeOrderForm({ tickerInfoJson, setShowConfirmationScreen }) {
-    // Three stateful objects
-    // 1. buy / sell.
-
-    // 2. Shares / Dollars
-    // Requires data about price per share, from tickerInfoJson
-    // If shares submit as normal qty = share qty
-    // If dollars do math
-
-    // 3. Qty selector
-    // Send value data up to a useState onChange
-
-    // 4. Submit
-    // request will be a POST to /api/trade
-    // in the request body i will specify
-    // ticker, qty, and transaction_type
-    // has to handle 200, 400, 404, and 500
     const [txUnit, setTxUnit] = useState('shares');
     let currentPrice = null;
     let ticker = null;
@@ -30,14 +14,26 @@ export default function TradeOrderForm({ tickerInfoJson, setShowConfirmationScre
     };
 
     function handleQtyUnit(qtyUnit, qty, currentPrice) {
-        // Convert dollars to shares.
-        if (qtyUnit === 'dollars') {
-            return qty / currentPrice;
-        } else if (qtyUnit === 'shares') {
-            return qty;
-        } else {
-            return 0;
+        // Returns [dollars, shares]
+        if (qtyUnit === 'shares') {
+            const shares = Math.round(qty * 10) / 10; // Ensure it's valid 1/10th
+            const dollars = Math.round(shares * currentPrice * 100) / 100; // Round to cents
+            return [dollars, shares];
         }
+
+        if (qtyUnit === 'dollars') {
+            const rawShares = qty / currentPrice;
+            const adjustedShares = Math.round(rawShares * 10) / 10;
+            const adjustedDollars = Math.round(adjustedShares * currentPrice * 100) / 100;
+
+            return [adjustedDollars, adjustedShares];
+        }
+
+        return [0, 0];
+    }
+
+    function handleSubmit() {
+
     }
 
     return (

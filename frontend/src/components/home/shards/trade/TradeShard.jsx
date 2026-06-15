@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useSyncExternalStore } from 'react'
 import { parseResponse } from '../../../../scripts/utils.js'
 import TradeSearch from './TradeSearch.jsx'
 import TradeOrderForm from './TradeOrderForm.jsx'
@@ -11,7 +11,9 @@ export default function TradeShard({ queryProp }) {
     const [activeQuery, setActiveQuery] = useState(safeQueryProp || "");
     const [loading, setLoading] = useState(false);
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
+
     const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
+    const [showSummaryScreen, setShowSummaryScreen] = useState(false);
 
     async function getTickerInfoFromTradeRoute(query) {
         // Makes a GET request to the '/api/trade' route.
@@ -47,11 +49,15 @@ export default function TradeShard({ queryProp }) {
             return;
         };
 
+        if (!tickerInfoJson) {
+            setTickerInfoJson(null);
+            setLoading(false);
+            return;
+        }
+
         let timerId = null;
         async function tick() {
-            // Only reschedule the next poll when the fetch succeeds. A 404
-            // (ticker not found) or any error returns false, which stops the
-            // loop so we don't keep polling a missing/broken ticker.
+            // getinfo...() returns bool
             const ok = await getTickerInfoFromTradeRoute(activeQuery);
             if (ok) {
                 timerId = setTimeout(() => {

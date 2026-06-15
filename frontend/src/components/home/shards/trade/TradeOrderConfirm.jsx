@@ -42,7 +42,7 @@ export default function TradeOrderConfirm({ formData }) {
     async function handleResponse(res) {
         // parse response
         // handle error codes 200, 400, 404, and 500
-        // return text or cause side effects.
+        // return text or cause side effects. 
     }
 
     console.log(await parseResponse(res));
