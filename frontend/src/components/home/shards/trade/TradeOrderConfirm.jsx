@@ -1,7 +1,7 @@
 import { parseResponse } from '../../../../scripts/utils';
+import { useState } from 'react';
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
-import { useState } from 'react';
 
 
 export default function TradeOrderConfirm({ formData }) {

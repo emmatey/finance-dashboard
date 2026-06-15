@@ -102,21 +102,21 @@ export default function TradeShard() {
     }, [tickerInfoJson]);
 
     return (
-        <div style={{ display: 'flex' }}>
-            <div className='card'>
-                <TradeSearch
-                    activeQuery={activeQuery}
-                    setActiveQuery={setActiveQuery}
-                    loading={loading}
-                    tickerInfoJson={tickerInfoJson}
-                />
-            </div>
-            <div className='card'>
-                <TradeOrderForm
-                    tickerInfoJson={tickerInfoJson}
-                    setPendingOrder={setPendingOrder}
-                />
-            </div>
-        </div >
+            <div style={{ display: 'flex' }}>
+                <div className='card'>
+                    <TradeSearch
+                        activeQuery={activeQuery}
+                        setActiveQuery={setActiveQuery}
+                        loading={loading}
+                        tickerInfoJson={tickerInfoJson}
+                    />
+                </div>
+                <div className='card'>
+                    <TradeOrderForm
+                        tickerInfoJson={tickerInfoJson}
+                        setPendingOrder={setPendingOrder}
+                    />
+                </div>
+            </div >
     )
 }
