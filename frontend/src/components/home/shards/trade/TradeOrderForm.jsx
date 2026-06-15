@@ -1,9 +1,10 @@
 import { parseResponse } from '../../../../scripts/utils';
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
+import { useState } from 'react';
 
 
-export default function TradeOrderForm({ tickerInfoJson }) {
+export default function TradeOrderForm({ tickerInfoJson, setShowConfirmationScreen }) {
     // Three stateful objects
     // 1. buy / sell.
 
@@ -20,6 +21,7 @@ export default function TradeOrderForm({ tickerInfoJson }) {
     // in the request body i will specify
     // ticker, qty, and transaction_type
     // has to handle 200, 400, 404, and 500
+    const [txUnit, setTxUnit] = useState('shares');
     let currentPrice = null;
     let ticker = null;
     if (tickerInfoJson) {
@@ -38,48 +40,24 @@ export default function TradeOrderForm({ tickerInfoJson }) {
         }
     }
 
-    async function handleSubmitTradeOrder(event) {
-        // Makes a POST request to the '/api/trade' route
-        event.preventDefault();
-        const formData = new FormData(event.target);
-
-        const transactionType = formData.get('txType');
-        const qtyUnit = formData.get('qtyUnit');
-        const rawQty = formData.get('qtyInput');
-        const qty = handleQtyUnit(qtyUnit, rawQty, currentPrice);
-
-        if (!qty || !ticker || !transactionType) {
-            console.warn("Missing data for request...");
-            console.log(`qty: ${qty} ticker:${ticker}, transactionType: ${transactionType}`);
-            return;
-        };
-
-        if (qty < 1 && qtyUnit === 'dollars') {
-            
-        }
-
-        const res = await fetch("/api/trade", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", },
-            body: JSON.stringify({
-                'ticker': ticker,
-                'qty': qty,
-                'transaction_type': transactionType
-            })
-        });
-
-        console.log(await parseResponse(res));
-
-    }
     return (
-        <form name='tradeTransactForm' onSubmit={handleSubmitTradeOrder}>
+        <form name='tradeTransactForm' onSubmit={handleSubmit}>
             <select name='txType'>
                 <option value='buy'>Buy</option>
                 <option value='sell'>Sell</option>
             </select>
             <div>
-                <input type='number' name='qtyInput' placeholder='Qty' min='0.1' step='0.1' />
-                <select name='qtyUnit'>
+                {
+                    (txUnit === 'shares')
+                    &&
+                    <input type='number' name='qtyInput' placeholder='Qty' min='0.1' step='0.1' />
+                }
+                {
+                    (txUnit === 'dollars')
+                    &&
+                    <input type='number' name='qtyInput' placeholder='Qty' min='1' step='1' />
+                }
+                <select name='qtyUnit' onChange={(e) => (setTxUnit(e.target.value))}>
                     <option value='shares'>Shares</option>
                     <option value='dollars'>Dollars</option>
                 </select>

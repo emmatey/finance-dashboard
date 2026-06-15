@@ -11,6 +11,7 @@ export default function TradeShard({ queryProp }) {
     const [activeQuery, setActiveQuery] = useState(safeQueryProp || "");
     const [loading, setLoading] = useState(false);
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
+    const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
 
     async function getTickerInfoFromTradeRoute(query) {
         // Makes a GET request to the '/api/trade' route.
@@ -62,7 +63,7 @@ export default function TradeShard({ queryProp }) {
         tick();
 
         return () => { clearTimeout(timerId) }
-    }, [activeQuery]);
+    }, [activeQuery, showConfirmationScreen]);
 
     return (
         <div style={{ display: 'flex' }}>
