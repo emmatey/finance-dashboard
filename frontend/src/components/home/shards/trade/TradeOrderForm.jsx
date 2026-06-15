@@ -25,6 +25,7 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
 
         const [txDollarQty, txShareQty] = adjustPendingOrder(txUnit, Number(txQty), currentPrice)
         setPendingOrder({
+            'txTicker': ticker,
             'txType': txType,
             'txShareQty': txShareQty,
             'txDollarQty': txDollarQty,

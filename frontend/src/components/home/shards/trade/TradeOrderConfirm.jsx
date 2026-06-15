@@ -4,18 +4,14 @@ import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
 
-export default function TradeOrderConfirm({ formData }) {
+export default function TradeOrderConfirm({ pendingOrder }) {
+    const { txType, txShareQty, txDollarQty, txUnit } = pendingOrder;
+
     async function handleSubmitTradeOrder(event) {
         // Makes a POST request to the '/api/trade' route
         event.preventDefault();
-        const formData = new FormData(event.target);
 
-        const transactionType = formData.get('txType');
-        const qtyUnit = formData.get('qtyUnit');
-        const rawQty = formData.get('qtyInput');
-        const qty = handleQtyUnit(qtyUnit, rawQty, currentPrice);
-
-        if (!qty || !ticker || !transactionType) {
+        if (!txShareQty || !ticker || !transactionType) {
             console.warn("Missing data for request...");
             console.log(`qty: ${qty} ticker:${ticker}, transactionType: ${transactionType}`);
             return;

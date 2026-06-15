@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { parseResponse, adjustPendingOrder } from '../../../../scripts/utils.js'
-import TradeInput from './TradeInput.jsx' 
+import TradeInput from './TradeInput.jsx'
+import TradeOrderConfirm from './TradeOrderConfirm.jsx'
+import TradePostOrderSummary from './TradePostOrderSummary.jsx'
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
@@ -9,7 +11,16 @@ export default function TradeShard() {
     const [loading, setLoading] = useState(false);
 
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
+    
+    let currentPrice = null;
+    let ticker = null;
+    if (tickerInfoJson) {
+        currentPrice = tickerInfoJson.current_price;
+        ticker = tickerInfoJson.ticker;
+    }
+
     const [pendingOrder, setPendingOrder] = useState({
+        'txTicker': null,
         'txType': null,
         'txShareQty': null,
         'txDollarQty': null,
@@ -21,7 +32,6 @@ export default function TradeShard() {
     const [showSummaryScreen, setShowSummaryScreen] = useState(false);
 
     async function getTickerInfoFromTradeRoute(query) {
-        // Makes a GET request to the '/api/trade' route.
         try {
             setLoading(true);
             const tickerInfoResponse = await fetch(`/api/trade?ticker=${encodeURIComponent(query)}`);
@@ -73,20 +83,19 @@ export default function TradeShard() {
             return;
         }
 
+        const { current_price: freshPrice, ticker: freshTicker } = tickerInfoJson;
+
         setPendingOrder((prevOrder) => {
             if (!prevOrder.txUnit) {
                 return prevOrder;
             }
 
             const { txType, txShareQty, txDollarQty, txUnit } = prevOrder;
-            const currentQty = txUnit === 'dollars' ? txDollarQty : txShareQty;
-            const [newDollars, newShares] = adjustPendingOrder(
-                txUnit,
-                currentQty,
-                tickerInfoJson.current_price
-            );
+            const currentQty = (txUnit === 'dollars' ? txDollarQty : txShareQty);
+            const [newDollars, newShares] = adjustPendingOrder(txUnit, currentQty, freshPrice);
 
             return {
+                txTicker: freshTicker,
                 txType: txType,
                 txUnit: txUnit,
                 txShareQty: newShares,
@@ -94,10 +103,10 @@ export default function TradeShard() {
             };
         });
 
-    }, [tickerInfoJson]);
+    }, [tickerInfoJson]); 
 
     return (
-        <div className="trade-shard-container">
+        <div className="card">
             {showInputScreen && (
                 <TradeInput
                     activeQuery={activeQuery}
