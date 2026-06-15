@@ -137,6 +137,10 @@ export function getRandomIntInclusive(min, max) {
 }
 
 export function adjustPendingOrder(qtyUnit, qty, currentPrice) {
+    if (!qtyUnit || !qty || !currentPrice) {
+        return false;
+    }
+    
     if (qtyUnit === 'shares') {
         const shares = Math.round(qty * 10) / 10; // Ensure it's valid 1/10th
         const dollars = Math.round(shares * currentPrice * 100) / 100; // Round to cents

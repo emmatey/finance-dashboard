@@ -74,9 +74,32 @@ export default function TradeShard() {
     }, [activeQuery, showConfirmationScreen]);
 
     useEffect(() => {
-        // on ticker info json change, update pending order with new price.
-        console.warn(pendingOrder);
-    }, [pendingOrder])
+        if (!tickerInfoJson || !tickerInfoJson.current_price) {
+            return;
+        }
+
+        setPendingOrder((prevOrder) => {
+            if (!prevOrder.txUnit) {
+                return prevOrder;
+            };
+
+            const { txType, txShareQty, txDollarQty, txUnit } = prevOrder;
+            const currentQty = txUnit === 'dollars' ? txDollarQty : txShareQty;
+            const [newDollars, newShares] = adjustPendingOrder(
+                txUnit,
+                currentQty,
+                tickerInfoJson.current_price
+            );
+
+            return {
+                txType: txType,
+                txUnit: txUnit,
+                txShareQty: newShares,
+                txDollarQty: newDollars,
+            };
+        });
+
+    }, [tickerInfoJson]);
 
     return (
         <div style={{ display: 'flex' }}>
