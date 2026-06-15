@@ -35,8 +35,8 @@ export function formatLargeNumber(n) {
     if (n == null) return 'N/A'
     const abs = Math.abs(n)
     if (abs >= 1e12) return (n / 1e12).toFixed(2) + 'T'
-    if (abs >= 1e9)  return (n / 1e9).toFixed(2)  + 'B'
-    if (abs >= 1e6)  return (n / 1e6).toFixed(2)  + 'M'
+    if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'B'
+    if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M'
     return Number(n).toLocaleString('en-US')
 }
 
@@ -70,10 +70,10 @@ export function getSentimentLabel(score) {
         human-readable label. Returns 'No Data' for null or undefined values.
     */
     if (score == null) return 'No Data'
-    if (score >  0.5)  return 'Strongly Bullish'
-    if (score >  0.15) return 'Bullish'
+    if (score > 0.5) return 'Strongly Bullish'
+    if (score > 0.15) return 'Bullish'
     if (score > -0.15) return 'Neutral'
-    if (score > -0.5)  return 'Bearish'
+    if (score > -0.5) return 'Bearish'
     return 'Strongly Bearish'
 }
 
@@ -83,7 +83,7 @@ export function getSentimentColorClass(score) {
         Returns 'text-muted' for null or undefined values.
     */
     if (score == null) return 'text-muted'
-    if (score >  0.15) return 'text-success'
+    if (score > 0.15) return 'text-success'
     if (score < -0.15) return 'text-danger'
     return 'text-warning'
 }
@@ -98,8 +98,8 @@ export async function parseResponse(response) {
     }
 
     let body = null;
-    try { 
-        body = await response.json(); 
+    try {
+        body = await response.json();
     } catch (error) {
         console.error(error);
     }
@@ -131,7 +131,25 @@ export function getRandomIntInclusive(min, max) {
     /* 
         https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random#examples
     */
-  const minCeiled = Math.ceil(min);
-  const maxFloored = Math.floor(max);
-  return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
+    const minCeiled = Math.ceil(min);
+    const maxFloored = Math.floor(max);
+    return Math.floor(Math.random() * (maxFloored - minCeiled + 1) + minCeiled); // The maximum is inclusive and the minimum is inclusive
+}
+
+export function adjustPendingOrder(qtyUnit, qty, currentPrice) {
+    if (qtyUnit === 'shares') {
+        const shares = Math.round(qty * 10) / 10; // Ensure it's valid 1/10th
+        const dollars = Math.round(shares * currentPrice * 100) / 100; // Round to cents
+        return [dollars, shares];
+    }
+
+    if (qtyUnit === 'dollars') {
+        const rawShares = qty / currentPrice;
+        const adjustedShares = Math.round(rawShares * 10) / 10;
+        const adjustedDollars = Math.round(adjustedShares * currentPrice * 100) / 100;
+
+        return [adjustedDollars, adjustedShares];
+    }
+
+    return [0, 0];
 }

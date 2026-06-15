@@ -1,5 +1,5 @@
 import { useState, useEffect, useSyncExternalStore } from 'react'
-import { parseResponse } from '../../../../scripts/utils.js'
+import { parseResponse, adjustPendingOrder } from '../../../../scripts/utils.js'
 import TradeSearch from './TradeSearch.jsx'
 import TradeOrderForm from './TradeOrderForm.jsx'
 import '../../../../styles/utilities.css'
@@ -10,7 +10,14 @@ export default function TradeShard({ queryProp }) {
     const safeQueryProp = String(queryProp ?? "").trim();
     const [activeQuery, setActiveQuery] = useState(safeQueryProp || "");
     const [loading, setLoading] = useState(false);
+
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
+    const [pendingOrder, setPendingOrder] = useState({
+        'txType': null,
+        'txShareQty': null,
+        'txDollarQty': null,
+        'txUnit': null
+    });
 
     const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
     const [showSummaryScreen, setShowSummaryScreen] = useState(false);
@@ -70,6 +77,11 @@ export default function TradeShard({ queryProp }) {
 
         return () => { clearTimeout(timerId) }
     }, [activeQuery, showConfirmationScreen]);
+
+    useEffect(() => {
+        // on ticker info json change, update pending order with new price.
+        console.warn(pendingOrder);
+    }, [pendingOrder])
 
     return (
         <div style={{ display: 'flex' }}>

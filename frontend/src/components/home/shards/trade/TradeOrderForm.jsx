@@ -1,11 +1,15 @@
 import { parseResponse } from '../../../../scripts/utils';
+import { adjustPendingOrder } from '../../../../scripts/utils';
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 import { useState } from 'react';
 
 
-export default function TradeOrderForm({ tickerInfoJson, setShowConfirmationScreen }) {
+export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
+    const [txType, setTxType] = useState(null);
+    const [txQty, setTxQty] = useState(0);
     const [txUnit, setTxUnit] = useState('shares');
+
     let currentPrice = null;
     let ticker = null;
     if (tickerInfoJson) {
@@ -13,32 +17,19 @@ export default function TradeOrderForm({ tickerInfoJson, setShowConfirmationScre
         ticker = tickerInfoJson.ticker;
     };
 
-    function handleQtyUnit(qtyUnit, qty, currentPrice) {
-        // Returns [dollars, shares]
-        if (qtyUnit === 'shares') {
-            const shares = Math.round(qty * 10) / 10; // Ensure it's valid 1/10th
-            const dollars = Math.round(shares * currentPrice * 100) / 100; // Round to cents
-            return [dollars, shares];
-        }
-
-        if (qtyUnit === 'dollars') {
-            const rawShares = qty / currentPrice;
-            const adjustedShares = Math.round(rawShares * 10) / 10;
-            const adjustedDollars = Math.round(adjustedShares * currentPrice * 100) / 100;
-
-            return [adjustedDollars, adjustedShares];
-        }
-
-        return [0, 0];
-    }
-
     function handleSubmit() {
-
+        const [txDollarQty, txShareQty] = adjustPendingOrder(txType, txQty, currentPrice)
+        setPendingOrder({
+            'txType': txType,
+            'txShareQty': txShareQty,
+            'txDollarQty': txDollarQty,
+            'txUnit': txUnit
+        })
     }
 
     return (
         <form name='tradeTransactForm' onSubmit={handleSubmit}>
-            <select name='txType'>
+            <select name='txType' onChange={(e) => (setTxType(e.target.value))}>
                 <option value='buy'>Buy</option>
                 <option value='sell'>Sell</option>
             </select>
@@ -46,12 +37,12 @@ export default function TradeOrderForm({ tickerInfoJson, setShowConfirmationScre
                 {
                     (txUnit === 'shares')
                     &&
-                    <input type='number' name='qtyInput' placeholder='Qty' min='0.1' step='0.1' />
+                    <input type='number' name='qtyInput' placeholder='Qty' onChange={(e) => setTxQty(e.target.value)} min='0.1' step='0.1' />
                 }
                 {
                     (txUnit === 'dollars')
                     &&
-                    <input type='number' name='qtyInput' placeholder='Qty' min='1' step='1' />
+                    <input type='number' name='qtyInput' placeholder='Qty' onChange={(e) => setTxQty(e.target.value)} min='1' step='1' />
                 }
                 <select name='qtyUnit' onChange={(e) => (setTxUnit(e.target.value))}>
                     <option value='shares'>Shares</option>

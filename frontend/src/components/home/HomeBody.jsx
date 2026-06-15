@@ -7,7 +7,6 @@ export default function HomeBody({ username }) {
     return (
         <>
         <Header />
-        <Scratchpad />
         <div>
             <div className='card'>
                 <h1>Hi {username || null}, Welcome to finance-dashboard, you ARE logged in!</h1>
