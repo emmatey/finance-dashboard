@@ -22,6 +22,10 @@ export default function TradeOrderConfirm({ pendingOrder }) {
         console.log(await parseResponse(res));
     }
 
+    function handleCancel() {
+                
+    }
+
     return (
         <form onSubmit={handleSubmitTradeOrder}>
             <h2>Confirm Your Transaction</h2>
@@ -61,7 +65,7 @@ export default function TradeOrderConfirm({ pendingOrder }) {
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="button">Cancel</button>
+                <button type="button" onClick={handleCancel}>Cancel</button>
                 <button type="submit">Confirm Trade</button>
             </div>
         </form>
