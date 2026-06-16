@@ -86,10 +86,6 @@ export default function TradeShard() {
         const { current_price: freshPrice, ticker: freshTicker } = tickerInfoJson;
 
         setPendingOrder((prevOrder) => {
-            if (!prevOrder.txUnit) {
-                return prevOrder;
-            }
-
             const { txType, txShareQty, txDollarQty, txUnit } = prevOrder;
             const currentQty = (txUnit === 'dollars' ? txDollarQty : txShareQty);
             const [newDollars, newShares] = adjustPendingOrder(txUnit, currentQty, freshPrice);
@@ -115,6 +111,15 @@ export default function TradeShard() {
                     tickerInfoJson={tickerInfoJson}
                     setPendingOrder={setPendingOrder}
                 />
+            )}
+            
+            {showConfirmationScreen && (
+                <TradeOrderConfirm />
+            )}
+
+            {showSummaryScreen && (
+                <TradePostOrderSummary />
+
             )}
         </div>
     );

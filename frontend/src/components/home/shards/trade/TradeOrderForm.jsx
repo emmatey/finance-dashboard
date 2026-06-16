@@ -21,7 +21,10 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
         event.preventDefault()
 
         // Block submission if there's no valid quantity or active price
-        if (!txQty || !currentPrice) return;
+        if (!txQty || !currentPrice) {
+            console.error(`No valid quantity or active price.`);
+            return;
+        };
 
         const [txDollarQty, txShareQty] = adjustPendingOrder(txUnit, Number(txQty), currentPrice)
         setPendingOrder({
