@@ -114,7 +114,10 @@ export default function TradeShard() {
             )}
             
             {showConfirmationScreen && (
-                <TradeOrderConfirm pendingOrder={pendingOrder}/>
+                <TradeOrderConfirm
+                    pendingOrder={pendingOrder}
+                    tickerInfoJson={tickerInfoJson}    
+                />
             )}
 
             {showSummaryScreen && (
