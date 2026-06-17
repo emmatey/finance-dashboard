@@ -11,7 +11,7 @@ export default function TradeShard() {
     const [loading, setLoading] = useState(false);
 
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
-    
+
     let currentPrice = null;
     let ticker = null;
     if (tickerInfoJson) {
@@ -30,6 +30,11 @@ export default function TradeShard() {
     const [showInputScreen, setShowInputScreen] = useState(false);
     const [showConfirmationScreen, setShowConfirmationScreen] = useState(true);
     const [showSummaryScreen, setShowSummaryScreen] = useState(false);
+    const viewController = {
+        'setShowInput': setShowInputScreen,
+        'setShowConfirmationScreen': setShowConfirmationScreen,
+        'setShowSummaryScreen': setShowSummaryScreen
+    };
 
     async function getTickerInfoFromTradeRoute(query) {
         try {
@@ -99,7 +104,7 @@ export default function TradeShard() {
             };
         });
 
-    }, [tickerInfoJson]); 
+    }, [tickerInfoJson]);
 
     return (
         <div className="card">
@@ -110,19 +115,23 @@ export default function TradeShard() {
                     loading={loading}
                     tickerInfoJson={tickerInfoJson}
                     setPendingOrder={setPendingOrder}
+                    viewController={viewController}
                 />
             )}
-            
+
             {showConfirmationScreen && (
                 <TradeOrderConfirm
                     pendingOrder={pendingOrder}
-                    tickerInfoJson={tickerInfoJson}    
+                    tickerInfoJson={tickerInfoJson}
+                    setActiveQuery={setActiveQuery}
+                    viewController={viewController}
                 />
             )}
 
             {showSummaryScreen && (
-                <TradePostOrderSummary />
-
+                <TradePostOrderSummary
+                    viewController={viewController}
+                />
             )}
         </div>
     );
