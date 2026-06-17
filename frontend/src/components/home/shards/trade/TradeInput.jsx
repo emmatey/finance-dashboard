@@ -8,7 +8,8 @@ export default function TradeInput({
     setActiveQuery, 
     loading, 
     tickerInfoJson, 
-    setPendingOrder 
+    setPendingOrder,
+    viewController
 }) {
     return (
         <div style={{ display: 'flex', gap: '16px' }}>
@@ -24,6 +25,7 @@ export default function TradeInput({
                 <TradeOrderForm
                     tickerInfoJson={tickerInfoJson}
                     setPendingOrder={setPendingOrder}
+                    viewController={viewController}
                 />
             </div>
         </div>

@@ -5,7 +5,7 @@ import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
 
-export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
+export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewController }) {
     const [txType, setTxType] = useState("buy");
     const [txQty, setTxQty] = useState(0);
     const [txUnit, setTxUnit] = useState('shares');
@@ -34,6 +34,9 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
             'txDollarQty': txDollarQty,
             'txUnit': txUnit
         })
+
+        viewController['setShowConfirmationScreen'](true);
+        viewController['setShowInput'](false);
     }
 
     return (
@@ -48,7 +51,7 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder }) {
                     type='number'
                     name='qtyInput'
                     placeholder={txUnit === 'shares' ? 'Qty of Shares' : 'Amount in USD'}
-                    value={txQty} 
+                    value={txQty}
                     onChange={(e) => setTxQty(e.target.value)}
                     min={txUnit === 'shares' ? '0.1' : '1'}
                     step={txUnit === 'shares' ? '0.1' : '1'}

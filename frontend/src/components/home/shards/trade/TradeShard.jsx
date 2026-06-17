@@ -6,6 +6,14 @@ import TradePostOrderSummary from './TradePostOrderSummary.jsx'
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
+/*
+    TODO: Add data about current users'existing holdings with the company.
+        Use this info to check if the user is able to make a sell order.
+
+        Catch errors with buying and selling. i.e. not enough shares to sell. 
+            or not enough money to buy!
+ */
+
 export default function TradeShard() {
     const [activeQuery, setActiveQuery] = useState("");
     const [loading, setLoading] = useState(false);
@@ -27,8 +35,8 @@ export default function TradeShard() {
         'txUnit': null
     });
 
-    const [showInputScreen, setShowInputScreen] = useState(false);
-    const [showConfirmationScreen, setShowConfirmationScreen] = useState(true);
+    const [showInputScreen, setShowInputScreen] = useState(true);
+    const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
     const [showSummaryScreen, setShowSummaryScreen] = useState(false);
     const viewController = {
         'setShowInput': setShowInputScreen,
@@ -81,10 +89,10 @@ export default function TradeShard() {
         tick();
 
         return () => { clearTimeout(timerId); };
-    }, [activeQuery, showConfirmationScreen]);
+    }, [activeQuery]);
 
     useEffect(() => {
-        if (!tickerInfoJson || !tickerInfoJson.current_price) {
+        if (!tickerInfoJson || !tickerInfoJson.current_price || !pendingOrder['txTicker']) {
             return;
         }
 
