@@ -27,8 +27,8 @@ export default function TradeShard() {
         'txUnit': null
     });
 
-    const [showInputScreen, setShowInputScreen] = useState(true);
-    const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
+    const [showInputScreen, setShowInputScreen] = useState(false);
+    const [showConfirmationScreen, setShowConfirmationScreen] = useState(true);
     const [showSummaryScreen, setShowSummaryScreen] = useState(false);
 
     async function getTickerInfoFromTradeRoute(query) {
@@ -114,7 +114,7 @@ export default function TradeShard() {
             )}
             
             {showConfirmationScreen && (
-                <TradeOrderConfirm />
+                <TradeOrderConfirm pendingOrder={pendingOrder}/>
             )}
 
             {showSummaryScreen && (

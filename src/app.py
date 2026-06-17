@@ -557,7 +557,7 @@ def trade():
                 "success": False,
                 "message": f"Missing data for {ticker}. (last_price or prev_close)"
             }), 500
-            
+        
         return jsonify({
             "success": True,
             "ticker": ticker,
@@ -565,16 +565,37 @@ def trade():
             "current_price": last_price,
             "prev_close": prev_close,
             "pct_change_since_close": round(((last_price - prev_close) / prev_close) * 100, 2),
-            "fifty_two_week_high": fin_metrics.get("fifty_two_week_high"),
-            "fifty_two_week_low": fin_metrics.get("fifty_two_week_low"),
-            "market_cap": fin_metrics.get("market_cap"),
-            "three_month_avg_volume": fin_metrics.get("three_month_avg_volume"),
-            "analyst_count": fin_metrics.get("analyst_count"),
-            "rating": fin_metrics.get("rating"),
-            "target_price": fin_metrics.get("target_price"),
             "cash_balance": cc.get_balance(user_id=user_id),
             "qty_owned": holding_info.get("qty_owned"),
             "holding_value": holding_info.get("holding_value"),
+            
+            # Formatted financial_metrics fields (excluding ID)
+            "symbol_id": fin_metrics.get("symbol_id"),
+            "last_updated": fin_metrics.get("last_updated"),
+            "market_open": fin_metrics.get("market_open"),
+            "market_cap": fin_metrics.get("market_cap"),
+            "eps": fin_metrics.get("eps"),
+            "beta": fin_metrics.get("beta"),
+            "trailing_pe": fin_metrics.get("trailing_pe"),
+            "forward_pe": fin_metrics.get("forward_pe"),
+            "profit_margin": fin_metrics.get("profit_margin"),
+            "shares_outstanding": fin_metrics.get("shares_outstanding"),
+            "book_value": fin_metrics.get("book_value"),
+            "price_to_book": fin_metrics.get("price_to_book"),
+            "dividend_yield": fin_metrics.get("dividend_yield"),
+            "fifty_two_week_high": fin_metrics.get("fifty_two_week_high"),
+            "fifty_two_week_low": fin_metrics.get("fifty_two_week_low"),
+            "fifty_day_average": fin_metrics.get("fifty_day_average"),
+            "two_hundred_day_average": fin_metrics.get("two_hundred_day_average"),
+            "rating": fin_metrics.get("rating"),
+            "insider_sentiment": fin_metrics.get("insider_sentiment"),
+            "analyst_count": fin_metrics.get("analyst_count"),
+            "target_price": fin_metrics.get("target_price"),
+            "current_ratio": fin_metrics.get("current_ratio"),
+            "debt_to_equity": fin_metrics.get("debt_to_equity"),
+            "todays_volume": fin_metrics.get("todays_volume"),
+            "ten_day_avg_volume": fin_metrics.get("ten_day_avg_volume"),
+            "three_month_avg_volume": fin_metrics.get("three_month_avg_volume")
         }), 200
     
     if request.method == "POST":
