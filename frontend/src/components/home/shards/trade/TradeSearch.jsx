@@ -4,7 +4,7 @@ import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
 
-export default function TradeSearch({ activeQuery, setActiveQuery, loading, tickerInfoJson }) {
+export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
     const [pendingQuery, setPendingQuery] = useState("");
     const [dataList, setDataList] = useState([]); // [[company_name, ticker], ...]
     const [dataListVisible, setDataListVisible] = useState(false);
@@ -55,7 +55,6 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading, tick
         setPendingQuery("");
     }
 
-    // https://developer.mozilla.org/en-US/docs/Web/API/FocusEvent/relatedTarget
     return (
         <>
             <form name='tradeSearchForm' onSubmit={handleSearchSubmit} >
@@ -90,28 +89,6 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading, tick
                     <button type='submit'> Search </button>
                 </div>
             </form>
-
-            {
-                loading ?
-                    (<h4> Loading... </h4>)
-                    :
-                    !activeQuery ?
-                        (null)
-                        :
-                        !tickerInfoJson ?
-                            <ul>
-                                <li>No info found...</li>
-                            </ul>
-                            :
-                            <ul>
-                                {Object.entries(tickerInfoJson).map(
-                                    ([k, v]) => (
-                                        <li
-                                            key={k}>{k}: {String(v)}
-                                        </li>
-                                    ))}
-                            </ul>
-            }
         </>
     )
 }
