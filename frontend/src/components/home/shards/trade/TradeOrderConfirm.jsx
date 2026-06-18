@@ -47,6 +47,8 @@ export default function TradeOrderConfirm({
     return (
         <form onSubmit={handleSubmitTradeOrder} className='card'>
             <h2>Confirm Your Transaction</h2>
+            <hr />
+            
             <section>
 
                 <figure>

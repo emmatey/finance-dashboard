@@ -77,6 +77,7 @@ export default function TradeShard() {
             const ok = await getTickerInfoFromTradeRoute(activeQuery);
             if (ok) {
                 timerId = setTimeout(() => {
+                    console.log(`Price of ${activeQuery} updated.`)
                     tick();
                 }, 60000);
             }

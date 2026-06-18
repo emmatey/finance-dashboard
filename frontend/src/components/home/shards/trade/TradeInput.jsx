@@ -1,5 +1,6 @@
 import TradeSearch from './TradeSearch.jsx';
 import TradeOrderForm from './TradeOrderForm.jsx';
+import TradeHoldings from './TradeHoldings.jsx';
 import '../../../../styles/utilities.css';
 import '../../../../styles/colors.css';
 
@@ -21,12 +22,17 @@ export default function TradeInput({
                     tickerInfoJson={tickerInfoJson}
                 />
             </div>
+
             <div className='card'>
                 <TradeOrderForm
                     tickerInfoJson={tickerInfoJson}
                     setPendingOrder={setPendingOrder}
                     viewController={viewController}
                 />
+            </div>
+
+            <div className='card'>
+                <TradeHoldings tickerInfoJson={tickerInfoJson}/>
             </div>
         </div>
     );
