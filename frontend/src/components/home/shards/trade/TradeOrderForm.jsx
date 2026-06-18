@@ -1,6 +1,7 @@
 import { parseResponse } from '../../../../scripts/utils';
 import { adjustPendingOrder } from '../../../../scripts/utils';
 import { useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import '../../../../styles/utilities.css'
 import '../../../../styles/colors.css'
 
@@ -12,10 +13,30 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
 
     let currentPrice = null;
     let ticker = null;
+    let qtyOwned = null;
+    let cashBalance = null;
     if (tickerInfoJson) {
         currentPrice = tickerInfoJson.current_price;
         ticker = tickerInfoJson.ticker;
+        qtyOwned = tickerInfoJson.qty_owned;
+        cashBalance = tickerInfoJson.cashBalance;
     };
+
+    function checkCanAfford(txDollarQty, cashBalance) {
+        if (Number(cashBalance) >= Number(txDollarQty)) {
+            return true;
+        } else {
+            return false
+        };
+    }
+
+    function checkCanSell() {
+        if (Number(qtyOwned) >= Number(txQty)) {
+            return true;
+        } else {
+            return false
+        };
+    }
 
     function handleSubmit(event) {
         event.preventDefault()
@@ -27,6 +48,19 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
         };
 
         const [txDollarQty, txShareQty] = adjustPendingOrder(txUnit, Number(txQty), currentPrice)
+
+        //if (txType === 'sell') {
+        //    if (!checkCanSell()) {
+        //        toast.error("Unable to make transaction! You own less shares than you're attempting to sell!");
+        //        return;
+        //    };
+        //} else if (txType === 'buy') {
+        //    if (!checkCanAfford(txDollarQty, cashBalance)) {
+        //        toast.error("Unable to make transaction! You cannot afford this transaction!")
+        //        return;
+        //    };
+        //}
+
         setPendingOrder({
             'txTicker': ticker,
             'txType': txType,
@@ -34,7 +68,6 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
             'txDollarQty': txDollarQty,
             'txUnit': txUnit
         })
-
         viewController['setShowConfirmationScreen'](true);
         viewController['setShowInput'](false);
     }
@@ -65,6 +98,7 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
 
             {/* Disable button if there's no active ticker info available */}
             <button type='submit' disabled={!tickerInfoJson}>Submit</button>
+            <Toaster />
         </form>
     );
 }

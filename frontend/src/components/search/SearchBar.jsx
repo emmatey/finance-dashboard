@@ -90,6 +90,7 @@ export default function SearchBar() {
                         onKeyUp={handleKeyUp}
                         onBlur={() => setDataListVisible(false)}
                         onFocus={() => setDataListVisible(true)}
+                        autoComplete="off"
                     />
                     <button disabled={query ? false : true} type='submit'> Search! </button>
                 </div>
