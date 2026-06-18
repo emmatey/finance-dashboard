@@ -7,6 +7,7 @@ export default function TradeOrderConfirm({
     pendingOrder,
     tickerInfoJson,
     setActiveQuery,
+    setOrderSummaryData,
     viewController
 }) {
     const { txTicker, txType, txShareQty, txDollarQty, txUnit } = pendingOrder;
@@ -29,7 +30,12 @@ export default function TradeOrderConfirm({
             })
         });
 
-        console.log(await parseResponse(res));
+        const statusJson = await parseResponse(res);
+        console.log(statusJson);
+        viewController['setShowConfirmationScreen'](false);
+        viewController['setShowSummaryScreen'](true);
+        setActiveQuery(null);
+        setOrderSummaryData(statusJson);
     }
 
     function handleCancelTx() {
@@ -44,17 +50,17 @@ export default function TradeOrderConfirm({
             <section>
 
                 <figure>
-                    <output> {txTicker} </output>
+                    <h3> {txTicker} </h3>
                     <figcaption> Company being traded. </figcaption>
                 </figure>
 
                 <figure>
-                    <output> {txType} </output>
+                    <h3> {txType.toUpperCase()} </h3>
                     <figcaption> Transaction Type </figcaption>
                 </figure>
 
                 <figure>
-                    <output> You are trading {txShareQty} shares for a total value of {txDollarQty} USD. </output>
+                    <h3> You are trading {txShareQty} shares for a total value of {txDollarQty} USD. </h3>
                     <figcaption> Price was last updated at {tickerInfoJson?.last_updated} UTC. </figcaption>
                 </figure>
 

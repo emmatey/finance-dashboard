@@ -19,13 +19,8 @@ export default function TradeShard() {
     const [loading, setLoading] = useState(false);
 
     const [tickerInfoJson, setTickerInfoJson] = useState(null);
-
     let currentPrice = null;
     let ticker = null;
-    if (tickerInfoJson) {
-        currentPrice = tickerInfoJson.current_price;
-        ticker = tickerInfoJson.ticker;
-    }
 
     const [pendingOrder, setPendingOrder] = useState({
         'txTicker': null,
@@ -34,6 +29,7 @@ export default function TradeShard() {
         'txDollarQty': null,
         'txUnit': null
     });
+    const [orderSummaryData, setOrderSummaryData] = useState(null);
 
     const [showInputScreen, setShowInputScreen] = useState(true);
     const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
@@ -132,12 +128,14 @@ export default function TradeShard() {
                     pendingOrder={pendingOrder}
                     tickerInfoJson={tickerInfoJson}
                     setActiveQuery={setActiveQuery}
+                    setOrderSummaryData={setOrderSummaryData}
                     viewController={viewController}
                 />
             )}
 
             {showSummaryScreen && (
                 <TradePostOrderSummary
+                    orderSummaryData={orderSummaryData}
                     viewController={viewController}
                 />
             )}
