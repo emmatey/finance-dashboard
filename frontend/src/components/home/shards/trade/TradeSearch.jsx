@@ -59,7 +59,7 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
         <>
             <form name='tradeSearchForm' onSubmit={handleSearchSubmit} >
                 <div>
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <div style={{ position: 'relative', display: 'inline-block', zIndex: 2}}>
                         <input
                             name='searchInput'
                             type='text'

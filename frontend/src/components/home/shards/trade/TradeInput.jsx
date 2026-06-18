@@ -15,7 +15,7 @@ export default function TradeInput({
 }) {
     return (
         <div style={{ display: 'flex', gap: '16px' }}>
-            <div className='card'>
+            <div className='card' style={{ zIndex: 1 }}>
                 <TradeSearch
                     activeQuery={activeQuery}
                     setActiveQuery={setActiveQuery}
