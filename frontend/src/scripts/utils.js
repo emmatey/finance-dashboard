@@ -89,37 +89,26 @@ export function getSentimentColorClass(score) {
 }
 
 export async function parseResponse(response) {
-    /*
-        Catch errors and jsonify objects returned from backend.
-        Parse and strip 'success' tag.
-    */
-    if (!(response instanceof Response)) {
-        throw new Error("response parameter must be a Response object.");
-    }
-
-    let body = null;
+    let body = {};
     try {
+        // Always try to parse the JSON, even if there's an error status
+        // because servers often send error messages in the body
         body = await response.json();
-    } catch (error) {
-        console.error(error);
+    } catch (e) {
+        // If JSON parsing fails (e.g., empty 500 page), keep body as {}
+        console.error(e);
     }
 
-    if (!response.ok) {
-        console.error("Server Error Payload:", body);
-        throw new Error(`Server responded with status: ${response.status}`);
+    if (!response.ok || body?.success === false) {
+        // Throw an error object that contains the data from the server
+        const error = new Error(body.message || `Request failed with status ${response.status}`);
+        error.data = body; // Attach the server's error payload to the error object!
+        throw error;
     }
 
-    if (body?.success === false) {
-        console.error("API Logic Failure:", body);
-        throw new Error(body.message ?? 'Request failed');
-    }
-
-    if (body && 'success' in body) {
-        const { success, ...cleanBody } = body;
-        return cleanBody;
-    }
-
-    return body;
+    // Success: return data without the 'success' key
+    const { success, ...cleanBody } = body;
+    return cleanBody;
 }
 
 export function getRandomAccentColor() {

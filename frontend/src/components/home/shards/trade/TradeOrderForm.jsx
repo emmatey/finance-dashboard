@@ -49,17 +49,17 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
 
         const [txDollarQty, txShareQty] = adjustPendingOrder(txUnit, Number(txQty), currentPrice)
 
-        //if (txType === 'sell') {
-        //    if (!checkCanSell()) {
-        //        toast.error("Unable to make transaction! You own less shares than you're attempting to sell!");
-        //        return;
-        //    };
-        //} else if (txType === 'buy') {
-        //    if (!checkCanAfford(txDollarQty, cashBalance)) {
-        //        toast.error("Unable to make transaction! You cannot afford this transaction!")
-        //        return;
-        //    };
-        //}
+        if (txType === 'sell') {
+            if (!checkCanSell()) {
+                toast.error("Unable to make transaction! You own less shares than you're attempting to sell!");
+                return;
+            };
+        } else if (txType === 'buy') {
+            if (!checkCanAfford(txDollarQty, cashBalance)) {
+                toast.error("Unable to make transaction! You cannot afford this transaction!")
+                return;
+            };
+        }
 
         setPendingOrder({
             'txTicker': ticker,
