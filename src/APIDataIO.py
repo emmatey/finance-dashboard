@@ -771,6 +771,7 @@ class APIDataIO(DbManager):
                 {
                     'region': 'USA',
                     'ticker': 'VOO',
+                    'company_name': 'Vanguard S&P 500 ETF',
                     'current_price': 614.16,
                     'prev_close': 622.03,
                     'pct_change': -1.27
@@ -778,6 +779,7 @@ class APIDataIO(DbManager):
                 {
                     'region': 'Europe',
                     'ticker': 'IEUR',
+                    'company_name': 'iShares Core MSCI Europe ETF',
                     'current_price': 89.45,
                     'prev_close': 90.12,
                     'pct_change': -0.74
@@ -805,8 +807,9 @@ class APIDataIO(DbManager):
         placeholders = ", ".join(['?' for _ in tickers])
         
         sql = f"""
-            SELECT 
+            SELECT
                 s.ticker,
+                s.company_name,
                 s.last_price as current_price,
                 fm.prev_close,
                 ((s.last_price - fm.prev_close) / fm.prev_close * 100) as pct_change
@@ -835,6 +838,7 @@ class APIDataIO(DbManager):
             result.append({
                 'region': region,
                 'ticker': ticker,
+                'company_name': row.get('company_name'),
                 'current_price': row.get('current_price'),
                 'prev_close': row.get('prev_close'),
                 'pct_change': round(row.get('pct_change', 0), 2),

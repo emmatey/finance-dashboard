@@ -274,6 +274,7 @@ RESOURCES
             data: [{
                 region: str,
                 ticker: str,
+                company_name: str,
                 current_price: float,
                 prev_close: float,
                 pct_change: float
