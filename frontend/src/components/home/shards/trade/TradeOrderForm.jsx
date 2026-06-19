@@ -19,7 +19,7 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
         currentPrice = tickerInfoJson.current_price;
         ticker = tickerInfoJson.ticker;
         qtyOwned = tickerInfoJson.qty_owned;
-        cashBalance = tickerInfoJson.cashBalance;
+        cashBalance = tickerInfoJson.cash_balance;
     };
 
     function checkCanAfford(txDollarQty, cashBalance) {
@@ -29,7 +29,7 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
             return false
         };
     }
-
+    // BUG FORGOT TO HANDLE THE DOLLARS STATE THIS ONLY HANDLES SHARES BUT I HAVE TO STOP
     function checkCanSell() {
         if (Number(qtyOwned) >= Number(txQty)) {
             return true;
