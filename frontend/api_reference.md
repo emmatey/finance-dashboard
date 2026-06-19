@@ -31,9 +31,10 @@ RESOURCES
         register
             to   - POST /api/auth/register  {username: str, password: str}
             from - {success: bool}
-        me - login required
+        me
             to   - GET /api/auth/me
-            from - {success: true, username: str}
+            from - {success: true, username: str | null}
+            note - no login required; returns username: null when unauthenticated
 
     USER 
         summary
@@ -48,6 +49,9 @@ RESOURCES
                 grand_total: float,
                 rank: int
             }
+            400 - no user in session and no username param
+            404 - username not found in database
+            500 - partial/missing data for user
         portfolio
             to   - GET /api/user/portfolio  ?username=str (optional, defaults to logged in user)
             from - {
@@ -253,8 +257,8 @@ RESOURCES
                 prev_close: float,
                 price_change_pct: float,
                 market_cap: float,
-                todays_volume: float,
-                three_month_avg_volume: float,
+                todays_volume: int,
+                three_month_avg_volume: int,
                 volume_change_pct: float
             }]
         }
@@ -278,7 +282,7 @@ RESOURCES
         regions: USA, EU, LATAM, Africa, Australia, India, Japan,
                  China, Gold, Copper, Oil
 
-    TRADE
+    TRADE - login required
         to   - GET /api/trade  ?ticker=str
         from - {
             success: true,
@@ -287,16 +291,35 @@ RESOURCES
             current_price: float,
             prev_close: float,
             pct_change_since_close: float,
-            fifty_two_week_high: float,
-            fifty_two_week_low: float,
-            market_cap: float,
-            three_month_avg_volume: float,
-            analyst_count: int,
-            rating: str,
-            target_price: float,
             cash_balance: float,
             qty_owned: float,
-            holding_value: float
+            holding_value: float,
+            symbol_id: int,
+            last_updated: str,
+            market_open: float,
+            market_cap: float,
+            eps: float,
+            beta: float,
+            trailing_pe: float,
+            forward_pe: float,
+            profit_margin: float,
+            shares_outstanding: float,
+            book_value: float,
+            price_to_book: float,
+            dividend_yield: float,
+            fifty_two_week_high: float,
+            fifty_two_week_low: float,
+            fifty_day_average: float,
+            two_hundred_day_average: float,
+            rating: str,
+            analyst_count: int,
+            target_price: float,
+            current_ratio: float,
+            debt_to_equity: float,
+            todays_volume: float,
+            ten_day_avg_volume: float,
+            three_month_avg_volume: float,
+            insider_sentiment: float | null
         }
         to   - POST /api/trade request body:{ticker: str, qty: float, transaction_type: str (buy|sell)}
         from - {
