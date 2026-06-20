@@ -17,11 +17,16 @@ class UpdateFrequency(Enum):
     price = 300 # symbols table
     balance_snapshot = 86400  # 24 hours
 
-class Satan(CommonQueries):
+class Daemon(CommonQueries):
     """
-    The daemon manager (please laugh).
-    Will be run in a separate process to app.py.
-    Currently will not really be 'daemons' but just a script that does these two operations and then dies.
+    Background task runner for periodic price and balance snapshot updates.
+
+    Runs inside Flask's @app.after_request teardown hook rather than as a
+    separate background process. This is intentional: free-tier web hosts don't
+    support long-running background processes, so teardown is used to trigger
+    updates without requiring one.
+
+    Uses the global_events table to check whether updates are due before running.
     """
     def run(self):
         """

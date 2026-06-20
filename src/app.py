@@ -14,7 +14,7 @@ from CommonQueries import CommonQueries
 from MarketOverviewCoordinator import MarketOverviewCoordinator, SYMBOLS
 from ReportManager import ReportManager  # Fixed space in filename
 from ResearchDataCoordinator import ResearchDataCoordinator
-from Satan import Satan
+from Daemon import Daemon
 from SearchManager import SearchManager
 from TransactionManager import TransactionManager
 from YahooQueryService import YahooQueryService
@@ -61,10 +61,10 @@ def after_request(response):
 def teardown(exception):
     if not app.config.get("TESTING", False):
         try:
-            dae = Satan()
+            dae = Daemon()
             dae.run()
         except Exception:
-            logger.exception("Satan.run() failed during teardown")
+            logger.exception("Daemon.run() failed during teardown")
 
     db = g.pop('db', None)
     if db is not None:
