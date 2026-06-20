@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { parseResponse } from '../../../../scripts/utils';
 import MarketRegion from './MarketRegion';
 import MarketOverviewSkeleton from './MarketOverviewSkeleton';
-import * as styles from './styles';
-import '../../../../styles/colors.css';
 
 
 export default function MarketOverviewShard() {
@@ -40,7 +38,7 @@ export default function MarketOverviewShard() {
     }
 
     return (
-        <div style={styles.bar}>
+        <div>
             {regionEntries.map(([region, packets]) => (
                 <MarketRegion key={region} region={region} packets={packets} />
             ))}
