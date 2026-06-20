@@ -8,27 +8,9 @@ export default function MarketOverviewShard() {
     const [loading, setLoading] = useState(true);
     const [regions, setRegions] = useState({});
 
-    async function fetchMarketOverview() {
-        try {
-            const response = await fetch('/api/market_overview', { method: 'GET' });
-            const json = await parseResponse(response);
-            return json.data ?? [];
-        } catch (error) {
-            // Fixed route + fixed params: nothing actionable to tell the user.
-            // Stay silent — an API outage is evident elsewhere in the UI.
-            console.error(error.message);
-            return [];
-        }
-    }
 
-    useEffect(() => {
-        (async () => {
-            const packets = await fetchMarketOverview();
-            setRegions(groupByRegion(packets));
-            setLoading(false);
-        })();
-    }, []);
 
+    
     const regionEntries = Object.entries(regions);
 
     // While loading, or if the fetch failed/returned nothing, hold the bar's

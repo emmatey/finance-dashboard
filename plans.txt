@@ -24,3 +24,12 @@ Groups:
     User ranking leaderboard
 
     Transact (buy/sell)
+
+
+TODO:
+    Move all fetch calls in child components to the parent component who can call 
+    fetch.all on page load. Factor out promise handling to an custom hook.
+    Pass promise responses as props.
+
+    Before I go any further I need to backtrack and make this refactor to my current components.
+        - MarketOverview 
