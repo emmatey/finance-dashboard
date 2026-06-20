@@ -24,9 +24,3 @@ Groups:
     User ranking leaderboard
 
     Transact (buy/sell)
-
-
-TODO:
-
-
-    https://tanstack.com/query/latest/docs/framework/react/overview

@@ -1,32 +1,10 @@
-import { useState, useEffect } from 'react'
-import { parseResponse } from '../../../scripts/utils.js'
 import '../../../styles/utilities.css'
 import '../../../styles/colors.css'
+import useTransactionHistory from './useTransactionHistory.js'
 
 
 export default function TransactionHistoryShard({ username }) {
-    const [historyObjects, setHistoryObjects] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    async function fetchHistory() {
-        const safeQuery = String(username).trim();
-        try {
-            const response = await fetch(`/api/user/transactions?username=${encodeURIComponent(safeQuery)}`);
-            return (await parseResponse(response))?.data ?? [];
-        } catch (error) {
-            console.error(error);
-            return [];
-        }
-    }
-
-    useEffect(() => {
-        if (username === undefined) {
-            setLoading(true);
-        } else if (username) {
-            setLoading(false);
-            fetchHistory().then(setHistoryObjects);
-        }
-    }, [username]);
+    const { historyObjects } = useTransactionHistory(username);
 
     return (
         <div className='card'>

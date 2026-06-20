@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-    parseResponse,
     formatCurrencyUSD,
     formatPercent,
     formatNumber,
@@ -10,6 +9,7 @@ import {
     getSentimentLabel,
     getSentimentColorClass,
 } from '../../scripts/utils.js'
+import useResearchData from './useResearchData.js'
 
 const RANGES = { '1yr': 31536000, '1mo': 2592000, '1wk': 604800 }
 
@@ -143,37 +143,7 @@ function PriceChart({ prices }) {
 }
 
 export default function ResearchBody({ ticker }) {
-    const [data, setData] = useState(null)
-    const [error, setError] = useState(null)
-
-    useEffect(() => {
-        if (!ticker) return
-        setData(null)
-        setError(null)
-
-        let cancelled = false
-
-        async function load() {
-            try {
-                const localRes = await fetch(`/api/research/local?ticker=${encodeURIComponent(ticker)}`)
-                const local = await parseResponse(localRes)
-                if (!cancelled) setData(local)
-            } catch {
-                // ticker may not be in DB yet — continue to online
-            }
-
-            try {
-                const onlineRes = await fetch(`/api/research/online?ticker=${encodeURIComponent(ticker)}`)
-                const online = await parseResponse(onlineRes)
-                if (!cancelled) setData(online)
-            } catch (err) {
-                if (!cancelled) setError(err.message)
-            }
-        }
-
-        load()
-        return () => { cancelled = true }
-    }, [ticker])
+    const { data, error } = useResearchData(ticker)
 
     if (!ticker) return <main className="container py-4"><h2>Research</h2><p>Search for a company to view research.</p></main>
     if (error && !data) return <main className="container py-4"><h2>Research: {ticker}</h2><p className="text-danger">{error}</p></main>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { parseResponse, adjustPendingOrder } from '../../../../scripts/utils.js'
+import { adjustPendingOrder } from '../../../../scripts/utils.js'
+import useTickerInfo from './useTickerInfo.js'
 import TradeInput from './TradeInput.jsx'
 import TradeOrderConfirm from './TradeOrderConfirm.jsx'
 import TradePostOrderSummary from './TradePostOrderSummary.jsx'
@@ -16,9 +17,8 @@ import '../../../../styles/colors.css'
 
 export default function TradeShard() {
     const [activeQuery, setActiveQuery] = useState("");
-    const [loading, setLoading] = useState(false);
+    const { tickerInfoJson, loading } = useTickerInfo(activeQuery);
 
-    const [tickerInfoJson, setTickerInfoJson] = useState(null);
     let currentPrice = null;
     let ticker = null;
 
@@ -39,54 +39,6 @@ export default function TradeShard() {
         'setShowConfirmationScreen': setShowConfirmationScreen,
         'setShowSummaryScreen': setShowSummaryScreen
     };
-
-    async function getTickerInfoFromTradeRoute(query) {
-        try {
-            setLoading(true);
-            const tickerInfoResponse = await fetch(`/api/trade?ticker=${encodeURIComponent(query)}`);
-            switch (tickerInfoResponse.status) {
-                case 404:
-                    console.log(`Ticker ${query} not found.`);
-                    setTickerInfoJson(null);
-                    setLoading(false);
-                    return false;
-                default:
-                    const tickerJson = await parseResponse(tickerInfoResponse) || {};
-                    setTickerInfoJson(tickerJson);
-                    setLoading(false);
-                    return true;
-            }
-        } catch (error) {
-            setLoading(false);
-            setTickerInfoJson({ "error": `${error}` });
-            console.error(error);
-            return false;
-        }
-    }
-
-    // Updates data about current company every 60 seconds.
-    useEffect(() => {
-        if (!activeQuery) {
-            setTickerInfoJson(null);
-            setLoading(false);
-            return;
-        }
-
-        let timerId = null;
-        async function tick() {
-            const ok = await getTickerInfoFromTradeRoute(activeQuery);
-            if (ok) {
-                timerId = setTimeout(() => {
-                    console.log(`Price of ${activeQuery} updated.`)
-                    tick();
-                }, 60000);
-            }
-        }
-
-        tick();
-
-        return () => { clearTimeout(timerId); };
-    }, [activeQuery]);
 
     useEffect(() => {
         if (!tickerInfoJson || !tickerInfoJson.current_price || !pendingOrder['txTicker']) {
