@@ -7,21 +7,10 @@ import TradePostOrderSummary from './TradePostOrderSummary.jsx'
 import '@/styles/utilities.css'
 import '@/styles/colors.css'
 
-/*
-    TODO: Add data about current users'existing holdings with the company.
-        Use this info to check if the user is able to make a sell order.
-
-        Catch errors with buying and selling. i.e. not enough shares to sell. 
-            or not enough money to buy!
- */
 
 export default function TradeShard() {
     const [activeQuery, setActiveQuery] = useState("");
     const { tickerInfoJson, loading } = useTickerInfo(activeQuery);
-
-    let currentPrice = null;
-    let ticker = null;
-
     const [pendingOrder, setPendingOrder] = useState({
         'txTicker': null,
         'txType': null,

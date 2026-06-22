@@ -7,15 +7,7 @@ export default function PortfolioShard() {
     const [loading, setLoading] = useState(false);
 
     usePortfolio(setHoldingsObjects, setLoading);
-    // cost_basis: number
-    // current_value: number
-    // gain_loss: number
-    // gain_loss_pct: number
-    // name: string
-    // shares: number
-    // symbol: string
-    // total_cost: number
-    // unit_price: number
+
     return (
         <div className='card'>
             {loading && (
