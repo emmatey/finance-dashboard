@@ -8,10 +8,10 @@ export default function TransactionHistoryShard() {
     const [historyObjects, setHistoryObjects] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    useTransactionHistory();
+    useTransactionHistory(setHistoryObjects, setLoading);
     console.log(historyObjects);
 
-    
+
     return (
         <div className='card'>
             {loading && (
