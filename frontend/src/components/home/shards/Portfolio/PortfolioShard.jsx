@@ -7,7 +7,15 @@ export default function PortfolioShard() {
     const [loading, setLoading] = useState(false);
 
     usePortfolio(setHoldingsObjects, setLoading);
-
+    // cost_basis: number
+    // current_value: number
+    // gain_loss: number
+    // gain_loss_pct: number
+    // name: string
+    // shares: number
+    // symbol: string
+    // total_cost: number
+    // unit_price: number
     return (
         <div className='card'>
             {loading && (
@@ -18,11 +26,29 @@ export default function PortfolioShard() {
             {!loading && <table>
                 <thead>
                     <tr>
-                        <th></th>
+                        <th>Symbol</th>
+                        <th>Name</th>
+                        <th>Shares</th>
+                        <th>Price/Share</th>
+                        <th>Cost Basis</th>
+                        <th>Current Value</th>
+                        <th>Gain/Loss</th>
+                        <th>Gain/Loss %</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {}
+                    {holdingsObjects.map(h => (
+                        <tr key={h.symbol}>
+                            <td>{h.symbol}</td>
+                            <td>{h.name}</td>
+                            <td>{h.shares}</td>
+                            <td>${h.unit_price.toFixed(2)}</td>
+                            <td>${h.cost_basis.toFixed(2)}</td>
+                            <td>${h.current_value.toFixed(2)}</td>
+                            <td>${h.gain_loss.toFixed(2)}</td>
+                            <td>{h.gain_loss_pct.toFixed(2)}%</td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>}
         </div>

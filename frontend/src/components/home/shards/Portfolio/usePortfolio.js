@@ -15,13 +15,18 @@ export default function usePortfolio(setHoldingsObjects, setLoading) {
         };
 
         async function fetchHoldings(user) {
-            const url = '/api/';
+            const url = `/api/user/portfolio?username=${encodeURIComponent(user)}`;
             try {
-                
+                const res = await fetch(url);
+                const data = await parseResponse(res);
+                setHoldingsObjects(data?.data ?? []);
+                setLoading(false);
             } catch (error) {
                 console.error(error);
+                console.error(error.data);
                 return [];
             }
         }
+        fetchHoldings(user);
     }, [user])
 }
