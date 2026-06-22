@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react'
 import { parseResponse } from '../../../scripts/utils.js'
 
-export default function useTransactionHistory(username) {
-    const [historyObjects, setHistoryObjects] = useState([])
-    const [loading, setLoading] = useState(false)
-
+export default function useTransactionHistory(username, setHistoryObjects) {
     useEffect(() => {
         if (username === undefined) {
             setLoading(true)
