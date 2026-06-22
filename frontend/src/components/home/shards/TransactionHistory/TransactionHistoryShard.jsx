@@ -9,9 +9,6 @@ export default function TransactionHistoryShard() {
     const [loading, setLoading] = useState(false);
 
     useTransactionHistory(setHistoryObjects, setLoading);
-    console.log(historyObjects);
-
-
     return (
         <div className='card'>
             {loading && (
@@ -24,7 +21,7 @@ export default function TransactionHistoryShard() {
                     <tr>
                         <th>Type</th>
                         <th>Ticker</th>
-                        <th>Shares</th>
+                        <th>Qty</th>
                         <th>Price/Share</th>
                         <th>Date</th>
                         <th>Balance After</th>
@@ -33,7 +30,7 @@ export default function TransactionHistoryShard() {
                 <tbody>
                     {historyObjects.map(tx => (
                         <tr key={tx.transaction_id}>
-                            <td>{tx.transaction_type}</td>
+                            <td>{String(tx.transaction_type).toLocaleUpperCase()}</td>
                             <td>{tx.ticker}</td>
                             <td>{Math.abs(tx.qty)}</td>
                             <td>${tx.unit_price.toFixed(2)}</td>
