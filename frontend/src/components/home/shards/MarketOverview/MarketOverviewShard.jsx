@@ -12,7 +12,6 @@ export default function MarketOverviewShard() {
     const regionEntries = Object.entries(regions);
 
     useMarketOverview(setLoading, setRegions);
-    console.log(regions);
 
     // While loading, or if the fetch failed/returned nothing, hold the bar's
     // shape with empty frames rather than collapsing the layout.

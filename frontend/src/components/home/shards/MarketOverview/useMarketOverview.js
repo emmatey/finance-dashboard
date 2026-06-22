@@ -5,18 +5,19 @@ export default function useMarketOverview(setLoading, setRegions) {
     const url = '/api/market_overview';
 
     function _sort(dataList) {
+        // data.region could be a word like Oil, a country like USA, or a country
+        // specific market like USA NASDAQ
         let sorted = {};
-        const regions = new Set();
         for (const i of dataList) {
-            regions.add(i.region.split(' ')[0]);
-        };
-        for (const i of regions) {
-            sorted[i] = [];
-        };
-        for (const i of dataList) {
-            sorted[i.region.split(' ')[0]].push(i);
+            let split = String(i?.region || '').split(' ');
+
+            if (Object.hasOwn(sorted, split[0])) {
+                sorted[split[0]].push(i);
+            } else{
+                sorted[split[0]] = [i];
+            };
         }
-        return sorted
+        return sorted;
     }
 
     useEffect(() => {
