@@ -1,5 +1,5 @@
-import '../../../../styles/utilities.css';
-import '../../../../styles/colors.css';
+import '@/styles/utilities.css';
+import '@/styles/colors.css';
 
 export default function TradeMarketData({ activeQuery, loading, tickerInfoJson }) {
     // Utility formatters for clean UI

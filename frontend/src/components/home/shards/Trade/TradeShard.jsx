@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { adjustPendingOrder } from '../../../../scripts/utils.js'
+import { adjustPendingOrder } from '@/scripts/utils.js'
 import useTickerInfo from './useTickerInfo.js'
 import TradeInput from './TradeInput.jsx'
 import TradeOrderConfirm from './TradeOrderConfirm.jsx'
 import TradePostOrderSummary from './TradePostOrderSummary.jsx'
-import '../../../../styles/utilities.css'
-import '../../../../styles/colors.css'
+import '@/styles/utilities.css'
+import '@/styles/colors.css'
 
 /*
     TODO: Add data about current users'existing holdings with the company.

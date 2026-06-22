@@ -1,7 +1,7 @@
-import { parseResponse } from '../../../../scripts/utils';
+import { parseResponse } from '@/scripts/utils';
 import { useState } from 'react';
-import '../../../../styles/utilities.css';
-import '../../../../styles/colors.css';
+import '@/styles/utilities.css';
+import '@/styles/colors.css';
 
 export default function TradeOrderConfirm({
     pendingOrder,

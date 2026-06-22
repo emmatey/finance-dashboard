@@ -1,9 +1,8 @@
-import { parseResponse } from '../../../../scripts/utils';
-import { adjustPendingOrder } from '../../../../scripts/utils';
+import { parseResponse, adjustPendingOrder } from '@/scripts/utils';
 import { useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import '../../../../styles/utilities.css'
-import '../../../../styles/colors.css'
+import '@/styles/utilities.css'
+import '@/styles/colors.css'
 
 
 export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewController }) {

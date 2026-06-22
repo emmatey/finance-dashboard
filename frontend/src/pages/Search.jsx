@@ -1,6 +1,6 @@
-import Header from '../components/Header.jsx'
-import Footer from '../components/Footer.jsx'
-import SearchBody from '../components/search/SearchBody.jsx'
+import Header from '@/components/Header.jsx'
+import Footer from '@/components/Footer.jsx'
+import SearchBody from '@/components/search/SearchBody.jsx'
 import { useSearchParams } from 'react-router-dom'
 
 

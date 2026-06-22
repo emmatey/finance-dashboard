@@ -1,4 +1,4 @@
-import '../../styles/utilities.css';
+import '@/styles/utilities.css';
 
 export default function SearchListHeader({ text }) {
     

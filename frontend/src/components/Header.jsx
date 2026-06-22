@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
-import { getRandomAccentColor } from '../scripts/utils.js'
+import { useAuth } from '@/context/AuthContext.jsx'
+import { getRandomAccentColor } from '@/scripts/utils.js'
 
-import SearchBar from '../components/search/SearchBar.jsx'
+import SearchBar from '@/components/search/SearchBar.jsx'
 
-import '../styles/colors.css'
-import '../styles/utilities.css'
+import '@/styles/colors.css'
+import '@/styles/utilities.css'
 
 export default function Header() {
     const navigate = useNavigate()

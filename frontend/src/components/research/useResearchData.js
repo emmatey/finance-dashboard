@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { parseResponse } from '../../scripts/utils.js'
+import { parseResponse } from '@/scripts/utils.js'
 
 export default function useResearchData(ticker) {
     const [data, setData] = useState(null)

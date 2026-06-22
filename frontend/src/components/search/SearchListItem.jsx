@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import '../../styles/utilities.css';
+import '@/styles/utilities.css';
 
 export default function SearchListItem({ object, type }) {
     /*

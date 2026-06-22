@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { parseResponse } from '../../../../scripts/utils.js'
+import { parseResponse } from '@/scripts/utils.js'
 
 export default function useMarketOverview(setLoading, setRegions) {
     const url = '/api/market_overview';
@@ -24,7 +24,7 @@ export default function useMarketOverview(setLoading, setRegions) {
         async function fetchData() {
             const res = await fetch(url);
             const data = await parseResponse(res);
-            const dataList = data?.data;
+            const dataList = data?.data ?? [];
             const sorted = _sort(dataList);
             
             setRegions(sorted);

@@ -2,8 +2,8 @@ import TradeSearch from './TradeSearch.jsx';
 import TradeOrderForm from './TradeOrderForm.jsx';
 import TradeHoldings from './TradeHoldings.jsx';
 import TradeMarketData from './TradeMarketData.jsx';
-import '../../../../styles/utilities.css';
-import '../../../../styles/colors.css';
+import '@/styles/utilities.css';
+import '@/styles/colors.css';
 
 export default function TradeInput({
     activeQuery,

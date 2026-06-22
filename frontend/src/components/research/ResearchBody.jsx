@@ -8,7 +8,7 @@ import {
     getAnalystRatingColorClass,
     getSentimentLabel,
     getSentimentColorClass,
-} from '../../scripts/utils.js'
+} from '@/scripts/utils.js'
 import useResearchData from './useResearchData.js'
 
 const RANGES = { '1yr': 31536000, '1mo': 2592000, '1wk': 604800 }

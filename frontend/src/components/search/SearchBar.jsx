@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { parseResponse } from '../../scripts/utils'
+import { parseResponse } from '@/scripts/utils'
 import SearchListItem from './SearchListItem';
 import SearchListHeader from './SearchListHeader';
 

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { parseResponse } from '../../scripts/utils.js'
+import { parseResponse } from '@/scripts/utils.js'
 import SearchListItem from './SearchListItem'
 import SearchListHeader from './SearchListHeader'
-import '../../styles/utilities.css'
+import '@/styles/utilities.css'
 
 export default function SearchBody({ query }) {
     const [results, setResults] = useState(null);

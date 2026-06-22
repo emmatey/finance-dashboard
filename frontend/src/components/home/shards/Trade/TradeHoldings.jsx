@@ -1,5 +1,5 @@
-import '../../../../styles/utilities.css';
-import '../../../../styles/colors.css';
+import '@/styles/utilities.css';
+import '@/styles/colors.css';
 
 export default function TradeHoldings({ tickerInfoJson }) {
     const formatter = new Intl.NumberFormat("en-US", {

@@ -1,4 +1,4 @@
-import { formatCurrencyUSD } from '../../../../scripts/utils';
+import { formatCurrencyUSD } from '@/scripts/utils';
 
 export default function TickerCard() {
 

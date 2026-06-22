@@ -1,13 +1,17 @@
-import '../../../styles/utilities.css'
-import '../../../styles/colors.css'
+import '@/styles/utilities.css'
+import '@/styles/colors.css'
 import useTransactionHistory from './useTransactionHistory.js'
 import { useState } from 'react';
 
 
-export default function TransactionHistoryShard({ username }) {
+export default function TransactionHistoryShard() {
     const [historyObjects, setHistoryObjects] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    useTransactionHistory();
+    console.log(historyObjects);
+
+    
     return (
         <div className='card'>
             {loading && (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { parseResponse } from '../../../../scripts/utils';
+import { parseResponse } from '@/scripts/utils';
 import useMarketOverview from './useMarketOverview.js'
 
 import MarketRegion from './MarketRegion';

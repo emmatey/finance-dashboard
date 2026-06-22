@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { parseResponse } from '../../../../scripts/utils.js'
+import { parseResponse } from '@/scripts/utils.js'
 
 export default function useTickerInfo(activeQuery) {
     const [tickerInfoJson, setTickerInfoJson] = useState(null)

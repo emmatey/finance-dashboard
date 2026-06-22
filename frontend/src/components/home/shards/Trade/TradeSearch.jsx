@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { parseResponse, getRandomAccentColor } from '../../../../scripts/utils.js'
-import '../../../../styles/utilities.css'
-import '../../../../styles/colors.css'
+import { parseResponse, getRandomAccentColor } from '@/scripts/utils.js'
+import '@/styles/utilities.css'
+import '@/styles/colors.css'
 
 
 export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
