@@ -1,17 +1,10 @@
 LONG TERM FEATURES
-    - Populate buy/sell 2ndary cards with data about user holdings and current price
-    - Animations to fade in/out red/green on price moves.
     - Refresh price button on research and index that shows when last price was fetched.
-    - Deposit/withdraw cash routes
     - Add seed transactions to create various mock users of different investment profiles
-
-- Daemons
-    Every 60 seconds the prices will be updated.(global events)
-    Every 24 hours all users will have balance snapshot taken. (global events)
 
 UI Shards - a self contained unit that can fit in a card 
 
-Groups: 
+Shard Groups: 
     Home Page initial navigation
         - User summary card (large)
         - Balance history graph
@@ -24,3 +17,9 @@ Groups:
     User ranking leaderboard
 
     Transact (buy/sell)
+
+Pages:
+    Home
+    Search
+    Research
+    User Pages

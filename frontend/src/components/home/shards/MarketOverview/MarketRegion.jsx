@@ -1,8 +1,9 @@
 import TickerCard from './TickerCard';
+import '../../../../styles/utilities.css'
 
 export default function MarketRegion({ region, packets }) {
     return (
-        <div>
+        <div className='card'>
             <strong>{region}</strong>
             <ul>
                 {packets.map((packet) => (
