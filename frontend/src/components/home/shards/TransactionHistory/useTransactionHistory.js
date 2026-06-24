@@ -4,9 +4,10 @@ import { useAuth } from '@/context/AuthContext.jsx';
 
 export default function useTransactionHistory() {
     const { user } = useAuth();
-    const [historyObjects, setHistoryObjects] = useState([])
-    const [loading, setLoading] = useState(false)
-    const [errorStatus, setErrorStatus] = useState(null)
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState(null);
+    const [error, setError] = useState(null);
+    const [responseCode, setResponseCode] = useState(null);
 
     useEffect(() => {
         if (user === undefined) {
@@ -15,27 +16,30 @@ export default function useTransactionHistory() {
         }
         if (!user) return
 
-        async function fetchHistory() {
+        async function fetchData() {
             try {
-                const response = await fetch(`/api/user/transactions?username=${encodeURIComponent(user)}`)
-                const data = await parseResponse(response);
-                setHistoryObjects(data?.data ?? []);
-                setLoading(false);
-            } catch (error) {
-                console.error(error)
-                setLoading(false)
-                setErrorStatus(error.status ?? null)
-                if (error.status === 401) {
-                    console.error('Session expired.')
-                } else if (error.status === 404) {
-                    console.error('User not found.')
-                } else if (error.status === 500) {
-                    console.error('Server error fetching transaction history.')
+                setLoading(true);
+                const res = await fetch(`/api/user/transactions?username=${encodeURIComponent(user)}`);
+                const data = await parseResponse(res);
+                setData(data?.data ?? []);
+            } catch (err) {
+                console.error(err);
+                setResponseCode(err.status ?? null);
+                if (err.status === 400) {
+                    setError("No user session found. Please log in.");
+                } else if (err.status === 404) {
+                    setError("User not found.");
+                } else if (err.status === 500) {
+                    setError("Could not load transaction history. Please try again later.");
+                } else {
+                    setError("An unexpected error occurred. Please try again.");
                 }
+            } finally {
+                setLoading(false);
             }
         }
-        fetchHistory()
+        fetchData();
     }, [user])
 
-    return { historyObjects, loading, errorStatus }
+    return { loading, data, error, responseCode };
 }
