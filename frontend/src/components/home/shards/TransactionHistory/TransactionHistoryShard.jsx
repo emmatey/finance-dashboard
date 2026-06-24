@@ -1,14 +1,10 @@
 import '@/styles/utilities.css'
 import '@/styles/colors.css'
 import useTransactionHistory from './useTransactionHistory.js'
-import { useState } from 'react';
 
 
 export default function TransactionHistoryShard() {
-    const [historyObjects, setHistoryObjects] = useState([]);
-    const [loading, setLoading] = useState(false);
-
-    useTransactionHistory(setHistoryObjects, setLoading);
+    const { historyObjects, loading } = useTransactionHistory();
     return (
         <div className='card'>
             {loading && (

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 
-export default function useMarketOverview(setLoading, setRegions) {
+export default function useMarketOverview() {
     const url = '/api/market_overview';
+    const [loading, setLoading] = useState(true)
+    const [regions, setRegions] = useState({})
 
     function _sort(dataList) {
         // data.region could be a word like Oil, a country like USA, or a country
@@ -36,4 +38,6 @@ export default function useMarketOverview(setLoading, setRegions) {
         }
         fetchData();
     }, [])
+
+    return { loading, regions }
 }

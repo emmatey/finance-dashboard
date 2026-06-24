@@ -3,8 +3,10 @@ import { parseResponse } from '@/scripts/utils.js'
 import { useAuth } from '@/context/AuthContext.jsx';
 
 
-export default function usePortfolio(setHoldingsObjects, setLoading) {
+export default function usePortfolio() {
     const { user } = useAuth();
+    const [holdingsObjects, setHoldingsObjects] = useState([])
+    const [loading, setLoading] = useState(false)
     const [errorStatus, setErrorStatus] = useState(null)
 
     useEffect(() => {
@@ -38,5 +40,5 @@ export default function usePortfolio(setHoldingsObjects, setLoading) {
         fetchHoldings(user);
     }, [user])
 
-    return { errorStatus }
+    return { holdingsObjects, loading, errorStatus }
 }

@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 import { useAuth } from '@/context/AuthContext.jsx';
 
-export default function useTransactionHistory(setHistoryObjects, setLoading) {
+export default function useTransactionHistory() {
     const { user } = useAuth();
+    const [historyObjects, setHistoryObjects] = useState([])
+    const [loading, setLoading] = useState(false)
     const [errorStatus, setErrorStatus] = useState(null)
 
     useEffect(() => {
@@ -35,5 +37,5 @@ export default function useTransactionHistory(setHistoryObjects, setLoading) {
         fetchHistory()
     }, [user])
 
-    return { errorStatus }
+    return { historyObjects, loading, errorStatus }
 }
