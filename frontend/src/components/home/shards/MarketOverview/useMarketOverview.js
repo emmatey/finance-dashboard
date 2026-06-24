@@ -2,22 +2,20 @@ import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 
 export default function useMarketOverview() {
-    const url = '/api/market_overview';
-    const [loading, setLoading] = useState(true)
-    const [regions, setRegions] = useState({})
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState(null);
+    const [error, setError] = useState(null);
+    const [responseCode, setResponseCode] = useState(null);
 
     function _sort(dataList) {
-        // data.region could be a word like Oil, a country like USA, or a country
-        // specific market like USA NASDAQ
         let sorted = {};
         for (const i of dataList) {
             let split = String(i?.region || '').split(' ');
-
             if (Object.hasOwn(sorted, split[0])) {
                 sorted[split[0]].push(i);
-            } else{
+            } else {
                 sorted[split[0]] = [i];
-            };
+            }
         }
         return sorted;
     }
@@ -25,19 +23,24 @@ export default function useMarketOverview() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await fetch(url);
-                const data = await parseResponse(res);
-                const dataList = data?.data ?? [];
-                const sorted = _sort(dataList);
-                setRegions(sorted);
-                setLoading(false);
-            } catch (error) {
-                console.error(error);
+                setLoading(true);
+                const res = await fetch('/api/market_overview');
+                const json = await parseResponse(res);
+                setData(_sort(json?.data ?? []));
+            } catch (err) {
+                console.error(err);
+                setResponseCode(err.status ?? null);
+                if (err.status === 500) {
+                    setError("Could not load market overview. Please try again later.");
+                } else {
+                    setError("An unexpected error occurred. Please try again.");
+                }
+            } finally {
                 setLoading(false);
             }
         }
         fetchData();
     }, [])
 
-    return { loading, regions }
+    return { loading, data, error, responseCode };
 }
