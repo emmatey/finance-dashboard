@@ -1,12 +1,38 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { parseResponse } from "@/scripts/utils";
-import { useAuth } from "@/context/AuthContext";
 
 
 export default function useUserSummary() {
-    const { user } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState(null);
+    const [error, setError] = useState(null);
+    const [responseCode, setResponseCode] = useState(null);
 
     useEffect(() => {
-        
+        async function fetchData() {
+            try {
+                setLoading(true);
+                const res = await fetch('/api/user/summary');
+                const data = await parseResponse(res);
+                setData(data);
+            } catch (err) {
+                console.error(err);
+                setResponseCode(err.status ?? null);
+                if (err.status === 400) {
+                    setError("No user session found. Please log in.");
+                } else if (err.status === 404) {
+                    setError("User not found.");
+                } else if (err.status === 500) {
+                    setError("Could not load user data. Some information may be missing.");
+                } else {
+                    setError("An unexpected error occurred. Please try again.");
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
     }, []);
+
+    return { loading, data, error, responseCode };
 }

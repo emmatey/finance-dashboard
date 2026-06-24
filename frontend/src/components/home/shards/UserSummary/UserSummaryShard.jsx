@@ -11,7 +11,10 @@ export default function UserSummaryShard() {
         //cash_balance: float,
         //grand_total: float,
         //rank: int
-        
+    // It has to handle 
+        //400 - no user in session and no username param
+        //404 - username not found in database
+        //500 - partial/missing data for user
 
     return(
         <>
