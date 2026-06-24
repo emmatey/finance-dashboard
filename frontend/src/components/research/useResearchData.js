@@ -3,12 +3,12 @@ import { parseResponse } from '@/scripts/utils.js'
 
 export default function useResearchData(ticker) {
     const [data, setData] = useState(null)
-    const [error, setError] = useState(null)
+    const [errorStatus, setErrorStatus] = useState(null)
 
     useEffect(() => {
         if (!ticker) return
         setData(null)
-        setError(null)
+        setErrorStatus(null)
 
         let cancelled = false
 
@@ -27,7 +27,16 @@ export default function useResearchData(ticker) {
                 const online = await parseResponse(onlineRes)
                 if (!cancelled) setData(online)
             } catch (err) {
-                if (!cancelled) setError(err.message)
+                if (!cancelled) {
+                    setErrorStatus(err.status ?? null)
+                    if (err.status === 404) {
+                        console.error(`Ticker ${ticker} not found.`)
+                    } else if (err.status === 500) {
+                        console.error('Server error fetching research data.')
+                    } else {
+                        console.error(err)
+                    }
+                }
             }
         }
 
@@ -35,5 +44,5 @@ export default function useResearchData(ticker) {
         return () => { cancelled = true }
     }, [ticker])
 
-    return { data, error }
+    return { data, errorStatus }
 }

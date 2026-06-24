@@ -143,10 +143,15 @@ function PriceChart({ prices }) {
 }
 
 export default function ResearchBody({ ticker }) {
-    const { data, error } = useResearchData(ticker)
+    const { data, errorStatus } = useResearchData(ticker)
+
+    const errorMessages = {
+        404: 'Ticker not found.',
+        500: 'Something went wrong. Please try again.',
+    }
 
     if (!ticker) return <main className="container py-4"><h2>Research</h2><p>Search for a company to view research.</p></main>
-    if (error && !data) return <main className="container py-4"><h2>Research: {ticker}</h2><p className="text-danger">{error}</p></main>
+    if (errorStatus && !data) return <main className="container py-4"><h2>Research: {ticker}</h2><p className="text-danger">{errorMessages[errorStatus] ?? 'Unable to reach the server.'}</p></main>
     if (!data) return <main className="container py-4"><h2>Research: {ticker}</h2><p className="text-muted">Loading…</p></main>
 
     const symbol = data.symbols?.[0]
