@@ -1,38 +1,20 @@
 import Header from "../../Header";
 import Footer from "../../Footer";
 import ScreenerCard from "./ScreenerCard";
-import { parseResponse } from "../../../scripts/utils";
-import { useEffect, useState } from "react";
+import useScreenerData from "./useScreenerData";
 
 export default function ScreenerShard() {
-    const [screenerData, setScreenerData] = useState({});
-
-    async function fetchScreenerData() {
-        try {
-            const response = await fetch("/api/screeners", {
-                method: "GET"
-            });
-            const screenerJson = await parseResponse(response);
-            return screenerJson;
-        } catch (error) {
-            console.error(error.message);
-            return {};
-        };
-    }
-
-    useEffect(() => {
-        (async () => {
-            const data = await fetchScreenerData();
-            setScreenerData(data);
-        })();
-    }, []);
+    const { loading, data, error } = useScreenerData();
 
     return (
         <>
         <p> Screener! </p>
-        {Object.entries(screenerData).map(([categoryName, itemsArray], idx) => {
-            return <ScreenerCard key={idx} title={categoryName} data={itemsArray} />
-        })}
+        {error
+            ? <p>{error}</p>
+            : Object.entries(data ?? {}).map(([categoryName, itemsArray], idx) => {
+                return <ScreenerCard key={idx} title={categoryName} data={itemsArray} />
+            })
+        }
         </>
     )
 }
