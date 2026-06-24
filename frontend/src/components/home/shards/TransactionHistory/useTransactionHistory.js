@@ -1,32 +1,24 @@
 import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
-import { useAuth } from '@/context/AuthContext.jsx';
 
 export default function useTransactionHistory() {
-    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
     const [responseCode, setResponseCode] = useState(null);
 
     useEffect(() => {
-        if (user === undefined) {
-            setLoading(true)
-            return
-        }
-        if (!user) return
-
         async function fetchData() {
             try {
                 setLoading(true);
-                const res = await fetch(`/api/user/transactions?username=${encodeURIComponent(user)}`);
+                const res = await fetch('/api/user/transactions');
                 const data = await parseResponse(res);
                 setData(data?.data ?? []);
             } catch (err) {
                 console.error(err);
                 setResponseCode(err.status ?? null);
-                if (err.status === 400) {
-                    setError("No user session found. Please log in.");
+                if (err.status === 401) {
+                    setError("You must be logged in to view transaction history.");
                 } else if (err.status === 404) {
                     setError("User not found.");
                 } else if (err.status === 500) {
@@ -39,7 +31,7 @@ export default function useTransactionHistory() {
             }
         }
         fetchData();
-    }, [user])
+    }, [])
 
     return { loading, data, error, responseCode };
 }

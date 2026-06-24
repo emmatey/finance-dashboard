@@ -4,7 +4,7 @@ import useTransactionHistory from './useTransactionHistory.js'
 
 
 export default function TransactionHistoryShard() {
-    const { historyObjects, loading } = useTransactionHistory();
+    const { loading, data, error, responseCode } = useTransactionHistory();
     return (
         <div className='card'>
             {loading && (
@@ -24,7 +24,7 @@ export default function TransactionHistoryShard() {
                     </tr>
                 </thead>
                 <tbody>
-                    {historyObjects.map(tx => (
+                    {(data ?? []).map(tx => (
                         <tr key={tx.transaction_id}>
                             <td>{String(tx.transaction_type).toLocaleUpperCase()}</td>
                             <td>{tx.ticker}</td>

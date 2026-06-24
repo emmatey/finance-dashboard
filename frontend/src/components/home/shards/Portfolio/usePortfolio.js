@@ -1,44 +1,37 @@
 import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
-import { useAuth } from '@/context/AuthContext.jsx';
-
 
 export default function usePortfolio() {
-    const { user } = useAuth();
-    const [holdingsObjects, setHoldingsObjects] = useState([])
-    const [loading, setLoading] = useState(false)
-    const [errorStatus, setErrorStatus] = useState(null)
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState(null);
+    const [error, setError] = useState(null);
+    const [responseCode, setResponseCode] = useState(null);
 
     useEffect(() => {
-        if (user === undefined) {
-            setLoading(true)
-            return
-        };
-        if (!user) {
-            return;
-        };
-
-        async function fetchHoldings(user) {
-            const url = `/api/user/portfolio?username=${encodeURIComponent(user)}`;
+        async function fetchData() {
             try {
-                const res = await fetch(url);
+                setLoading(true);
+                const res = await fetch('/api/user/portfolio');
                 const data = await parseResponse(res);
-                setHoldingsObjects(data?.data ?? []);
-                setLoading(false);
-            } catch (error) {
-                console.error(error);
-                console.error(error.data);
-                setLoading(false);
-                setErrorStatus(error.status ?? null)
-                if (error.status === 404) {
-                    console.error('User not found.')
-                } else if (error.status === 500) {
-                    console.error('Server error fetching portfolio.')
+                setData(data?.data ?? []);
+            } catch (err) {
+                console.error(err);
+                setResponseCode(err.status ?? null);
+                if (err.status === 400) {
+                    setError("No user session found. Please log in.");
+                } else if (err.status === 404) {
+                    setError("User not found.");
+                } else if (err.status === 500) {
+                    setError("Could not load portfolio. Please try again later.");
+                } else {
+                    setError("An unexpected error occurred. Please try again.");
                 }
+            } finally {
+                setLoading(false);
             }
         }
-        fetchHoldings(user);
-    }, [user])
+        fetchData();
+    }, [])
 
-    return { holdingsObjects, loading, errorStatus }
+    return { loading, data, error, responseCode };
 }

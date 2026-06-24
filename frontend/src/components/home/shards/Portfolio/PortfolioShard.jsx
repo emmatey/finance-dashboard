@@ -2,7 +2,7 @@ import usePortfolio from "./usePortfolio";
 
 
 export default function PortfolioShard() {
-    const { holdingsObjects, loading } = usePortfolio();
+    const { loading, data, error, responseCode } = usePortfolio();
 
     return (
         <div className='card'>
@@ -25,7 +25,7 @@ export default function PortfolioShard() {
                     </tr>
                 </thead>
                 <tbody>
-                    {holdingsObjects.map(h => (
+                    {(data ?? []).map(h => (
                         <tr key={h.symbol}>
                             <td>{h.symbol}</td>
                             <td>{h.name}</td>
