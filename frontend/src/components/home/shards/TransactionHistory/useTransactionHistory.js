@@ -20,7 +20,7 @@ export default function useTransactionHistory(setHistoryObjects, setLoading) {
                 setLoading(false);
             } catch (error) {
                 console.error(error)
-                return []
+                setLoading(false)
             }
         }
         fetchHistory()

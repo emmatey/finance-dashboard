@@ -17,8 +17,9 @@ export default function useResearchData(ticker) {
                 const localRes = await fetch(`/api/research/local?ticker=${encodeURIComponent(ticker)}`)
                 const local = await parseResponse(localRes)
                 if (!cancelled) setData(local)
-            } catch {
-                // ticker may not be in DB yet — continue to online fetch
+            } catch (err) {
+                // local failure (e.g. 500 db error) — still attempt online fetch
+                if (!cancelled) console.error('Local research fetch failed:', err)
             }
 
             try {
