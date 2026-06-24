@@ -22,13 +22,17 @@ export default function useMarketOverview(setLoading, setRegions) {
 
     useEffect(() => {
         async function fetchData() {
-            const res = await fetch(url);
-            const data = await parseResponse(res);
-            const dataList = data?.data ?? [];
-            const sorted = _sort(dataList);
-            
-            setRegions(sorted);
-            setLoading(false);
+            try {
+                const res = await fetch(url);
+                const data = await parseResponse(res);
+                const dataList = data?.data ?? [];
+                const sorted = _sort(dataList);
+                setRegions(sorted);
+                setLoading(false);
+            } catch (error) {
+                console.error(error);
+                setLoading(false);
+            }
         }
         fetchData();
     }, [])
