@@ -1,10 +1,10 @@
 import Header from "../../Header";
 import Footer from "../../Footer";
-import ScreenerCard from "./ScreenerCard";
-import useScreenerData from "./useScreenerData";
+import ScreenersCard from "./ScreenersCard";
+import useScreenersData from "./useScreenersData";
 
-export default function ScreenerShard() {
-    const { loading, data, error } = useScreenerData();
+export default function ScreenersShard() {
+    const { loading, data, error } = useScreenersData();
 
     return (
         <>
@@ -12,7 +12,7 @@ export default function ScreenerShard() {
         {error
             ? <p>{error}</p>
             : Object.entries(data ?? {}).map(([categoryName, itemsArray], idx) => {
-                return <ScreenerCard key={idx} title={categoryName} data={itemsArray} />
+                return <ScreenersCard key={idx} title={categoryName} data={itemsArray} />
             })
         }
         </>

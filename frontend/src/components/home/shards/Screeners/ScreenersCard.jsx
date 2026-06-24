@@ -3,7 +3,7 @@ import Footer from "../../Footer";
 import { parseResponse } from "../../../scripts/utils";
 
 
-export default function ScreenerCard({ title, data }) {
+export default function ScreenersCard({ title, data }) {
     // 'data' is a list of objects
     const headers = Object.keys(data[0]);
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { parseResponse } from "@/scripts/utils";
 
 
-export default function useScreenerData() {
+export default function useScoreboard() {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
@@ -12,14 +12,14 @@ export default function useScreenerData() {
         async function fetchData() {
             try {
                 setLoading(true);
-                const res = await fetch("/api/screeners");
+                const res = await fetch("/api/scoreboard");
                 const data = await parseResponse(res);
                 setData(data);
             } catch (err) {
                 console.error(err);
                 setResponseCode(err.status ?? null);
                 if (err.status === 500) {
-                    setError("Could not load screener data. Please try again later.");
+                    setError("Could not load scoreboard. Please try again later.");
                 } else {
                     setError("An unexpected error occurred. Please try again.");
                 }
