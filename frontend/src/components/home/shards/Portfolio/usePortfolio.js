@@ -25,7 +25,7 @@ export default function usePortfolio(setHoldingsObjects, setLoading) {
             } catch (error) {
                 console.error(error);
                 console.error(error.data);
-                return [];
+                setLoading(false);
             }
         }
         fetchHoldings(user);

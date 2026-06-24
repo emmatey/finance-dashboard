@@ -9,20 +9,21 @@ export default function useTickerInfo(activeQuery) {
         try {
             setLoading(true)
             const response = await fetch(`/api/trade?ticker=${encodeURIComponent(query)}`)
-            switch (response.status) {
-                case 404:
-                    console.log(`Ticker ${query} not found.`)
-                    setTickerInfoJson(null)
-                    setLoading(false)
-                    return false
-                default:
-                    const json = await parseResponse(response) || {}
-                    setTickerInfoJson(json)
-                    setLoading(false)
-                    return true
-            }
+            const json = await parseResponse(response) || {}
+            setTickerInfoJson(json)
+            setLoading(false)
+            return true
         } catch (error) {
             setLoading(false)
+            if (error.status === 404) {
+                console.log(`Ticker ${query} not found.`)
+                setTickerInfoJson(null)
+                return false
+            }
+            if (error.status === 401) {
+                setTickerInfoJson({ error: 'Session expired. Please log in again.' })
+                return false
+            }
             setTickerInfoJson({ error: `${error}` })
             console.error(error)
             return false
