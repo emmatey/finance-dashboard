@@ -91,18 +91,15 @@ export function getSentimentColorClass(score) {
 export async function parseResponse(response) {
     let body = {};
     try {
-        // Always try to parse the JSON, even if there's an error status
-        // because servers often send error messages in the body
         body = await response.json();
     } catch (e) {
-        // If JSON parsing fails (e.g., empty 500 page), keep body as {}
         console.error(e);
     }
 
     if (!response.ok || body?.success === false) {
-        // Throw an error object that contains the data from the server
         const error = new Error(body.message || `Request failed with status ${response.status}`);
-        error.data = body; // Attach the server's error payload to the error object!
+        error.status = response.status;
+        error.data = body;
         throw error;
     }
 

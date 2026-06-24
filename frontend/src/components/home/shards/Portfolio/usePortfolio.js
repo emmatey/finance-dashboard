@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 import { useAuth } from '@/context/AuthContext.jsx';
 
+
 export default function usePortfolio(setHoldingsObjects, setLoading) {
     const { user } = useAuth();
 
