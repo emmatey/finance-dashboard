@@ -5,6 +5,10 @@
   --grey-3: #F1F5F9;
   --grey-4: #E2E8F0;
   --grey-5: #CBD5E1;
+  --grey-6: #94A3B8;
+  --grey-7: #64748B;
+  --grey-8: #475569;
+  --grey-9: #334155;
 
   /* ─── Red ──────────────────────────────────────── */
   --red-1: #FFA9A5;
@@ -66,7 +70,8 @@
   --color-border-subtle:    var(--grey-3);
 
   /* Text */
-  --color-text:             var(--grey-5);
+  --color-text:             var(--grey-9);
+  --color-text-muted:       var(--grey-7);
   --color-text-on-primary:  var(--grey-1);
   --color-link:             var(--blue-4);
 }
