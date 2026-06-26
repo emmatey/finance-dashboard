@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Header from '@/components/Header.jsx'
 import NavPanel from '@/components/home/NavPanel.jsx'
-import { Card, CardContent } from '@/components/ui/card.jsx'
+import { Card } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 
 import UserSummaryShard from './shards/UserSummary/UserSummaryShard.jsx'
@@ -19,12 +19,12 @@ export default function HomeBody({ username }) {
     const [holdingsTab, setHoldingsTab] = useState('portfolio')
 
     return (
-        <div className="flex flex-col h-screen overflow-hidden">
+        <div className="flex flex-col h-screen">
             <Header />
-            <div className="flex flex-1 gap-3 p-3 overflow-hidden">
+            <div className="flex flex-row flex-1 min-h-0 gap-3 p-3">
                 <NavPanel activeView={activeView} setActiveView={setActiveView} />
-                <Card className="flex-1 flex flex-col overflow-hidden rounded-xl">
-                    <CardContent className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+                <Card className="flex-1 min-w-0 rounded-xl overflow-hidden">
+                    <div className="h-full overflow-y-auto p-4 flex flex-col gap-4">
 
                         {activeView === 'portfolio' && (
                             <>
@@ -48,8 +48,8 @@ export default function HomeBody({ username }) {
                                         Transactions
                                     </Button>
                                 </div>
-                                {holdingsTab === 'portfolio'     && <PortfolioShard />}
-                                {holdingsTab === 'transactions'  && <TransactionHistoryShard />}
+                                {holdingsTab === 'portfolio'    && <PortfolioShard />}
+                                {holdingsTab === 'transactions' && <TransactionHistoryShard />}
                             </>
                         )}
 
@@ -65,7 +65,7 @@ export default function HomeBody({ username }) {
 
                         {activeView === 'leaderboard' && <ScoreboardShard />}
 
-                    </CardContent>
+                    </div>
                 </Card>
             </div>
         </div>

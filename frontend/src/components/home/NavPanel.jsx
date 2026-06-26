@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card.jsx'
+import { Card } from '@/components/ui/card.jsx'
 import { Button } from '@/components/ui/button.jsx'
 
 const NAV_ITEMS = [
@@ -10,8 +10,8 @@ const NAV_ITEMS = [
 
 export default function NavPanel({ activeView, setActiveView }) {
     return (
-        <Card className="w-52 flex-shrink-0 flex flex-col rounded-xl">
-            <CardContent className="flex flex-col gap-1 p-2">
+        <Card className="w-52 shrink-0 rounded-xl">
+            <div className="flex flex-col gap-1 p-2">
                 {NAV_ITEMS.map(({ view, label }) => (
                     <Button
                         key={view}
@@ -22,7 +22,7 @@ export default function NavPanel({ activeView, setActiveView }) {
                         {label}
                     </Button>
                 ))}
-            </CardContent>
+            </div>
         </Card>
     )
 }
