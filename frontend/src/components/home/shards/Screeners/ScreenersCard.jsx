@@ -1,30 +1,27 @@
-import Header from "../../Header";
-import Footer from "../../Footer";
-import { parseResponse } from "../../../scripts/utils";
-
-
 export default function ScreenersCard({ title, data }) {
-    // 'data' is a list of objects
+    if (!data?.length) return null;
+
     const headers = Object.keys(data[0]);
 
     return (
-        <>
         <div className="card">
             <h4>{title}</h4>
             <table>
-                <tr>
-                { headers.map((header) => (<th>{header}</th>)) }
-                </tr>
-                
-                { data.map((obj) => (
+                <thead>
                     <tr>
-                        {headers.map((header) => (
-                            <td>{obj?.[header] || null} </td>
-                        ))}
+                        {headers.map((header) => (<th key={header}>{header}</th>))}
                     </tr>
-                )) }
+                </thead>
+                <tbody>
+                    {data.map((obj, i) => (
+                        <tr key={i}>
+                            {headers.map((header) => (
+                                <td key={header}>{obj?.[header] ?? null}</td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
             </table>
         </div>
-        </>
-    )
+    );
 }
