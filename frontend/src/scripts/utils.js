@@ -17,6 +17,23 @@ export function formatPercent(n) {
     return (Number(n) * 100).toFixed(2) + '%'
 }
 
+export function formatUTCSeconds(timestamp) {
+  /**
+   * Converts a Unix timestamp (in seconds) to US short date format (M/D/YY).
+   * * @param {number} timestamp - The Unix timestamp in seconds.
+   * @returns {string} - The formatted date (e.g., "3/31/26").
+   */
+
+  // Convert seconds to milliseconds
+  const date = new Date(timestamp * 1000);
+  
+  return date.toLocaleDateString('en-US', {
+    month: 'numeric', 
+    day: 'numeric',   
+    year: '2-digit'   
+  });
+}
+
 export function formatNumber(n, decimals = 2) {
     /*
         Formats a number with locale-aware thousands separators and a configurable

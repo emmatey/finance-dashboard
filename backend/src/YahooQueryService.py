@@ -330,14 +330,15 @@ class YahooQueryService:
                 if key not in desired_keys:
                     del story[key]
     
-            # Extract thumbnail URL from nested structure
+            # Extract thumbnail URL from nested structure; prefer index 1 (medium res) when available
             thumbnail_url = "N/A"
             resolutions = story.get("thumbnail", {})
             if isinstance(resolutions, dict):
                 images = resolutions.get("resolutions", [])
-                if len(images) > 1:
+                if images:
                     try:
-                        thumbnail_url = images[1].get("url", "N/A")
+                        idx = 1 if len(images) > 1 else 0
+                        thumbnail_url = images[idx].get("url", "N/A")
                     except (IndexError, AttributeError):
                         pass
             story["thumbnail"] = thumbnail_url

@@ -1,17 +1,18 @@
 import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { formatUTCSeconds } from "@/scripts/utils";
 
 
-export default function NewsStoryCard({story}) {
+export default function NewsStoryCard({ story }) {
     /*
         data: [{
             uuid: str,
@@ -31,26 +32,31 @@ export default function NewsStoryCard({story}) {
         the lifecycle.
     */
     return (
-        <Card>
-            <CardHeader>
-                <img 
+        <Card className='flex flex-row'>
+            <div className="flex-shrink-0 p-4">
+                <img
                     src={story?.thumbnail}
+                    className="w-16 h-16 object-cover rounded"
                     onError={(e) => {
-                        e.target.onError = null;
-                        e.target.src = 'images/searchBar/newsIcon.svg'
+                        e.target.onerror = null;
+                        e.target.src = '/images/searchBar/newsIcon.svg'
                     }}
                 />
-                <CardAction>
-                
-                </CardAction>
-            </CardHeader>
+            </div>
             <CardContent>
-
+                <a 
+                    href={story?.link ?? "#"}
+                    target="_blank"
+                >
+                    {story?.title ?? "title not found..."}
+                </a>
+                <CardDescription>
+                    {story?.publisher ?? "publisher not found"}
+                </CardDescription>
+                <CardDescription>
+                    {story?.providerPublishTime ? formatUTCSeconds(story.providerPublishTime) : "publish time not found."}
+                </CardDescription>
             </CardContent>
-            <CardDescription>
-
-            </CardDescription>
         </Card>
-        
     )
 }
