@@ -1,7 +1,17 @@
-import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 
-export default function NewsStoryCard() {
+export default function NewsStoryCard({story}) {
     /*
         data: [{
             uuid: str,
@@ -21,7 +31,26 @@ export default function NewsStoryCard() {
         the lifecycle.
     */
     return (
-        <>
-        </>
+        <Card>
+            <CardHeader>
+                <img 
+                    src={story?.thumbnail}
+                    onError={(e) => {
+                        e.target.onError = null;
+                        e.target.src = 'images/searchBar/newsIcon.svg'
+                    }}
+                />
+                <CardAction>
+                
+                </CardAction>
+            </CardHeader>
+            <CardContent>
+
+            </CardContent>
+            <CardDescription>
+
+            </CardDescription>
+        </Card>
+        
     )
 }

@@ -14,7 +14,7 @@ export default function useNewsfeed() {
                 setLoading(true);
                 const res = await fetch("/api/research/news");
                 const data = await parseResponse(res);
-                setData(data);
+                setData(data?.data ?? null);
             } catch (err) {
                 console.error(err);
                 setResponseCode(err.status ?? null);

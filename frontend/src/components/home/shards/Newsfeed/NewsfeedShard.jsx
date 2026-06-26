@@ -1,6 +1,16 @@
 import { useState } from "react";
 import useNewsfeed from "./useNewsfeed";
 import NewsStoryCard from "./NewsStoryCard";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 export default function NewsfeedShard() {
     /*
@@ -13,7 +23,6 @@ export default function NewsfeedShard() {
             providerPublishTime: int
         }]
     */
-   const [newsData, setNewsData] = useState(null);
    const { loading, data, error, responseCode } = useNewsfeed();
    if (loading) return <div>Loading...</div>;
    if (error) return <p>{`${error} ${responseCode}`}</p>;
@@ -27,7 +36,10 @@ export default function NewsfeedShard() {
     that the news story cards sit within. 
     */
     return (
-        <div>
-        </div>
+        <Card>
+            {data && data.map((story) => (
+                <NewsStoryCard key={story.uuid} story={story}/>
+            ))}
+        </Card>
     );
 }
