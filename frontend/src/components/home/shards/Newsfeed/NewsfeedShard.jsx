@@ -49,8 +49,8 @@ export default function NewsfeedShard() {
     const [currentPage, setCurrentPage] = useState(0);
     const [resultsPerPage, setResultsPerPage] = useState(10);
     const { loading, data, error, responseCode } = useNewsfeed();
-        if (loading) return <div>Loading...</div>;
-        if (error) return <p>{`${error} ${responseCode}`}</p>;
+    if (loading) return <div>Loading...</div>;
+    if (error) return <p>{`${error} ${responseCode}`}</p>;
     const [lowBound, highBound, pageQty] = data ? calculatePageMemberIndices(data, resultsPerPage, currentPage) : [0, 0, 0];
     let dataSubset = data ? data.slice(lowBound, highBound) : [];
 
@@ -59,28 +59,53 @@ export default function NewsfeedShard() {
             <CardHeader>
                 Newsfeed
             </CardHeader>
+
             <CardContent>
                 {dataSubset.map((data) => (<NewsStoryCard key={data.uuid} story={data} />))}
             </CardContent>
-            <CardFooter>
-                <Pagination>
-                    <PaginationItem>
-                        <PaginationPrevious
-                            onClick={(event) => {
-                                setCurrentPage((prevPage) => prevPage + -1)
-                            }}
-                            disabled={currentPage === 0 ? true : false}
-                        />
-                    </PaginationItem>
 
-                    <PaginationItem>
-                        <PaginationNext
-                            onClick={(event) => {
-                                setCurrentPage((prevPage) => prevPage + 1)
-                            }}
-                            disabled={currentPage === pageQty ? true : false}
-                        />
-                    </PaginationItem>
+            <CardFooter className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+                    <span>Per page:</span>
+                    <select
+                        value={resultsPerPage}
+                        onChange={(e) => {
+                            setResultsPerPage(Number(e.target.value));
+                            setCurrentPage(0);
+                        }}
+                        className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm text-center outline-none cursor-pointer"
+                    >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                    </select>
+                </div>
+
+                <Pagination className="w-auto mx-0">
+                    <PaginationContent>
+                        <PaginationItem>
+                            <PaginationPrevious
+                                onClick={(event) => {
+                                    setCurrentPage((prevPage) => prevPage + -1)
+                                }}
+                                disabled={currentPage === 0 ? true : false}
+                            />
+                        </PaginationItem>
+
+                        <PaginationItem>
+                            {`${currentPage}/${pageQty}`}
+                        </PaginationItem>
+
+                        <PaginationItem>
+                            <PaginationNext
+                                onClick={(event) => {
+                                    setCurrentPage((prevPage) => prevPage + 1)
+                                }}
+                                disabled={currentPage === pageQty ? true : false}
+                            />
+                        </PaginationItem>
+                    </PaginationContent>
                 </Pagination>
             </CardFooter>
         </Card>
