@@ -57,12 +57,12 @@ export default function NewsfeedShard() {
     let dataSubset = data ? data.slice(lowBound, highBound) : [];
 
     return (
-        <Card className={'bg-accent'}>
+        <Card>
             <CardHeader>
-                Newsfeed
+                <CardTitle>Newsfeed</CardTitle>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="flex flex-col gap-1 px-3">
                 {dataSubset.map((data) => (<NewsStoryCard key={data.uuid} story={data} />))}
             </CardContent>
 
