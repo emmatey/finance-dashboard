@@ -21,6 +21,20 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination"
 
+function calculatePageMemberIndices(data, pageSize, pageNumber) {
+    if (!data) return;
+    const pageQty = Math.ceil(data.length / pageSize) - 1;
+
+    if (pageNumber < 0 || pageNumber > pageQty || data.length === 0) {
+        return [0, 0, 0];
+    }
+
+    const lowBound = pageNumber * pageSize;
+    const highBound = Math.min(lowBound + pageSize, data.length);
+
+    return [lowBound, highBound, pageQty];
+}
+
 export default function NewsfeedShard() {
     /*
         newsData: [{
@@ -32,33 +46,22 @@ export default function NewsfeedShard() {
             providerPublishTime: int
         }]
     */
-    const { loading, data, error, responseCode } = useNewsfeed();
     const [currentPage, setCurrentPage] = useState(0);
-    if (loading) return <div>Loading...</div>;
-    if (error) return <p>{`${error} ${responseCode}`}</p>;
+    const [resultsPerPage, setResultsPerPage] = useState(10);
+    const { loading, data, error, responseCode } = useNewsfeed();
+        if (loading) return <div>Loading...</div>;
+        if (error) return <p>{`${error} ${responseCode}`}</p>;
+    const [lowBound, highBound, pageQty] = data ? calculatePageMemberIndices(data, resultsPerPage, currentPage) : [0, 0, 0];
+    let dataSubset = data ? data.slice(lowBound, highBound) : [];
 
-    function calculatePageMemberIndices(data, pageSize, pageNumber) {
-        const pageQty = Math.ceil(data.length / pageSize) - 1;
-
-        if (pageNumber < 0 || pageNumber > pageQty || data.length === 0) {
-            return [0, 0];
-        }
-
-        const lowBound = pageNumber * pageSize;
-        const highBound = Math.min(lowBound + pageSize, data.length);
-
-        return [lowBound, highBound];
-    }
-
-    
     return (
         <Card>
             <CardHeader>
                 Newsfeed
             </CardHeader>
-            {data && data.map((story) => (
-                <NewsStoryCard key={story.uuid} story={story} />
-            ))}
+            <CardContent>
+                {dataSubset.map((data) => (<NewsStoryCard key={data.uuid} story={data} />))}
+            </CardContent>
             <CardFooter>
                 <Pagination>
                     <PaginationItem>
@@ -70,16 +73,12 @@ export default function NewsfeedShard() {
                         />
                     </PaginationItem>
 
-                    {
-
-                    }
-
                     <PaginationItem>
                         <PaginationNext
                             onClick={(event) => {
                                 setCurrentPage((prevPage) => prevPage + 1)
                             }}
-                            disabled={currentPage === pageNumber ? true : false}
+                            disabled={currentPage === pageQty ? true : false}
                         />
                     </PaginationItem>
                 </Pagination>

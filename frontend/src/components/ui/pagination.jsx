@@ -41,6 +41,8 @@ function PaginationLink({
   className,
   isActive,
   size = "icon",
+  disabled = false,
+  onClick,
   ...props
 }) {
   return (
@@ -48,11 +50,14 @@ function PaginationLink({
       asChild
       variant={isActive ? "outline" : "ghost"}
       size={size}
-      className={cn(className)}>
+      className={cn(disabled && "pointer-events-none opacity-50", className)}
+    >
       <a
         aria-current={isActive ? "page" : undefined}
+        aria-disabled={disabled || undefined}
         data-slot="pagination-link"
         data-active={isActive}
+        onClick={disabled ? (e) => e.preventDefault() : onClick}
         {...props} />
     </Button>
   );
