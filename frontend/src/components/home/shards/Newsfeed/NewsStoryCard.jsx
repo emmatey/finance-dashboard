@@ -9,7 +9,7 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { formatUTCSeconds } from "@/scripts/utils";
+import { formatUTCSeconds } from "@/scripts/utils"
 
 
 export default function NewsStoryCard({ story }) {
@@ -31,8 +31,14 @@ export default function NewsStoryCard({ story }) {
         This card needs the state for one story. However the parent should control the visibility and
         the lifecycle.
     */
+    function handleClick() {
+        if (story?.link) {
+            window.open(story.link, '_blank', 'noopener,noreferrer');
+        }
+    }
+
     return (
-        <Card className='flex flex-row'>
+        <Card className='flex flex-row bg-secondary' onClick={handleClick}>
             <div className="flex-shrink-0 p-4">
                 <img
                     src={story?.thumbnail}
@@ -45,13 +51,9 @@ export default function NewsStoryCard({ story }) {
                 />
             </div>
             <CardContent>
-                <a 
-                    href={story?.link ?? "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <span>
                     {story?.title ?? "title not found..."}
-                </a>
+                </span>
                 <CardDescription>
                     {story?.publisher ?? "publisher not found"}
                 </CardDescription>

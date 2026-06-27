@@ -51,38 +51,38 @@
 }
 
 :root {
-    --background: var(--color-bg);
-    --foreground: var(--color-text);
-    --card: var(--color-surface);
-    --card-foreground: var(--color-text);
-    --popover: var(--color-surface);
-    --popover-foreground: var(--color-text);
-    --primary: var(--color-primary);
-    --primary-foreground: var(--color-text-on-primary);
-    --secondary: var(--color-surface-raised);
-    --secondary-foreground: var(--color-text);
-    --muted: var(--color-surface-raised);
-    --muted-foreground: var(--color-text-muted);
-    --accent: var(--color-accent);
-    --accent-foreground: var(--color-text);
-    --destructive: var(--color-loss);
-    --border: var(--color-border);
-    --input: var(--color-border);
-    --ring: var(--color-primary-hover);
-    --chart-1: var(--color-chart-gain);
-    --chart-2: var(--color-chart-loss);
-    --chart-3: var(--color-primary);
-    --chart-4: var(--color-accent);
-    --chart-5: var(--color-chart-neutral);
+    --background: var(--grey-1);
+    --foreground: var(--grey-9);
+    --card: var(--grey-2);
+    --card-foreground: var(--grey-9);
+    --popover: var(--grey-2);
+    --popover-foreground: var(--grey-9);
+    --primary: var(--blue-5);
+    --primary-foreground: var(--grey-1);
+    --secondary: var(--grey-3);
+    --secondary-foreground: var(--grey-9);
+    --muted: var(--grey-3);
+    --muted-foreground: var(--grey-7);
+    --accent: var(--yellow-4);
+    --accent-foreground: var(--grey-9);
+    --destructive: var(--red-4);
+    --border: var(--grey-4);
+    --input: var(--grey-4);
+    --ring: var(--blue-4);
+    --chart-1: var(--green-4);
+    --chart-2: var(--red-4);
+    --chart-3: var(--blue-5);
+    --chart-4: var(--yellow-4);
+    --chart-5: var(--grey-4);
     --radius: 0.625rem;
-    --sidebar: var(--color-surface);
-    --sidebar-foreground: var(--color-text);
-    --sidebar-primary: var(--color-primary);
-    --sidebar-primary-foreground: var(--color-text-on-primary);
-    --sidebar-accent: var(--color-surface-raised);
-    --sidebar-accent-foreground: var(--color-text);
-    --sidebar-border: var(--color-border);
-    --sidebar-ring: var(--color-primary-hover);
+    --sidebar: var(--grey-2);
+    --sidebar-foreground: var(--grey-9);
+    --sidebar-primary: var(--blue-5);
+    --sidebar-primary-foreground: var(--grey-1);
+    --sidebar-accent: var(--grey-3);
+    --sidebar-accent-foreground: var(--grey-9);
+    --sidebar-border: var(--grey-4);
+    --sidebar-ring: var(--blue-4);
 }
 
 .dark {

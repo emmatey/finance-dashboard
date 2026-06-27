@@ -57,7 +57,7 @@ export default function NewsfeedShard() {
     let dataSubset = data ? data.slice(lowBound, highBound) : [];
 
     return (
-        <Card>
+        <Card className={'bg-accent'}>
             <CardHeader>
                 Newsfeed
             </CardHeader>
