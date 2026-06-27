@@ -3,7 +3,7 @@ import { parseResponse } from "@/scripts/utils";
 
 
 export default function useNewsfeed() {
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
     const [responseCode, setResponseCode] = useState(null);
@@ -11,7 +11,6 @@ export default function useNewsfeed() {
     useEffect(() => {
         async function fetchData() {
             try {
-                setLoading(true);
                 const res = await fetch("/api/research/news?qty=100");
                 const data = await parseResponse(res);
                 setData(data?.data ?? null);

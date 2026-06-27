@@ -41,12 +41,14 @@ export default function NewsStoryCard({ story }) {
                         e.target.onerror = null;
                         e.target.src = '/images/searchBar/newsIcon.svg'
                     }}
+                    alt="Article thumbnail."
                 />
             </div>
             <CardContent>
                 <a 
                     href={story?.link ?? "#"}
                     target="_blank"
+                    rel="noopener noreferrer"
                 >
                     {story?.title ?? "title not found..."}
                 </a>
