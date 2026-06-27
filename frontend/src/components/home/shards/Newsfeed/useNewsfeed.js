@@ -12,7 +12,7 @@ export default function useNewsfeed() {
         async function fetchData() {
             try {
                 setLoading(true);
-                const res = await fetch("/api/research/news");
+                const res = await fetch("/api/research/news?qty=100");
                 const data = await parseResponse(res);
                 setData(data?.data ?? null);
             } catch (err) {
