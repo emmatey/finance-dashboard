@@ -20,7 +20,15 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination"
-
+/*
+The loading initial-state flicker still stands. useNewsfeed still starts loading: false, so your first render (loading false, data null, error null) falls through both guards and paints an empty <Card> newsfeed for a frame before the effect flips loading to true. None of the context you pasted changes that — it's about the hook's initial state, not the pagination or the parser. Still think useState(true) is the truer starting point.
+The "0/9" display still stands. {currentPage/{currentPage}/
+currentPage/{pageQty}} is still showing zero-based indices to a human. pageQty is still really "last page index," not a count. Display-only +1 on both sides fixes the human-facing text without touching your slicing math.
+<img> has no alt — that's over in NewsStoryCard, untouched here.
+target="_blank" without rel — also in NewsStoryCard, untouched.
+Unused imports in both NewsStoryCard and NewsfeedShard — untouched.
+The cosmetic pair — disabled={currentPage === 0 ? true : false} (still a boolean asking to become a boolean) and prevPage + -1 (still the scenic route to - 1) — still there, still harmless, still made me smile. 😄
+*/
 function calculatePageMemberIndices(data, pageSize, pageNumber) {
     if (!data) return;
     const pageQty = Math.ceil(data.length / pageSize) - 1;
