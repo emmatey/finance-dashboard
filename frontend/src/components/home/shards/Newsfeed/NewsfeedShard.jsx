@@ -61,7 +61,11 @@ export default function NewsfeedShard() {
     if (error) return <p>{`${error} ${responseCode}`}</p>;
     const [lowBound, highBound, pageQty] = data ? calculatePageMemberIndices(data, resultsPerPage, currentPage) : [0, 0, 0];
     let dataSubset = data ? data.slice(lowBound, highBound) : [];
+/*
 
+Your page-bound safety currently lives entirely in the view layer — it depends on PaginationLink's pointer-events-none doing its job, driven by your disabled={currentPage === 0} / disabled={currentPage === pageQty} props. Your handlers still don't clamp, and currentPage itself is never re-validated against pageQty. Today that's totally fine, because the only things that move currentPage are the two guarded buttons and the page-size <select> (which resets to 0). The invariant "currentPage is always within [0, pageQty]" holds.
+The day it could break is the day data changes size after mount — a refresh/refetch that returns fewer stories, a filter, a search box, anything. If pageQty shrinks while you're sitting on a high page, nothing re-clamps currentPage, and since currentPage > pageQty makes neither === 0 nor === pageQty true, both buttons un-disable and you're stranded clicking around an empty feed. So the genuinely-robust move isn't "clamp the click handler" — it's a small useEffect that pulls currentPage back in range whenever pageQty changes, so the page index can never be left pointing past the end of the data. Park it for now; it's a "when this feed gets a refresh button" problem, not a today problem. But it's the real shape of what I was clumsily gesturing at the first time. 🧭
+*/
     return (
         <Card>
             <CardHeader>
