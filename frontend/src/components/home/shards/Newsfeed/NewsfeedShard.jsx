@@ -87,10 +87,12 @@ export default function NewsfeedShard() {
                 <Pagination className="w-auto mx-0">
                     <PaginationContent>
                         <PaginationItem>
+                            <PaginationLink onClick={() => setCurrentPage(0)} disabled={currentPage === 0}>«</PaginationLink>
+                        </PaginationItem>
+
+                        <PaginationItem>
                             <PaginationPrevious
-                                onClick={() => {
-                                    setCurrentPage((prevPage) => prevPage - 1)
-                                }}
+                                onClick={() => setCurrentPage((p) => p - 1)}
                                 disabled={currentPage === 0}
                             />
                         </PaginationItem>
@@ -101,11 +103,13 @@ export default function NewsfeedShard() {
 
                         <PaginationItem>
                             <PaginationNext
-                                onClick={() => {
-                                    setCurrentPage((prevPage) => prevPage + 1)
-                                }}
-                                disabled={currentPage === lastPage ? true : false}
+                                onClick={() => setCurrentPage((p) => p + 1)}
+                                disabled={currentPage === lastPage}
                             />
+                        </PaginationItem>
+
+                        <PaginationItem>
+                            <PaginationLink onClick={() => setCurrentPage(lastPage)} disabled={currentPage === lastPage}>»</PaginationLink>
                         </PaginationItem>
                     </PaginationContent>
                 </Pagination>
