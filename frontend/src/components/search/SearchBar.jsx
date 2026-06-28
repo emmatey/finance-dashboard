@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { parseResponse } from '@/scripts/utils'
 import SearchListItem from './SearchListItem';
 import SearchListHeader from './SearchListHeader';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 
 export default function SearchBar() {
@@ -81,10 +83,10 @@ export default function SearchBar() {
     }
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div className='flex'>
             <form name='searchForm' onSubmit={handleSubmit} >
                 <div>
-                    <input
+                    <Input
                         id='searchBar'
                         type='text'
                         onKeyUp={handleKeyUp}
@@ -92,7 +94,7 @@ export default function SearchBar() {
                         onFocus={() => setDataListVisible(true)}
                         autoComplete="off"
                     />
-                    <button disabled={query ? false : true} type='submit'> Search! </button>
+                    <Button disabled={!query} type='submit'>Search</Button>
                 </div>
                 {
                     dataListVisible

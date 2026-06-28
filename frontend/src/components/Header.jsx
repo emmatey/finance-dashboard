@@ -22,27 +22,28 @@ export default function Header() {
     }
 
     return (
-        <header style={{ display: 'flex' }}>
-            
-            <div onClick={() => navigate('/')} onMouseOver={handleMouseOver} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }}>
-                <span>Finance Dashboard</span>
-            </div>
+        <header>
+            <div className='flex'>
+                <div onClick={() => navigate('/')} onMouseOver={handleMouseOver} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }}>
+                    <span>Finance Dashboard</span>
+                </div>
 
-            <SearchBar />
+                <SearchBar />
 
-            <div>
-                {user
-                    ?
-                    (
-                        <div>
-                            <button aria-label='logout' onClick={logout}> Log Out </button>
-                            <button aria-label="User"> {user} </button>
-                        </div>
-                    )
-                    :
-                    (
-                        <button type='button' onClick={() => navigate('/auth?mode=login')}> Log In </button>
-                    )}
+                <div>
+                    {user
+                        ?
+                        (
+                            <div>
+                                <button aria-label='logout' onClick={logout}> Log Out </button>
+                                <button aria-label="User"> {user} </button>
+                            </div>
+                        )
+                        :
+                        (
+                            <button type='button' onClick={() => navigate('/auth?mode=login')}> Log In </button>
+                        )}
+                </div>
             </div>
         </header>
     )
