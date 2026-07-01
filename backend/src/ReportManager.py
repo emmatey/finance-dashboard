@@ -351,9 +351,9 @@ class ReportManager(CommonQueries):
                 FROM balance_snapshots
                 JOIN users ON users.id = balance_snapshots.user_id
                 WHERE snap_datetime = (
-                    SELECT MAX(snap_datetime)
-                    FROM balance_snapshots
-                    GROUP BY user_id
+                    SELECT MAX(bs2.snap_datetime)
+                    FROM balance_snapshots AS bs2
+                    WHERE bs2.user_id = balance_snapshots.user_id
                 )
             ),
             ranked AS (
@@ -362,7 +362,7 @@ class ReportManager(CommonQueries):
                 RANK() OVER (ORDER BY grand_total DESC) AS rank
                 FROM latest_snapshots
             )
-            SELECT * FROM ranked 
+            SELECT * FROM ranked
         """
         return self.select_query(sql, ())
 
@@ -391,9 +391,9 @@ class ReportManager(CommonQueries):
                 FROM balance_snapshots
                 JOIN users ON users.id = balance_snapshots.user_id
                 WHERE snap_datetime = (
-                    SELECT MAX(snap_datetime)
-                    FROM balance_snapshots
-                    GROUP BY user_id
+                    SELECT MAX(bs2.snap_datetime)
+                    FROM balance_snapshots AS bs2
+                    WHERE bs2.user_id = balance_snapshots.user_id
                 )
             ),
             ranked AS (
