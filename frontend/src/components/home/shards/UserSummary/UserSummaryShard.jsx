@@ -1,14 +1,8 @@
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card"
 import useUserSummary from './useUserSummary'
 import useBalanceHistory from './BalanceHistory/useBalanceHistory'
+import AccountValueHeader from './AccountValueHeader'
 import BalanceHistoryChart from "./BalanceHistory/BalanceHistoryChart";
 
 export default function UserSummaryShard() {
@@ -16,6 +10,9 @@ export default function UserSummaryShard() {
 
     const { loading: summaryLoading, data: summary, error: summaryError, responseCode: summaryResponseCode } = useUserSummary();
     const { loading: historyLoading, data: history, error: historyError, responseCode: historyResponseCode } = useBalanceHistory();
+
+    const [activeLine, setActiveLine] = useState("grand_total");
+    const [hoveredPoint, setHoveredPoint] = useState(null);
 
     const loading = summaryLoading || historyLoading;
     const error = summaryError || historyError;
@@ -25,26 +22,16 @@ export default function UserSummaryShard() {
     if (error) return <p className="text-sm text-destructive">{responseCode}{error}</p>;
     if (!summary) return null;
 
-    // snap_datetime is epoch seconds (backend unixepoch()); Date expects ms, hence * 1000
-    const lastUpdated = summary.snap_datetime
-        ? new Date(summary.snap_datetime * 1000).toLocaleString()
-        : null;
-
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>
-                    Account Value
-                </CardTitle>
-                <CardDescription>
-                    Last updated on {lastUpdated}
-                </CardDescription>
-                <CardAction>
-                    <Badge> Rank #{summary.rank} </Badge>
-                </CardAction>
-            </CardHeader>
+            <AccountValueHeader summary={summary} hoveredPoint={hoveredPoint} activeLine={activeLine} />
             <CardContent>
-                <BalanceHistoryChart data={history} />
+                <BalanceHistoryChart
+                    data={history}
+                    activeLine={activeLine}
+                    onActiveLineChange={setActiveLine}
+                    onHoverChange={setHoveredPoint}
+                />
             </CardContent>
         </Card>
     );

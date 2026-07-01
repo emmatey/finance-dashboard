@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Line, LineChart } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { CHART_CONFIG } from "./chartConfig";
 
 const DAY_IN_SECONDS = 24 * 60 * 60;
 
@@ -25,27 +26,19 @@ function getRangeCutoffSeconds(range) {
     }
 }
 
-export default function BalanceHistoryChart({ data }) {
-    const chartConfig = {
-        grand_total: {
-            label: "Portfolio Value",
-            color: "var(--chart-3)",
-        },
-        cash_balance: {
-            label: "Cash Balance",
-            color: "var(--chart-1)"
-        },
-        portfolio_value: {
-            label: "Holdings Value",
-            color: "var(--chart-2)",
-        }
-    };
-
-    const [activeLine, setActiveLine] = useState("grand_total");
+export default function BalanceHistoryChart({ data, activeLine, onActiveLineChange, onHoverChange }) {
     const [activeRange, setActiveRange] = useState("1yr");
 
     const rangeCutoff = getRangeCutoffSeconds(activeRange);
     const rangedData = rangeCutoff ? data.filter((d) => d.snap_datetime >= rangeCutoff) : data;
+
+    function handleMouseMove(nextState) {
+        if (nextState.isTooltipActive && typeof nextState.activeTooltipIndex === "number") {
+            onHoverChange(rangedData[nextState.activeTooltipIndex] ?? null);
+        } else {
+            onHoverChange(null);
+        }
+    }
 
     return (
         <>
@@ -53,18 +46,18 @@ export default function BalanceHistoryChart({ data }) {
                 type="single"
                 variant="outline"
                 value={activeLine}
-                onValueChange={(value) => value && setActiveLine(value)}
+                onValueChange={(value) => value && onActiveLineChange(value)}
             >
-                {Object.entries(chartConfig).map(([dataKey, { label, color }]) => (
+                {Object.entries(CHART_CONFIG).map(([dataKey, { label, color }]) => (
                     <ToggleGroupItem key={dataKey} value={dataKey} aria-label={`Show ${label}`}>
                         <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
                         {label}
                     </ToggleGroupItem>
                 ))}
             </ToggleGroup>
-            <ChartContainer config={chartConfig}>
-                <LineChart data={rangedData}>
-                    {Object.keys(chartConfig).map((dataKey) => (
+            <ChartContainer config={CHART_CONFIG}>
+                <LineChart data={rangedData} onMouseMove={handleMouseMove} onMouseLeave={() => onHoverChange(null)}>
+                    {Object.keys(CHART_CONFIG).map((dataKey) => (
                         <Line
                             key={dataKey}
                             dataKey={dataKey}
