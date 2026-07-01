@@ -42,7 +42,7 @@ export default function UserSummaryShard() {
                     Account Value
                 </CardTitle>
                 <CardDescription>
-                    Last updated on {data['snap_datetime']}
+                    Last updated on {lastUpdated}
                 </CardDescription>
                 <CardAction>
                     <Badge> Rank #{data["rank"]} </Badge>

@@ -14,7 +14,7 @@ export default function useBalanceHistory() {
                 setLoading(true);
                 const res = await fetch("/api/user/balance_snapshots");
                 const data = await parseResponse(res);
-                setData(data);
+                setData(data['data']);
             } catch (err) {
                 console.error(err);
                 setResponseCode(err.status ?? null);
