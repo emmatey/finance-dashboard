@@ -2,7 +2,6 @@ import { Line, LineChart } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 import { Button } from "@/components/ui/button";
 import useBalanceHistory from "./useBalanceHistory"
-import { Mobile } from "@hugeicons/core-free-icons";
 
 
 export default function BalanceHistoryChart() {
@@ -11,7 +10,7 @@ export default function BalanceHistoryChart() {
            grand_total: 10000
            portfolio_value: 0
            snap_datetime: "2026-06-08 05:08:50"
-          username: "emma"
+           username: "emma"
     */
     const { loading, data, error, responseCode } = useBalanceHistory();
     console.log(data);
