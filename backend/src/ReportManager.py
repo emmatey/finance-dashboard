@@ -107,9 +107,9 @@ class ReportManager(CommonQueries):
         }
         """
         sql = """
-        SELECT 
+        SELECT
             u.username,
-            ss.snap_datetime, 
+            unixepoch(ss.snap_datetime) AS snap_datetime,
             ss.cash_balance,
             ss.portfolio_value,
             ss.grand_total
@@ -397,12 +397,12 @@ class ReportManager(CommonQueries):
                 )
             ),
             ranked AS (
-                SELECT username, user_id, snap_datetime, portfolio_value,
+                SELECT username, user_id, unixepoch(snap_datetime) AS snap_datetime, portfolio_value,
                     cash_balance, grand_total,
                     RANK() OVER (ORDER BY grand_total DESC) AS rank
                 FROM latest_snapshots
             )
-            SELECT * FROM ranked 
+            SELECT * FROM ranked
             WHERE user_id IN ({placeholders})
         """
         return self.select_query(sql, tuple(user_ids))
