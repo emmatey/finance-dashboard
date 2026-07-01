@@ -13,7 +13,7 @@
 //   (e.g. "cash_balance") into human-readable text for the header description.
 export const CHART_CONFIG = {
     grand_total: {
-        label: "Portfolio Value",
+        label: "Account Value",
         color: "var(--chart-3)",
     },
     cash_balance: {

@@ -6,8 +6,6 @@ import AccountValueHeader from './AccountValueHeader'
 import BalanceHistoryChart from "./BalanceHistory/BalanceHistoryChart";
 
 export default function UserSummaryShard() {
-    // TODO: Add 'today's gain/loss' feature here.
-
     const { loading: summaryLoading, data: summary, error: summaryError, responseCode: summaryResponseCode } = useUserSummary();
     const { loading: historyLoading, data: history, error: historyError, responseCode: historyResponseCode } = useBalanceHistory();
 
@@ -23,8 +21,8 @@ export default function UserSummaryShard() {
     if (!summary) return null;
 
     return (
-        <Card>
-            <AccountValueHeader summary={summary} hoveredPoint={hoveredPoint} activeLine={activeLine} />
+        <Card className="max-w-lg">
+            <AccountValueHeader summary={summary} history={history} hoveredPoint={hoveredPoint} activeLine={activeLine} />
             <CardContent>
                 <BalanceHistoryChart
                     data={history}

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Line, LineChart } from "recharts";
+import { Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartContainer } from "@/components/ui/chart";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { CHART_CONFIG } from "./chartConfig";
+import { formatUTCSeconds, formatCurrencyUSD } from "@/scripts/utils.js";
 
 const DAY_IN_SECONDS = 24 * 60 * 60;
 
@@ -33,8 +34,9 @@ export default function BalanceHistoryChart({ data, activeLine, onActiveLineChan
     const rangedData = rangeCutoff ? data.filter((d) => d.snap_datetime >= rangeCutoff) : data;
 
     function handleMouseMove(nextState) {
-        if (nextState.isTooltipActive && typeof nextState.activeTooltipIndex === "number") {
-            onHoverChange(rangedData[nextState.activeTooltipIndex] ?? null);
+        // activeTooltipIndex comes back as a string (e.g. "2"), not a number - Number() it before indexing
+        if (nextState.isTooltipActive && nextState.activeTooltipIndex != null) {
+            onHoverChange(rangedData[Number(nextState.activeTooltipIndex)] ?? null);
         } else {
             onHoverChange(null);
         }
@@ -55,8 +57,10 @@ export default function BalanceHistoryChart({ data, activeLine, onActiveLineChan
                     </ToggleGroupItem>
                 ))}
             </ToggleGroup>
-            <ChartContainer config={CHART_CONFIG}>
+            <ChartContainer config={CHART_CONFIG} className="h-56 pt-4">
                 <LineChart data={rangedData} onMouseMove={handleMouseMove} onMouseLeave={() => onHoverChange(null)}>
+                    <XAxis dataKey="snap_datetime" tickFormatter={formatUTCSeconds} />
+                    <YAxis tickFormatter={formatCurrencyUSD} width={80} />
                     {Object.keys(CHART_CONFIG).map((dataKey) => (
                         <Line
                             key={dataKey}
@@ -70,6 +74,7 @@ export default function BalanceHistoryChart({ data, activeLine, onActiveLineChan
             <ToggleGroup
                 type="single"
                 variant="outline"
+                className="mx-auto"
                 value={activeRange}
                 onValueChange={(value) => value && setActiveRange(value)}
             >
