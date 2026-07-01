@@ -25,6 +25,7 @@ export default function UserSummaryShard() {
     if (error) return <p className="text-sm text-destructive">{responseCode}{error}</p>;
     if (!summary) return null;
 
+    // snap_datetime is epoch seconds (backend unixepoch()); Date expects ms, hence * 1000
     const lastUpdated = summary.snap_datetime
         ? new Date(summary.snap_datetime * 1000).toLocaleString()
         : null;
