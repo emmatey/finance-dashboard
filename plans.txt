@@ -6,14 +6,13 @@ UI Shards - a self contained unit that can fit in a card
 
 Shard Groups: 
     Home Page initial navigation
-        - User summary card (large)
-        - Balance history graph
+        - User summary card + Balance history graph
+        - News feed 
         - Current Holdings / Transaction history (two components, toggled)
     Market Watch
-        - Global markets overview (add additional american markets)
+        - Global markets overview
         - Screeners: Show a separate card for each of the screener categories
-        - News feed 
-
+        
     User ranking leaderboard
 
     Transact (buy/sell)

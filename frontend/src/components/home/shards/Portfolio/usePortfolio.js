@@ -18,13 +18,13 @@ export default function usePortfolio() {
                 console.error(err);
                 setResponseCode(err.status ?? null);
                 if (err.status === 400) {
-                    setError("No user session found. Please log in.");
+                    setError(`Error: ${responseCode} No user session found. Please log in.`);
                 } else if (err.status === 404) {
-                    setError("User not found.");
+                    setError(`Error: ${responseCode} User not found.`);
                 } else if (err.status === 500) {
-                    setError("Could not load portfolio. Please try again later.");
+                    setError(`Error: ${responseCode} Could not load portfolio. Please try again later.`);
                 } else {
-                    setError("An unexpected error occurred. Please try again.");
+                    setError(`Error: ${responseCode} An unexpected error occurred. Please try again.`);
                 }
             } finally {
                 setLoading(false);
@@ -33,5 +33,5 @@ export default function usePortfolio() {
         fetchData();
     }, [])
 
-    return { loading, data, error, responseCode };
+    return { loading, data, error };
 }

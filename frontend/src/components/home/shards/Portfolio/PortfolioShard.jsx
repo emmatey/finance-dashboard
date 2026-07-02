@@ -1,15 +1,16 @@
 import usePortfolio from "./usePortfolio";
+import useTransactionHistory from "../TransactionHistory/useTransactionHistory";
+import { }
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 export default function PortfolioShard() {
-    const { loading, data, error, responseCode } = usePortfolio();
+    const { loading, data, error } = usePortfolio();
 
     return (
         <div className='card'>
             {loading && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100px' }}>
-                    <span>Loading...</span>
-                </div>
+                <span> Loading ... </span>
             )}
             {!loading && <table>
                 <thead>
