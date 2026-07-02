@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 
 export default function useTransactionHistory() {
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
     const [responseCode, setResponseCode] = useState(null);

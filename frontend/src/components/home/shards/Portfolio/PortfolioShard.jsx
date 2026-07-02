@@ -9,13 +9,19 @@ export default function PortfolioShard() {
     const { loading: txLoading, data: txData, error: txError } = useTransactionHistory();
 
     const loading = portfolioLoading || txLoading;
+    const error = portfolioError || txError;
 
     return (
         <div className='card'>
             {loading && (
                 <span> Loading ... </span>
             )}
-            {!loading && (
+
+            {error && (
+                <span> {error} </span>
+            )}
+
+            {!loading && !error && (
                 <PortfolioTable data={portfolioData}/>
             )}
         </div>
