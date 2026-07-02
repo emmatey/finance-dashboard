@@ -1,37 +1,57 @@
 
 
+const columnDef = [
+    {
+        accessorKey: "ticker_plus_name",
+        header: "Symbol",
+    },
+    {
+        accessorKey: "unit_price",
+        header: "Last Price",
+    },
+    {
+        accessorKey: "todays_gain_loss_plus_pct",
+        header: "Today's gain/loss",
+    },
+    {
+        accessorKey: "total_gain_loss_plus_pct",
+        header: "Total gain/loss",
+    },
+    {
+        accessorKey: "current_value",
+        header: "Current Value",
+    },
+    {
+        accessorKey: "",
+        header: "% of account",
+    },
+    {
+        accessorKey: "",
+        header: "Quantity",
+    },
+    {
+        accessorKey: "",
+        header: "Cost Basis"
+    }
+];
+
 export default function PortfolioTable({ data }) {
-    console.log(data);
+    // Combining 'ticker' and 'company name' to be displayed in one cell.
+    const displayData = structuredClone(data);
+    const portfolioVale = 
+    if (displayData) {
+        displayData.map((holding) => {
+            holding['ticker_plus_name'] = [holding.symbol, holding.name]
+            holding['todays_gain_loss_plus_pct'] = [holding.todays_gain_loss, holding.todays_gain_loss_pct]
+            holding['total_gain_loss_plus_pct'] = [holding.gain_loss, holding.gain_loss_pct]
+        })
+    };
+
+    console.log(displayData);
+
     return (
         <div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Name</th>
-                        <th>Shares</th>
-                        <th>Price/Share</th>
-                        <th>Cost Basis</th>
-                        <th>Current Value</th>
-                        <th>Gain/Loss</th>
-                        <th>Gain/Loss %</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {(data ?? []).map(h => (
-                        <tr key={h.symbol}>
-                            <td>{h.symbol}</td>
-                            <td>{h.name}</td>
-                            <td>{h.shares}</td>
-                            <td>${h.unit_price.toFixed(2)}</td>
-                            <td>${h.cost_basis.toFixed(2)}</td>
-                            <td>${h.current_value.toFixed(2)}</td>
-                            <td>${h.gain_loss.toFixed(2)}</td>
-                            <td>{h.gain_loss_pct.toFixed(2)}%</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+
         </div>
     )
 }
