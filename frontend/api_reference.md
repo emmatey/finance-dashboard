@@ -75,7 +75,10 @@ RESOURCES
                     current_value: float,
                     total_cost: float,
                     gain_loss: float,
-                    gain_loss_pct: float
+                    gain_loss_pct: float,
+                    todays_gain_loss: float,
+                    todays_gain_loss_pct: float,
+                    market_state: str | null
                 }]
             }
             empty portfolio returns { success: true, data: [] }

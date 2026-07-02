@@ -34,6 +34,10 @@ class ReportManager(CommonQueries):
                 - total_cost: Total amount paid for shares
                 - gain_loss: Dollar gain/loss (current_value - total_cost)
                 - gain_loss_pct: Percentage gain/loss
+                - todays_gain_loss: Dollar gain/loss since previous close (shares * todays_change)
+                - todays_gain_loss_pct: Percentage change since previous close
+                - market_state: Yahoo market session state (e.g. 'REGULAR', 'POST', 'CLOSED'),
+                  None if financial_metrics hasn't been populated for this holding yet
             Sorted by current_value descending
         """
         adjusted_history = self.tx_history_company_grouped(user_id)
@@ -45,14 +49,22 @@ class ReportManager(CommonQueries):
         if not stock_ids:
             logger.debug(f"No portfolio holdings for user_id={user_id}")
             return []
-        
+
         placeholders = ', '.join(['?' for _ in stock_ids])
-        sql = f"SELECT id, ticker, company_name, last_price FROM symbols WHERE id IN ({placeholders})"
+        # LEFT JOIN: a holding may not have a financial_metrics row yet
+        # (e.g. bought before the Daemon's price cycle first ran for it).
+        sql = f"""
+        SELECT s.id, s.ticker, s.company_name, s.last_price,
+               fm.todays_change, fm.todays_change_pct, fm.market_state
+        FROM symbols s
+        LEFT JOIN financial_metrics fm ON fm.symbol_id = s.id
+        WHERE s.id IN ({placeholders})
+        """
         try:
             query_raw = self.select_query(sql, tuple(stock_ids))
         except Exception:
             raise
-            
+
         query_formatted = {line.get('id'): line for line in query_raw}
 
         # Format the data to have one line item per holding which conforms to '/index' interface
@@ -74,6 +86,14 @@ class ReportManager(CommonQueries):
             gain_loss = current_value - total_cost
             gain_loss_pct = (gain_loss / total_cost * 100) if total_cost > 0 else 0
 
+            # Calculate today's gain/loss since previous close.
+            # todays_change is per-share; todays_change_pct is a fraction (0.012 == 1.2%)
+            # and doesn't scale with shares held. Both are None until the Daemon's price
+            # cycle has run at least once for this ticker.
+            todays_change = query.get('todays_change') or 0
+            todays_change_pct = query.get('todays_change_pct') or 0
+            todays_gain_loss = shares * todays_change
+
             line = {
                 'symbol': query.get('ticker', f'ERROR in holding {stock_id}'),
                 'name': query.get('company_name', f'ERROR in holding {stock_id}'),
@@ -83,7 +103,10 @@ class ReportManager(CommonQueries):
                 'current_value': current_value,
                 'total_cost': total_cost,
                 'gain_loss': round(gain_loss, 2),
-                'gain_loss_pct': round(gain_loss_pct, 2)
+                'gain_loss_pct': round(gain_loss_pct, 2),
+                'todays_gain_loss': round(todays_gain_loss, 2),
+                'todays_gain_loss_pct': round(todays_change_pct * 100, 2),
+                'market_state': query.get('market_state')
             }
 
             index_view.append(line)

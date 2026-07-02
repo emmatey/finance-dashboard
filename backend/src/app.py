@@ -312,7 +312,10 @@ def portfolio_view():
                 current_value: Total current value (shares * unit_price),
                 total_cost: Total amount paid for shares,
                 gain_loss: Dollar gain/loss (current_value - total_cost),
-                gain_loss_pct: Percentage gain/loss
+                gain_loss_pct: Percentage gain/loss,
+                todays_gain_loss: Dollar gain/loss since previous close,
+                todays_gain_loss_pct: Percentage change since previous close,
+                market_state: Yahoo market session state, or null if not yet available
             }]
         400 - Username not found in session, nor query parameter.
         404- Username not found in database.
