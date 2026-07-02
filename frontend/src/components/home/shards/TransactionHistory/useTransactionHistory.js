@@ -18,13 +18,13 @@ export default function useTransactionHistory() {
                 console.error(err);
                 setResponseCode(err.status ?? null);
                 if (err.status === 401) {
-                    setError("You must be logged in to view transaction history.");
+                    setError(`Error: ${responseCode} You must be logged in to view transaction history.`);
                 } else if (err.status === 404) {
-                    setError("User not found.");
+                    setError(`Error: ${responseCode} User not found.`);
                 } else if (err.status === 500) {
-                    setError("Could not load transaction history. Please try again later.");
+                    setError(`Error: ${responseCode} Could not load transaction history. Please try again later.`);
                 } else {
-                    setError("An unexpected error occurred. Please try again.");
+                    setError(`Error: ${responseCode} An unexpected error occurred. Please try again.`);
                 }
             } finally {
                 setLoading(false);
@@ -33,5 +33,5 @@ export default function useTransactionHistory() {
         fetchData();
     }, [])
 
-    return { loading, data, error, responseCode };
+    return { loading, data, error };
 }
