@@ -1,6 +1,7 @@
 import logging
 import time
 
+from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
 from enum import Enum
 from MarketOverviewCoordinator import MarketOverviewCoordinator, SYMBOLS
@@ -150,6 +151,9 @@ class Daemon(CommonQueries):
 
         Note:
             Uses yq_ticker_fetch_price_map() which includes circuit breaker protection.
+            Also upserts todays_change/todays_change_pct/market_state into financial_metrics
+            from the same payload, since price_updater already pulls the 'price' module for
+            every held ticker every 5 minutes and those fields would otherwise be dropped.
         """
         if yq_service is None:
             yq_service = YahooQueryService()
@@ -185,6 +189,7 @@ class Daemon(CommonQueries):
             # Fetch prices for all batches using YahooQueryService (with circuit breaker)
             updated_symbols = []
             failed_symbols = []
+            change_metrics = {}
 
             # Call through API gateway with exception handling
             price_map = yq_service.yq_ticker_fetch_price_map(tickers)
@@ -192,16 +197,23 @@ class Daemon(CommonQueries):
             if price_map is None:
                 logger.warning("Price map returned None - API may be down or circuit breaker active")
                 return False
-            for symbol, price in price_map.items():
+            for symbol, data in price_map.items():
                 symbol_safe = str(symbol).strip().upper()
-                if isinstance(price, float):
+                if isinstance(data, dict):
                     # Successful price retrieval
-                    updated_symbols.append((price, symbol_safe))
-                elif isinstance(price, str):
+                    price = data.get("price")
+                    if isinstance(price, float):
+                        updated_symbols.append((price, symbol_safe))
+                    change_metrics[symbol_safe] = {
+                        "todays_change": data.get("todays_change"),
+                        "todays_change_pct": data.get("todays_change_pct"),
+                        "market_state": data.get("market_state"),
+                    }
+                elif isinstance(data, str):
                     # Error message from API
-                    logger.debug(f"Price fetch failed for {symbol}: {price}")
+                    logger.debug(f"Price fetch failed for {symbol}: {data}")
                     failed_symbols.append((symbol_safe,))
-                elif price is None:
+                elif data is None:
                     # Price not available in response
                     logger.debug(f"Price not available for {symbol}")
                     failed_symbols.append((symbol_safe,))
@@ -214,6 +226,12 @@ class Daemon(CommonQueries):
                 WHERE ticker = ?
                 """
                 self.bulk_query(update_sql, updated_symbols)
+
+            # Upsert same-day change data into financial_metrics.
+            # from_screeners=True since this is a partial update (price fields only)
+            # and shouldn't mark the rest of the row (PE, dividend yield, etc.) as fresh.
+            if change_metrics:
+                APIDataIO().set_financial_metrics(change_metrics, from_screeners=True)
 
             logger.info(f"Price update complete. Updated: {len(updated_symbols)}, Failed: {len(failed_symbols)}")
             return True
