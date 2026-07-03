@@ -9,9 +9,6 @@ import {
 import { useMemo } from "react";
 import { formatPercent, formatCurrencyUSD } from "@/scripts/utils";
 
-function gainLossClass(value) {
-    return Number(value) > 0 ? 'text-gain' : 'text-destructive';
-}
 
 export default function PortfolioTable({ data }) {
     const portfolioValue = useMemo(
@@ -43,10 +40,10 @@ export default function PortfolioTable({ data }) {
                             </TableCell>
                             <TableCell>{formatCurrencyUSD(row.unit_price)}</TableCell>
                             <TableCell>
-                                <h3>{formatCurrencyUSD(row.todays_gain_loss)}</h3> <small className={gainLossClass(row.todays_gain_loss)}>{row.todays_gain_loss_pct}%</small>
+                                <h3>{formatCurrencyUSD(row.todays_gain_loss)}</h3> <small className={Number(row.todays_gain_loss_pct) > 0 ? 'text-gain' : 'text-destructive'}>{row.todays_gain_loss_pct}%</small>
                             </TableCell>
                             <TableCell>
-                                <h3>{formatCurrencyUSD(row.gain_loss)}</h3> <small className={gainLossClass(row.gain_loss)}>{row.gain_loss_pct}%</small>
+                                <h3>{formatCurrencyUSD(row.gain_loss)}</h3> <small className={Number(row.gain_loss_pct) > 0 ? 'text-gain' : 'text-destructive'}>{row.gain_loss_pct}%</small>
                             </TableCell>
                             <TableCell>{formatCurrencyUSD(row.current_value)}</TableCell>
                             <TableCell>{formatPercent(row.current_value / portfolioValue)}</TableCell>
