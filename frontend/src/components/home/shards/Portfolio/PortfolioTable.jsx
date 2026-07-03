@@ -11,9 +11,8 @@ import { formatPercent, formatCurrencyUSD } from "@/scripts/utils";
 
 
 export default function PortfolioTable({ data }) {
-    const portfolioValue = useMemo(
-        () => data.reduce((acc, cur) => acc + cur.current_value, 0),
-        [rows]
+    const portfolioValue = useMemo(() => data.reduce((acc, cur) => acc + cur.current_value, 0),
+        [data]
     );
 
     return (
@@ -33,7 +32,7 @@ export default function PortfolioTable({ data }) {
                 </TableHeader>
 
                 <TableBody>
-                    {rows.map((row) => (
+                    {data.map((row) => (
                         <TableRow key={row.symbol}>
                             <TableCell>
                                 <h3>{row.symbol}</h3> <small>{row.name}</small>
