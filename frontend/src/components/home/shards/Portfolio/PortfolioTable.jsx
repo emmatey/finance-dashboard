@@ -1,58 +1,103 @@
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { useMemo } from "react";
+import { formatPercent, formatCurrencyUSD } from "@/scripts/utils";
 
+function gainLossClass(value) {
+    return Number(value) > 0 ? 'text-gain' : 'text-destructive';
+}
 
 const columnDef = [
     {
         accessorKey: "ticker_plus_name",
         header: "Symbol",
+        cell: (row) => (
+            <>
+                <h3>{row.symbol}</h3> <small>{row.name}</small>
+            </>
+        ),
     },
     {
         accessorKey: "unit_price",
         header: "Last Price",
+        cell: (row) => formatCurrencyUSD(row.unit_price),
     },
     {
         accessorKey: "todays_gain_loss_plus_pct",
         header: "Today's gain/loss",
+        cell: (row) => (
+            <>
+                <h3>{formatCurrencyUSD(row.todays_gain_loss)}</h3> <small className={gainLossClass(row.todays_gain_loss)}>{row.todays_gain_loss_pct}%</small>
+            </>
+        ),
     },
     {
         accessorKey: "total_gain_loss_plus_pct",
         header: "Total gain/loss",
+        cell: (row) => (
+            <>
+                <h3>{formatCurrencyUSD(row.gain_loss)}</h3> <small className={gainLossClass(row.gain_loss)}>{row.gain_loss_pct}%</small>
+            </>
+        ),
     },
     {
         accessorKey: "current_value",
         header: "Current Value",
+        cell: (row) => formatCurrencyUSD(row.current_value),
     },
     {
         accessorKey: "pct_of_account",
         header: "% of account",
+        cell: (row, portfolioValue) => formatPercent(row.current_value / portfolioValue),
     },
     {
         accessorKey: "shares",
         header: "Quantity",
+        cell: (row) => row.shares,
     },
     {
         accessorKey: "cost_basis",
-        header: "Cost Basis"
-    }
+        header: "Cost Basis",
+        cell: (row) => formatCurrencyUSD(row.cost_basis),
+    },
 ];
 
 export default function PortfolioTable({ data }) {
-    // Combining 'ticker' and 'company name' to be displayed in one cell.
-    const displayData = structuredClone(data);
-    const portfolioValue = displayData.reduce((acc, cur) => (acc + cur.current_value) ,0);
+    const rows = data ?? [];
+    const portfolioValue = useMemo(
+        () => rows.reduce((acc, cur) => acc + cur.current_value, 0),
+        [rows]
+    );
 
-    if (displayData) {
-        displayData.map((holding) => {
-            holding['ticker_plus_name'] = [holding.symbol, holding.name];
-            holding['todays_gain_loss_plus_pct'] = [holding.todays_gain_loss, holding.todays_gain_loss_pct];
-            holding['total_gain_loss_plus_pct'] = [holding.gain_loss, holding.gain_loss_pct];
-            holding['pct_of_account'] = ((holding.current_value / portfolioValue) * 100).toFixed(2);
-        })
-    };
-
-    console.log(displayData);
     return (
         <div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        {columnDef.map((colDef) => (
+                            <TableHead key={colDef.accessorKey}>{colDef.header}</TableHead>
+                        ))}
+                    </TableRow>
+                </TableHeader>
 
+                <TableBody>
+                    {rows.map((row) => (
+                        <TableRow key={row.symbol}>
+                            {columnDef.map((colDef) => (
+                                <TableCell key={colDef.accessorKey}>
+                                    {colDef.cell(row, portfolioValue)}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </div>
     )
 }
