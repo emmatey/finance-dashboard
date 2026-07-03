@@ -17,7 +17,7 @@ const columnDef = [
     {
         accessorKey: "ticker_plus_name",
         header: "Symbol",
-        cell: (row) => (
+        render: (row) => (
             <>
                 <h3>{row.symbol}</h3> <small>{row.name}</small>
             </>
@@ -26,12 +26,12 @@ const columnDef = [
     {
         accessorKey: "unit_price",
         header: "Last Price",
-        cell: (row) => formatCurrencyUSD(row.unit_price),
+        render: (row) => formatCurrencyUSD(row.unit_price),
     },
     {
         accessorKey: "todays_gain_loss_plus_pct",
         header: "Today's gain/loss",
-        cell: (row) => (
+        render: (row) => (
             <>
                 <h3>{formatCurrencyUSD(row.todays_gain_loss)}</h3> <small className={gainLossClass(row.todays_gain_loss)}>{row.todays_gain_loss_pct}%</small>
             </>
@@ -40,7 +40,7 @@ const columnDef = [
     {
         accessorKey: "total_gain_loss_plus_pct",
         header: "Total gain/loss",
-        cell: (row) => (
+        render: (row) => (
             <>
                 <h3>{formatCurrencyUSD(row.gain_loss)}</h3> <small className={gainLossClass(row.gain_loss)}>{row.gain_loss_pct}%</small>
             </>
@@ -49,22 +49,22 @@ const columnDef = [
     {
         accessorKey: "current_value",
         header: "Current Value",
-        cell: (row) => formatCurrencyUSD(row.current_value),
+        render: (row) => formatCurrencyUSD(row.current_value),
     },
     {
         accessorKey: "pct_of_account",
         header: "% of account",
-        cell: (row, portfolioValue) => formatPercent(row.current_value / portfolioValue),
+        render: (row, portfolioValue) => formatPercent(row.current_value / portfolioValue),
     },
     {
         accessorKey: "shares",
         header: "Quantity",
-        cell: (row) => row.shares,
+        render: (row) => row.shares,
     },
     {
         accessorKey: "cost_basis",
         header: "Cost Basis",
-        cell: (row) => formatCurrencyUSD(row.cost_basis),
+        render: (row) => formatCurrencyUSD(row.cost_basis),
     },
 ];
 
