@@ -14,9 +14,8 @@ function gainLossClass(value) {
 }
 
 export default function PortfolioTable({ data }) {
-    const rows = data ?? [];
     const portfolioValue = useMemo(
-        () => rows.reduce((acc, cur) => acc + cur.current_value, 0),
+        () => data.reduce((acc, cur) => acc + cur.current_value, 0),
         [rows]
     );
 
