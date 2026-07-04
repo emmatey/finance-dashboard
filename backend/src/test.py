@@ -9,7 +9,7 @@ from ResearchDataCoordinator import ResearchDataCoordinator
 from TransactionManager import TransactionManager
 from YahooAPIClient import YahooAPIClient
 from YahooQueryService import YahooQueryService
-from Satan import Satan
+from Daemon import Daemon
 from MarketOverviewCoordinator import MarketOverviewCoordinator
 from SearchManager import SearchManager
 import pandas as pd
@@ -55,20 +55,12 @@ def home():
     tm = TransactionManager()
     api = YahooAPIClient()
     yqs = YahooQueryService()
-    dae = Satan()
+    dae = Daemon()
     moc = MarketOverviewCoordinator()
     sm = SearchManager()
     cc = CommonQueries()
 
-    sm.search_companies_online("mmm")
-    
-    """
-    localkeys
-    dict_keys(['id', 'uuid', 'timeInserted', 'title', 'thumbnail', 'link', 'publisher', 'providerPublishTime'])
-
-    online keys
-    dict_keys(['uuid', 'title', 'publisher', 'link', 'providerPublishTime', 'thumbnail', 'relatedTickers', 'search_type'])
-    """
+    dae.price_updater()
 
     filler_page = """
         <body style="background-color: black; color: green;">
