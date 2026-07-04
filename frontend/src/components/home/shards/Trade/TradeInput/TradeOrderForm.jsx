@@ -95,7 +95,6 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
                 </select>
             </div>
 
-            {/* Disable button if there's no active ticker info available */}
             <button type='submit' disabled={!tickerInfoJson}>Submit</button>
             <Toaster />
         </form>

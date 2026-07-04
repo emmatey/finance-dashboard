@@ -14,7 +14,7 @@ export default function PortfolioTable({ data }) {
     const portfolioValue = useMemo(() => data.reduce((acc, cur) => acc + cur.current_value, 0),
         [data]
     );
-
+    console.log(data);
     return (
         <div>
             <Table>

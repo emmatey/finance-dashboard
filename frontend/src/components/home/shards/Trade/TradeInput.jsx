@@ -1,7 +1,7 @@
-import TradeSearch from './TradeSearch.jsx';
-import TradeOrderForm from './TradeOrderForm.jsx';
-import TradeHoldings from './TradeHoldings.jsx';
-import TradeMarketData from './TradeMarketData.jsx';
+import TradeSearch from './TradeInput/TradeSearch.jsx';
+import TradeOrderForm from './TradeInput/TradeOrderForm.jsx';
+import TradeHoldings from './TradeInput/TradeHoldings.jsx';
+import TradeMarketData from './TradeInput/TradeMarketData.jsx';
 import '@/styles/utilities.css';
 import '@/styles/colors.css';
 
