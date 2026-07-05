@@ -49,45 +49,62 @@ class Daemon(CommonQueries):
             logger.critical(f"Error reading global_events...Skipping updates.")
             return
         
-        to_update = []
-        to_update_funcs = []
+        to_update = [] #(global_events_sql_name, func)
+
         price_time = status[0].get("price")
         if not price_time:
             price_time = 0
         if time.time() - price_time > UpdateFrequency.price.value:
-            to_update.append("last_price_update")
-            to_update_funcs.append(self.price_updater)
+            to_update.append(("last_price_update", self.price_updater))
         snap_time =  status[0].get("snap")
         if not snap_time:
             snap_time = 0
         if time.time() - snap_time > UpdateFrequency.balance_snapshot.value:
-            to_update.append("last_snapshot_update")
-            to_update_funcs.append(self.balance_snapshot_all_users)
+            to_update.append(("last_snapshot_update", self.balance_snapshot_all_users))
         if not to_update:
             logger.debug("All satan tables up to date, skipping...")
             return
         
-        update_placeholders = ", ".join(f"{i} = ?" for i in to_update)
-        update_sql = f"""
+        # Update all global event tables which need to be written to with current time to prevent other requests from doing the same work.
+        lock_placeholders = ", ".join(f"{i[0]} = ?" for i in to_update)
+        lock_sql = f"""
         UPDATE global_events
-        SET {update_placeholders}
+        SET {lock_placeholders}
         WHERE id = 1
         """
-
         utc_now = time.gmtime() 
         params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in to_update]
-        
-        self.modify_query(update_sql, tuple(params))
-        for func in to_update_funcs:
-            ret = func()
+        self.modify_query(lock_sql, tuple(params))
+
+        failed = []
+        updated = []
+        for func_tuple in to_update:
+            ret = func_tuple[1]()
             if ret is False:
-                revert_sql = f"UPDATE global_events SET {', '.join(f'{col} = NULL' for col in to_update)} WHERE id = 1"
-                self.modify_query(revert_sql, ())
-                to_update.pop(func)
+                logger.error(f"Failed to update {func_tuple[0]}.")
+                failed.append(func_tuple[0])
+            else:
+                updated.append(func_tuple[0])
+        
+        if failed:
+            failed_placeholders = ', '.join(f'{i} = NULL' for i in failed)
+            revert_sql = f"""
+            UPDATE global_events
+            SET {failed_placeholders}
+            WHERE id = 1
+            """
+            self.modify_query(revert_sql, ())
 
-        utc_now = time.gmtime() 
-        params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in to_update]
-        self.modify_query(update_sql, tuple(params))
+        if updated:
+            timestamp_placeholders = ", ".join(f"{i} = ?" for i in updated)
+            timestamp_sql = f"""
+            UPDATE global_events
+            SET {timestamp_placeholders}
+            WHERE id = 1
+            """
+            utc_now = time.gmtime() 
+            params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in updated]
+            self.modify_query(timestamp_sql , tuple(params))
 
     def balance_snapshot_all_users(self) -> bool:
         """
