@@ -7,14 +7,14 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { useMemo } from "react";
-import { formatPercent, formatCurrencyUSD } from "@/scripts/utils";
+import { formatPercent, formatCurrencyUSD, getMarketStateBadge } from "@/scripts/utils";
+import { Badge } from "@/components/ui/badge";
 
 
 export default function PortfolioTable({ data }) {
     const portfolioValue = useMemo(() => data.reduce((acc, cur) => acc + cur.current_value, 0),
         [data]
     );
-    console.log(data);
     return (
         <div>
             <Table>
@@ -32,10 +32,14 @@ export default function PortfolioTable({ data }) {
                 </TableHeader>
 
                 <TableBody>
-                    {data.map((row) => (
+                    {data.map((row) => {
+                        const marketStateBadge = getMarketStateBadge(row.market_state);
+                        return (
                         <TableRow key={row.symbol}>
                             <TableCell>
-                                <h3>{row.symbol}</h3> <small>{row.name}</small>
+                                <h3>{row.symbol} {marketStateBadge && (
+                                    <Badge variant={marketStateBadge.variant}>{marketStateBadge.label}</Badge>
+                                )}</h3> <small>{row.name}</small>
                             </TableCell>
                             <TableCell>{formatCurrencyUSD(row.unit_price)}</TableCell>
                             <TableCell>
@@ -49,7 +53,8 @@ export default function PortfolioTable({ data }) {
                             <TableCell>{row.shares}</TableCell>
                             <TableCell>{formatCurrencyUSD(row.cost_basis)}</TableCell>
                         </TableRow>
-                    ))}
+                        );
+                    })}
                 </TableBody>
             </Table>
         </div>

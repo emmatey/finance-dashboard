@@ -17,6 +17,27 @@ export function formatPercent(n) {
     return (Number(n) * 100).toFixed(2) + '%'
 }
 
+export function getMarketStateBadge(marketState) {
+    /*
+        Maps a raw yahooquery marketState string to a display label + Badge variant.
+        Returns null for 'REGULAR' (open market), since no badge is needed then.
+    */
+    switch (marketState) {
+        case 'REGULAR':
+            return null
+        case 'PRE':
+        case 'PREPRE':
+            return { label: 'Pre-Market', variant: 'outline' }
+        case 'POST':
+        case 'POSTPOST':
+            return { label: 'After Hours', variant: 'outline' }
+        case 'CLOSED':
+            return { label: 'Market Closed', variant: 'secondary' }
+        default:
+            return marketState ? { label: marketState, variant: 'secondary' } : null
+    }
+}
+
 export function formatUTCSeconds(timestamp) {
   /**
    * Converts a Unix timestamp (in seconds) to US short date format (M/D/YY).

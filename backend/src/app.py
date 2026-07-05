@@ -567,6 +567,7 @@ def trade():
             "name": ticker_info.get("company_name"),
             "current_price": last_price,
             "prev_close": prev_close,
+            "market_state": ticker_info.get("market_state"),
             "cash_balance": cc.get_balance(user_id=user_id),
             "qty_owned": holding_info.get("qty_owned"),
             "holding_value": holding_info.get("holding_value"),

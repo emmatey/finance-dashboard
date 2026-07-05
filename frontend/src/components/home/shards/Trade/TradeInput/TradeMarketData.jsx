@@ -1,3 +1,5 @@
+import { Badge } from '@/components/ui/badge';
+import { getMarketStateBadge } from '@/scripts/utils';
 import '@/styles/utilities.css';
 import '@/styles/colors.css';
 
@@ -46,13 +48,14 @@ export default function TradeMarketData({ activeQuery, loading, tickerInfoJson }
     // Smart fallback for P/E Ratio (Prefer Trailing, fallback to Forward)
     const peRatio = tickerInfoJson.trailing_pe || tickerInfoJson.forward_pe;
     const peLabel = tickerInfoJson.trailing_pe ? "P/E (TTM)" : "P/E (Fwd)";
+    const marketStateBadge = getMarketStateBadge(tickerInfoJson.market_state);
 
     return (
         <div>
             <h3 style={{ margin: '0 0 4px 0', color: 'var(--color-text-main)' }}>
                 {tickerInfoJson.name} ({tickerInfoJson.ticker})
             </h3>
-            
+
             <h2 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'baseline', gap: '8px', color: 'var(--color-text-main)' }}>
                 {currencyFormatter.format(tickerInfoJson.current_price || 0)}
                 <span style={{
@@ -62,6 +65,9 @@ export default function TradeMarketData({ activeQuery, loading, tickerInfoJson }
                     {tickerInfoJson.pct_change_since_close >= 0 ? '▲ +' : '▼ '}
                     {tickerInfoJson.pct_change_since_close}%
                 </span>
+                {marketStateBadge && (
+                    <Badge variant={marketStateBadge.variant}>{marketStateBadge.label}</Badge>
+                )}
             </h2>
 
             {/* 2-Column Metric Grid */}
