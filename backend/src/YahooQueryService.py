@@ -357,6 +357,8 @@ class YahooQueryService:
                 "market_open": price.get('regularMarketOpen'),
                 "prev_close": price.get('regularMarketPreviousClose'),
                 "market_cap": price.get('marketCap'),
+                "todays_change": price.get("regularMarketChange"),
+                "todays_change_pct": price.get("regularMarketChangePercent"),
 
                 # Valuation & Risk (defaultKeyStatistics module)
                 "beta": defaultKeyStatistics.get('beta'),

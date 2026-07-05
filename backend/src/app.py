@@ -567,12 +567,11 @@ def trade():
             "name": ticker_info.get("company_name"),
             "current_price": last_price,
             "prev_close": prev_close,
-            "pct_change_since_close": round(((last_price - prev_close) / prev_close) * 100, 2),
             "cash_balance": cc.get_balance(user_id=user_id),
             "qty_owned": holding_info.get("qty_owned"),
             "holding_value": holding_info.get("holding_value"),
-            
-            # Formatted financial_metrics fields (excluding ID)
+            "pct_change_since_close": fin_metrics.get("todays_change_pct"),
+            "pct_change_since_close_old": round(((last_price - prev_close) / prev_close) * 100, 2),
             "symbol_id": fin_metrics.get("symbol_id"),
             "last_updated": fin_metrics.get("last_updated"),
             "market_open": fin_metrics.get("market_open"),

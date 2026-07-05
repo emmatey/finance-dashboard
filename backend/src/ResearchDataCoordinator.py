@@ -192,7 +192,6 @@ class ResearchDataCoordinator(CommonQueries):
             """
             self.modify_query(fresh_sql, (symbol_id, table, now))
             return True
-
         # Validate before touching the DB
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
@@ -292,8 +291,13 @@ class ResearchDataCoordinator(CommonQueries):
         # All others are forced to True/Fresh to skip fetching.
         fresh_report = self.create_research_fresh_report(symbol=ticker)
         for table in list(fresh_report.keys()):
-            if table not in ["symbol"] + tables_to_update:
+            if table == 'symbol':
+                continue
+            if table not in tables_to_update:
+                # True means fresh, i.e. skip.
                 fresh_report[table] = True
+                logger.info(f"Overriding fresh report for {table}. Setting to fresh")
+        
         self.research_data_update_orchestrator(
             fresh_report=fresh_report,
             yqs_instance=yqs_instance,
