@@ -83,6 +83,7 @@ class Daemon(CommonQueries):
             if ret is False:
                 revert_sql = f"UPDATE global_events SET {', '.join(f'{col} = NULL' for col in to_update)} WHERE id = 1"
                 self.modify_query(revert_sql, ())
+                to_update.pop(func)
         utc_now = time.gmtime() 
 
         params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in to_update]
