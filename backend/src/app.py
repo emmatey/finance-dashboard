@@ -571,7 +571,6 @@ def trade():
             "qty_owned": holding_info.get("qty_owned"),
             "holding_value": holding_info.get("holding_value"),
             "pct_change_since_close": fin_metrics.get("todays_change_pct"),
-            "pct_change_since_close_old": round(((last_price - prev_close) / prev_close) * 100, 2),
             "symbol_id": fin_metrics.get("symbol_id"),
             "last_updated": fin_metrics.get("last_updated"),
             "market_open": fin_metrics.get("market_open"),
@@ -650,13 +649,21 @@ def trade():
         # Refresh price before executing.
         modules = yqs.yq_ticker_fetch_modules(symbols=ticker, modules="price")
         io.upsert_symbols(modules_dict=modules)
-    
+
         if not cc.symbol_exists_in_db(ticker):
            return jsonify({
                "success": False,
                "message": f"Ticker {ticker} not found."
            }), 404
-        
+
+        ticker_info = cc.get_stock_basic_overview(tickers=ticker)[0]
+        market_state = ticker_info.get("market_state")
+        if market_state != "REGULAR":
+            return jsonify({
+                "success": False,
+                "message": f"Market is not trading for {ticker} (state: {market_state})."
+            }), 400
+
         tx_info = None
         if transaction_type == "buy":
             can_afford = tm.check_can_afford(user_id=user_id, ticker=ticker, qty=qty)

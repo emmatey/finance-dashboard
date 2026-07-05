@@ -54,8 +54,8 @@ class ReportManager(CommonQueries):
         # LEFT JOIN: a holding may not have a financial_metrics row yet
         # (e.g. bought before the Daemon's price cycle first ran for it).
         sql = f"""
-        SELECT s.id, s.ticker, s.company_name, s.last_price,
-               fm.todays_change, fm.todays_change_pct, fm.market_state
+        SELECT s.id, s.ticker, s.company_name, s.last_price, s.market_state,
+               fm.todays_change, fm.todays_change_pct
         FROM symbols s
         LEFT JOIN financial_metrics fm ON fm.symbol_id = s.id
         WHERE s.id IN ({placeholders})
