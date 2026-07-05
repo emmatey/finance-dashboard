@@ -36,11 +36,12 @@ class APIDataIO(DbManager):
                 }
         """
         sql = """
-        INSERT INTO symbols (quote_type, exchange, ticker, company_name, last_price, last_updated)
-        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO symbols (quote_type, exchange, market_state, ticker, company_name, last_price, last_updated)
+        VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(ticker) DO UPDATE SET
             quote_type = excluded.quote_type,
             exchange = excluded.exchange,
+            market_state = excluded.market_state,
             company_name = excluded.company_name,
             last_price = excluded.last_price,
             last_updated = CURRENT_TIMESTAMP
@@ -65,15 +66,16 @@ class APIDataIO(DbManager):
                 exchange = price_module.get('exchangeName')
                 if not exchange:
                     exchange = price_module.get("exchange", "UNKNOWN")
+                market_state = price_module.get('marketState')
                 company_name = (
-                    price_module.get('longName') or 
-                    price_module.get('shortName') or 
+                    price_module.get('longName') or
+                    price_module.get('shortName') or
                     symbol.upper()
                 )
                 last_price = price_module.get('regularMarketPrice')
                 if not last_price:
                     continue
-                symbols_tuples.append(tuple([quote_type, exchange, symbol, company_name, last_price]))
+                symbols_tuples.append(tuple([quote_type, exchange, market_state, symbol, company_name, last_price]))
 
             else:
                 logger.warning(f"'price' module not found for {symbol}.")

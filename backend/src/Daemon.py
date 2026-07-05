@@ -150,9 +150,10 @@ class Daemon(CommonQueries):
             Returns False early if circuit breaker is active.
 
         Note:
-            Uses yq_ticker_fetch_price_map() which includes circuit breaker protection.
-            Also upserts todays_change/todays_change_pct/market_state into financial_metrics
-            from the same payload, since price_updater already pulls the 'price' module for
+            Uses yq_ticker_fetch_modules() which includes circuit breaker protection.
+            Upserts the 'price' module straight into symbols (price, market_state, etc.)
+            and also upserts todays_change/todays_change_pct into financial_metrics from
+            the same payload, since price_updater already pulls the 'price' module for
             every held ticker every 5 minutes and those fields would otherwise be dropped.
         """
         if yq_service is None:
@@ -186,52 +187,43 @@ class Daemon(CommonQueries):
                 logger.info("No active symbols to update.")
                 return True
 
-            # Fetch prices for all batches using YahooQueryService (with circuit breaker)
+            # Fetch price modules for all batches using YahooQueryService (with circuit breaker)
             updated_symbols = []
             failed_symbols = []
             change_metrics = {}
 
             # Call through API gateway with exception handling
-            price_map = yq_service.yq_ticker_fetch_price_map(tickers)
-            # price_map returns None if circuit breaker is active
-            if price_map is None:
-                logger.warning("Price map returned None - API may be down or circuit breaker active")
+            modules_dict = yq_service.yq_ticker_fetch_modules(tickers, ['price'])
+            # modules_dict returns None if circuit breaker is active
+            if modules_dict is None:
+                logger.warning("Modules fetch returned None - API may be down or circuit breaker active")
                 return False
-            for symbol, data in price_map.items():
+            for symbol, modules in modules_dict.items():
                 symbol_safe = str(symbol).strip().upper()
-                if isinstance(data, dict):
+                price_module = modules.get("price")
+                if isinstance(price_module, dict):
                     # Successful price retrieval
-                    price = data.get("price")
-                    if isinstance(price, float):
-                        updated_symbols.append((price, symbol_safe))
+                    updated_symbols.append(symbol_safe)
                     change_metrics[symbol_safe] = {
-                        "todays_change": data.get("todays_change"),
-                        "todays_change_pct": data.get("todays_change_pct"),
-                        "market_state": data.get("market_state"),
+                        "todays_change": price_module.get("regularMarketChange"),
+                        "todays_change_pct": price_module.get("regularMarketChangePercent"),
                     }
-                elif isinstance(data, str):
-                    # Error message from API
-                    logger.debug(f"Price fetch failed for {symbol}: {data}")
-                    failed_symbols.append((symbol_safe,))
-                elif data is None:
-                    # Price not available in response
-                    logger.debug(f"Price not available for {symbol}")
-                    failed_symbols.append((symbol_safe,))
+                else:
+                    # Error message from API or price not available
+                    logger.debug(f"Price fetch failed for {symbol}: {price_module}")
+                    failed_symbols.append(symbol_safe)
 
-            # Update symbols table with new prices
-            if updated_symbols:
-                update_sql = """
-                UPDATE symbols
-                SET last_price = ?, last_updated = CURRENT_TIMESTAMP
-                WHERE ticker = ?
-                """
-                self.bulk_query(update_sql, updated_symbols)
+            io = APIDataIO()
+
+            # Upsert price, market_state, exchange, etc. straight into symbols.
+            if modules_dict:
+                io.upsert_symbols(modules_dict)
 
             # Upsert same-day change data into financial_metrics.
             # from_screeners=True since this is a partial update (price fields only)
             # and shouldn't mark the rest of the row (PE, dividend yield, etc.) as fresh.
             if change_metrics:
-                APIDataIO().set_financial_metrics(change_metrics, from_screeners=True)
+                io.set_financial_metrics(change_metrics, from_screeners=True)
 
             logger.info(f"Price update complete. Updated: {len(updated_symbols)}, Failed: {len(failed_symbols)}")
             return True

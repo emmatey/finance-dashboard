@@ -127,59 +127,6 @@ class YahooQueryService:
 
         return raw_modules
 
-    @DbManager.time_method
-    @yq_exception_handler()
-    def yq_ticker_fetch_price_map(
-        self,
-        symbols: Union[List[str], str]
-    ) -> Dict[str, Union[Dict[str, Any], str, None]]:
-        """
-        Get current market prices and same-day change data for one or more stock symbols.
-
-        Pulled from the same 'price' module payload already fetched here, so this stays
-        a single API call regardless of how many of these fields are read downstream.
-
-        Args:
-            symbols: Single ticker symbol or list of symbols (e.g., 'AAPL' or ['AAPL', 'MSFT'])
-
-        Returns:
-            Dictionary mapping symbols to their price data:
-                {symbol: data} where data is:
-                    - dict: {'price', 'todays_change', 'todays_change_pct', 'market_state'}
-                            on successful retrieval (individual fields may be None)
-                    - str: error message from API
-                    - None: symbol not available in response
-
-        Example:
-            >>> service.yq_ticker_fetch_price_map(['AAPL', 'MSFT'])
-            {'AAPL': {'price': 150.25, 'todays_change': 1.8, 'todays_change_pct': 0.012,
-                      'market_state': 'REGULAR'}, ...}
-        """
-        if isinstance(symbols, str):
-            symbols = [symbols.upper()]
-        else:
-            symbols = [i.upper() for i in symbols]
-
-        ticker = self.ticker_factory(symbols)
-        result = ticker.price
-
-        price_map: Dict[str, Union[Dict[str, Any], str, None]] = {}
-        for symbol, data in result.items():
-            if isinstance(data, dict):
-                # YQ returned data dict
-                price_map[symbol] = {
-                    "price": data.get("regularMarketPrice"),
-                    "todays_change": data.get("regularMarketChange"),
-                    "todays_change_pct": data.get("regularMarketChangePercent"),
-                    "market_state": data.get("marketState"),
-                }
-            else:
-                # YQ returned error string or unexpected format
-                logger.debug(f"Price fetch failed for {symbol}: {data}")
-                price_map[symbol] = data
-
-        return price_map
-    
     @ResearchDataCoordinator.register_as_research('historical_prices', api=True)
     @yq_exception_handler()
     def yq_ticker_fetch_historical_prices(
