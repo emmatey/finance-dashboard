@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 
-export default function usePortfolio() {
+export default function useHoldings() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);

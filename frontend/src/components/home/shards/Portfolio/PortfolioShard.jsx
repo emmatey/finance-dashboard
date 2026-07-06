@@ -1,33 +1,19 @@
-import usePortfolio from "./usePortfolio";
-import useTransactionHistory from "../TransactionHistory/useTransactionHistory";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs } from "@/components/ui/tabs";
-import PortfolioTable from "./PortfolioTable";
-import TransactionHistoryShard from "../TransactionHistory/TransactionHistoryShard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Holdings from "./Holdings/Holdings";
+import TransactionHistory from "./TransactionHistory/TransactionHistory";
 
 
 export default function PortfolioShard() {
-    const { loading: portfolioLoading, data: portfolioData, error: portfolioError } = usePortfolio();
-
-    const loading = portfolioLoading;
-    const error = portfolioError;
-
     return (
         <div className='card'>
-            {loading && (
-                <span> Loading ... </span>
-            )}
-
-            {error && (
-                <span> {error} </span>
-            )}
-
-            {!loading && !error && (
-                <Tabs defaultValue="portfolio">
-                    <PortfolioTable value="portfolio" data={portfolioData} />
-                    <TransactionHistoryShard />
-                </Tabs>
-            )}
+            <Tabs defaultValue="portfolio">
+                <TabsList>
+                    <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+                    <TabsTrigger value="txHistory">Transaction History</TabsTrigger>
+                </TabsList>
+                <TabsContent value="portfolio"><Holdings /></TabsContent>
+                <TabsContent value="txHistory"><TransactionHistory /></TabsContent>
+            </Tabs>
         </div>
     )
 }
