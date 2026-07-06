@@ -1,15 +1,16 @@
 import usePortfolio from "./usePortfolio";
 import useTransactionHistory from "../TransactionHistory/useTransactionHistory";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs } from "@/components/ui/tabs";
 import PortfolioTable from "./PortfolioTable";
+import TransactionHistoryShard from "../TransactionHistory/TransactionHistoryShard";
 
 
 export default function PortfolioShard() {
     const { loading: portfolioLoading, data: portfolioData, error: portfolioError } = usePortfolio();
-    const { loading: txLoading, data: txData, error: txError } = useTransactionHistory();
 
-    const loading = portfolioLoading || txLoading;
-    const error = portfolioError || txError;
+    const loading = portfolioLoading;
+    const error = portfolioError;
 
     return (
         <div className='card'>
@@ -22,7 +23,10 @@ export default function PortfolioShard() {
             )}
 
             {!loading && !error && (
-                <PortfolioTable data={portfolioData}/>
+                <Tabs defaultValue="portfolio">
+                    <PortfolioTable value="portfolio" data={portfolioData} />
+                    <TransactionHistoryShard />
+                </Tabs>
             )}
         </div>
     )

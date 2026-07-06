@@ -12,9 +12,7 @@ export default function HomeBody({ username }) {
         <div>
             <Header />
             <h3> Hello {username}! You are logged in! And super cute </h3>
-            <TradeShard />
             <PortfolioShard />
-
         </div>
     )
 }
