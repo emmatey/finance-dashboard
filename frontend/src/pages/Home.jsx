@@ -9,7 +9,7 @@ export default function Home() {
     const {user, logout} = useAuth();
     return (
         <>
-        {user ? <HomeBody username={user}/> : <Landing />}
+        {user ? <HomeBody /> : <Landing />}
         </>
     )
 }

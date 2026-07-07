@@ -1,18 +1,32 @@
 import { useState } from 'react'
 import Header from '@/components/Header.jsx'
+import { Card, CardContent } from '@/components/ui/card'
+import ShardNav from './ShardNav'
+import { SHARD_GROUPS } from './shardGroups'
+import MarketOverviewShard from './shards/MarketOverview/MarketOverviewShard'
 
-import PortfolioShard from './shards/Portfolio/PortfolioShard'
-import TradeShard from './shards/Trade/TradeShard'
-
-export default function HomeBody({ username }) {
-    const [activeView, setActiveView] = useState('portfolio')
-    const [holdingsTab, setHoldingsTab] = useState('portfolio')
+export default function HomeBody() {
+    const [activeGroupId, setActiveGroupId] = useState(SHARD_GROUPS[0].id)
+    const activeGroup = SHARD_GROUPS.find((group) => group.id === activeGroupId)
 
     return (
-        <div>
+        <div className="flex h-screen flex-col">
             <Header />
-            <h3> Hello {username}! You are logged in! And super cute </h3>
-            <PortfolioShard />
+            <div className="flex flex-1 min-h-0">
+                <ShardNav activeGroupId={activeGroupId} onSelectGroup={setActiveGroupId} />
+
+                <main className="flex-1 min-h-0 py-4 pr-4">
+                    <Card className="h-full overflow-y-auto">
+                        <CardContent className="flex flex-wrap items-start gap-4">
+                            {activeGroup.shards.map(({ id, component: ShardComponent }) => (
+                                <div key={id} className="min-w-[320px] flex-1">
+                                    <ShardComponent />
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
         </div>
     )
 }
