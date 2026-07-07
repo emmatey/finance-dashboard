@@ -22,18 +22,19 @@ function sortByRegionKey(data) {
             continue;
         };
     }
-    return regionMap;
+    if (regionMap) return regionMap;
+    return flase;
 };
 
 export default function MarketOverviewShard() {
     const { loading, data, error } = useMarketOverview();
-    const tickers = data ?? [];
+    const regionMap = data ? sortByRegionKey(data) : {};
 
     if (error) {
         return (<p className="text-sm text-destructive">{error}</p>)
     };
 
-    if (loading || tickers.length === 0) {
+    if (loading || regionMap.length === 0) {
         return (
             <Card>
                 <CardHeader>
@@ -45,7 +46,6 @@ export default function MarketOverviewShard() {
             </Card>
         );
     };
-    const regionMap = sortByRegionKey(data);
     console.log(regionMap);
     return (
         <Card>
