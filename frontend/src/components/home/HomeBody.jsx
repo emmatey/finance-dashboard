@@ -3,7 +3,6 @@ import Header from '@/components/Header.jsx'
 import { Card, CardContent } from '@/components/ui/card'
 import ShardNav from './ShardNav'
 import { SHARD_GROUPS } from './shardGroups'
-import MarketOverviewShard from './shards/MarketOverview/MarketOverviewShard'
 
 export default function HomeBody() {
     const [activeGroupId, setActiveGroupId] = useState(SHARD_GROUPS[0].id)
@@ -12,10 +11,10 @@ export default function HomeBody() {
     return (
         <div className="flex h-screen flex-col">
             <Header />
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-1 min-h-0 gap-4 p-4">
                 <ShardNav activeGroupId={activeGroupId} onSelectGroup={setActiveGroupId} />
 
-                <main className="flex-1 min-h-0 py-4 pr-4">
+                <main className="flex-1 min-h-0">
                     <Card className="h-full overflow-y-auto">
                         <CardContent className="flex flex-wrap items-start gap-4">
                             {activeGroup.shards.map(({ id, component: ShardComponent }) => (

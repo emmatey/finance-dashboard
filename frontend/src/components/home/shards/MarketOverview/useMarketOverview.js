@@ -7,26 +7,13 @@ export default function useMarketOverview() {
     const [error, setError] = useState(null);
     const [responseCode, setResponseCode] = useState(null);
 
-    function _sort(dataList) {
-        let sorted = {};
-        for (const i of dataList) {
-            let split = String(i?.region || '').split(' ');
-            if (Object.hasOwn(sorted, split[0])) {
-                sorted[split[0]].push(i);
-            } else {
-                sorted[split[0]] = [i];
-            }
-        }
-        return sorted;
-    }
-
     useEffect(() => {
         async function fetchData() {
             try {
                 setLoading(true);
                 const res = await fetch('/api/market_overview');
                 const json = await parseResponse(res);
-                setData(_sort(json?.data ?? []));
+                setData(json?.data ?? []);
             } catch (err) {
                 console.error(err);
                 setResponseCode(err.status ?? null);
