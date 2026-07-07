@@ -4,17 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
+import getDisplayName from './overviewRegions.js';
 
 
 function sortByRegionKey(data) {
     const regionMap = new Map();
     for (const obj of data) {
         if (typeof(obj?.region) === 'string') {
-            const prefix = obj.region.split(" ")[0];
-            if (regionMap.has(prefix)) {
-                regionMap.get(prefix).push(obj);
+            const displayName = getDisplayName(obj.region);
+            if (regionMap.has(displayName)) {
+                regionMap.get(displayName).push(obj);
             } else {
-                regionMap.set(prefix, [obj])
+                regionMap.set(displayName, [obj])
             };
         } else {
             console.warn(`Type of obj.region not str ${typeof(obj?.region)}`);
