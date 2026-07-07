@@ -134,7 +134,7 @@ class YahooQueryService:
         symbol: str,
         period: str = "5y",
         interval: str = "1d"
-    ) -> Optional[List[Tuple[pd.Timestamp, float, int, str]]]:
+    ) -> Optional[List[Tuple[str, float, int, str]]]:
         """
         Fetch historical price and volume data for a stock.
 
@@ -152,7 +152,7 @@ class YahooQueryService:
 
         Returns:
             A list of tuples (date, close, volume, symbol) where:
-                - date: pandas.Timestamp (timezone-aware UTC)
+                - date: 'YYYY-MM-DD' string (sqlite3 can't bind a pandas Timestamp)
                 - close: Adjusted close price (float)
                 - volume: Trading volume (int)
                 - symbol: Stock ticker
@@ -175,6 +175,14 @@ class YahooQueryService:
             # Filter out any rows where ANY of the three target columns are empty
             df_filter = df_subset.dropna(subset=['date', 'close', 'volume', 'symbol'])
 
+            # sqlite3 can't bind a pandas Timestamp, and Yahoo inconsistently returns
+            # either plain datetime.date (most tickers) or tz-aware Timestamps (e.g.
+            # thinly-traded/warrant symbols) for the 'date' column depending on the
+            # ticker. pd.to_datetime() normalizes both cases before formatting to the
+            # same YYYY-MM-DD string the rest of the codebase uses for DATETIME columns.
+            df_filter = df_filter.copy()
+            df_filter['date'] = pd.to_datetime(df_filter['date']).dt.strftime('%Y-%m-%d')
+
             # Convert to list of tuples
             data_tuples = df_filter.values.tolist()
 
@@ -190,7 +198,7 @@ class YahooQueryService:
         self,
         symbols: Union[List[str], str],
         period: str = "5y"
-    ) -> List[Tuple[pd.Timestamp, float, str]]:
+    ) -> List[Tuple[str, float, str]]:
         """
         Retrieve historical stock split data for one or more symbols.
 
@@ -201,12 +209,13 @@ class YahooQueryService:
                             '1y', '2y', '5y', '10y', 'ytd', 'max']
 
         Returns:
-            List of tuples containing (date, split_ratio, symbol)
+            List of tuples containing (date, split_ratio, symbol), where date is a
+            'YYYY-MM-DD' string (sqlite3 can't bind a pandas Timestamp)
             Returns empty list if no splits found or on error
 
         Example:
             >>> service.yq_ticker_stock_splits(['AAPL'])
-            [(Timestamp('2020-08-31'), 4.0, 'AAPL'), ...]
+            [('2020-08-31', 4.0, 'AAPL'), ...]
         """
         if isinstance(symbols, str):
             symbols = [symbols.upper()]
@@ -227,7 +236,9 @@ class YahooQueryService:
         except KeyError:
             return []
 
-        dates: List[pd.Timestamp] = splits['date'].tolist()
+        # sqlite3 can't bind a pandas Timestamp - store as the same YYYY-MM-DD
+        # string format the rest of the codebase uses for DATETIME columns.
+        dates: List[str] = pd.to_datetime(splits['date']).dt.strftime('%Y-%m-%d').tolist()
         split_ratios: List[float] = splits['splits'].tolist()
         symbols_list: List[str] = splits['symbol'].tolist()
 

@@ -11,24 +11,23 @@ export const SHARD_GROUPS = [
         id: 'home',
         label: 'Home',
         shards: [
-            { id: 'userSummary', component: UserSummaryShard },
+            { id: 'marketOverview', component: MarketOverviewShard },
             { id: 'newsfeed', component: NewsfeedShard },
+            { id: 'userSummary', component: UserSummaryShard },
+        ],
+    },
+    {
+        id: 'portfolio',
+        label: 'Portfolio',
+        shards: [
             { id: 'portfolio', component: PortfolioShard },
         ],
     },
     {
-        id: 'marketWatch',
-        label: 'Market Watch',
+        id: 'screeners',
+        label: 'Screeners',
         shards: [
-            { id: 'marketOverview', component: MarketOverviewShard },
             { id: 'screeners', component: ScreenersShard },
-        ],
-    },
-    {
-        id: 'leaderboard',
-        label: 'Leaderboard',
-        shards: [
-            { id: 'scoreboard', component: ScoreboardShard },
         ],
     },
     {
@@ -36,6 +35,13 @@ export const SHARD_GROUPS = [
         label: 'Transact',
         shards: [
             { id: 'trade', component: TradeShard },
+        ],
+    },
+    {
+        id: 'leaderboard',
+        label: 'Leaderboard',
+        shards: [
+            { id: 'scoreboard', component: ScoreboardShard },
         ],
     },
 ]
