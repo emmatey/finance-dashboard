@@ -1,3 +1,21 @@
 LONG TERM FEATURES
     - Refresh price button on research and index that shows when last price was fetched.
     - Add seed transactions to create various mock users of different investment profiles
+
+I will require the 'portfolio' data for the logged in user in at least 3 places in this app, but it's the most computationally expensive route in the api.
+
+This is because it needs to process a user's entire transaction history and then process over it in multiple steps to handle things like 
+    -group by company
+    -drop closed positions
+    -stock splits
+    -cost basis. 
+Any other route that is querying from a large set of datapoints is doing so in the sql engine on an indexed table so this portfolio calculation is unique. 
+
+I initially considered making a different route that would serve my 'top/bottom' movers widget, but that seems like overkill and instead of doing 75+% of the computation and serving a subset of the portfolio data on a /top_bottom_movers route i'm going to just cache the calculaton instead.
+
+In python, once a module is imported it lives in memory for the lifetime of the process and is accessed via sys.modules.
+Anything in the module scope or the class var scope is accessable through this globally within a given process.
+
+This means I can use a class var to hold the 'user_holdings' state once computed and expose class methods to access and mutate it where needed throughout the app. logout(delete) transact(recalculate) fetch_holdings(read). 
+
+This is "event-based cache invalidation". and will not be refreshed on a timer. Although, im realizing now that I cant just cache the finished user portfolio data because it will be invalidated by every price lookup. Instead i'll draw the cache boundry at stock_id: [qty, cost_basis, total_cost] and have the server re-compute the columns derived from current price live every time, but this will be much less expensive. 
