@@ -21,3 +21,5 @@ This means I can use a class var to hold the 'user_holdings' state once computed
 This is "event-based cache invalidation". and will not be refreshed on a timer. Although, im realizing now that I cant just cache the finished user portfolio data because it will be invalidated by every price lookup. Instead i'll draw the cache boundry at stock_id: [qty, cost_basis, total_cost] and have the server re-compute the columns derived from current price live every time, but this will be much less expensive. 
 
 An alternative is to expand my "balance_snapshots" system to hold the qty owned data required to calculate top and bottom movers. 
+
+Either way, I need to nail down exactally what work balance snapshots and user holdings are doing to decide what to cache, when to update it, and who can read it.
