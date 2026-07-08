@@ -11,9 +11,9 @@ export const SHARD_GROUPS = [
         id: 'home',
         label: 'Home',
         shards: [
+            { id: 'userSummary', component: UserSummaryShard },
             { id: 'marketOverview', component: MarketOverviewShard },
             { id: 'newsfeed', component: NewsfeedShard },
-            { id: 'userSummary', component: UserSummaryShard },
         ],
     },
     {

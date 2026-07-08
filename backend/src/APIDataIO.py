@@ -791,7 +791,9 @@ class APIDataIO(DbManager):
             Returns empty list if no data found
         
         Note:
-            - Percent change calculated as: ((current - prev_close) / prev_close) * 100
+            - Percent change is Yahoo's own regularMarketChangePercent (fm.todays_change_pct),
+              not recomputed from prev_close, since some futures contracts (e.g. GC=F, HG=F)
+              don't reliably return a previous close.
             - Requires fresh data from initialize_regional_etfs()
             - Results ordered by region name alphabetically
         
@@ -814,7 +816,7 @@ class APIDataIO(DbManager):
                 s.company_name,
                 s.last_price as current_price,
                 fm.prev_close,
-                ((s.last_price - fm.prev_close) / fm.prev_close * 100) as pct_change
+                fm.todays_change_pct * 100 as pct_change
             FROM symbols s
             JOIN financial_metrics fm ON s.id = fm.symbol_id
             WHERE s.ticker IN ({placeholders})
@@ -843,7 +845,7 @@ class APIDataIO(DbManager):
                 'company_name': row.get('company_name'),
                 'current_price': row.get('current_price'),
                 'prev_close': row.get('prev_close'),
-                'pct_change': round(row.get('pct_change', 0), 2),
+                'pct_change': round(row.get('pct_change') or 0, 2),
             })
         
         # Sort by region name for consistent ordering

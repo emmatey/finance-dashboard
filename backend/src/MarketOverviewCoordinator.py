@@ -20,9 +20,9 @@ SYMBOLS = {
     'India': 'INDA',
     'Japan': 'EWJ',
     'China': 'MCHI',
-    'Gold': 'GLD',
-    'Copper': 'CPER',
-    'Oil': 'USO'
+    'Gold': 'GC=F',
+    'Copper': 'HG=F',
+    'Oil': 'CL=F'
 }
 # Screeners fetched from yahoo query.
 YQ_SCREENER_NAMES = [

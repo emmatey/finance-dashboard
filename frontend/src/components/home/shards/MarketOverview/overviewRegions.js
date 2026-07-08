@@ -19,3 +19,4 @@ const SYMBOLS = {
 export default function getDisplayName(regionValue){
     return SYMBOLS?.[regionValue] ?? "Other";
 }
+
