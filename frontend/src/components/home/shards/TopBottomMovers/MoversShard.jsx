@@ -1,5 +1,5 @@
 import useHoldings from "../Portfolio/Holdings/useHoldings"
-import { unsortedTestData, sortedTestData } from './testData.js'
+import { unsortedTestData, sortedTestData, thresholdBugData } from './testData.js'
 
 
 function updateThresholdState(highGroup, lowGroup) {
@@ -38,7 +38,7 @@ function updateThresholdState(highGroup, lowGroup) {
 
 export default function MoversShard() {
     //const { loading, data, error } = useHoldings();
-    const data = unsortedTestData;
+    const data = thresholdBugData;
     let highGroup = [];
     let lowGroup = [];
 
@@ -67,7 +67,6 @@ export default function MoversShard() {
                 highGroup.splice(highGroupThresholdIndex, 1);
                 highGroup.push(company);
             } else if (todaysChangePct < lowGroupThreshold) {
-                //debugger;
                 lowGroup.splice(lowGroupThresholdIndex, 1);
                 lowGroup.push(company);
             };
