@@ -33,5 +33,9 @@ export default function useHoldings() {
         fetchData();
     }, [])
 
-    return { loading, data, error };
+    return {
+        loading: loading,
+        data: data,
+        error: error
+    };
 }

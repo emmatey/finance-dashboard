@@ -5,6 +5,7 @@ import MarketOverviewShard from './shards/MarketOverview/MarketOverviewShard'
 import ScreenersShard from './shards/Screeners/ScreenersShard'
 import ScoreboardShard from './shards/Scoreboard/ScoreboardShard'
 import TradeShard from './shards/Trade/TradeShard'
+import MoversShard from './shards/TopBottomMovers/MoversShard'
 
 export const SHARD_GROUPS = [
     {
@@ -12,6 +13,7 @@ export const SHARD_GROUPS = [
         label: 'Home',
         shards: [
             { id: 'userSummary', component: UserSummaryShard },
+            { id: 'moversShard', component: MoversShard},
             { id: 'marketOverview', component: MarketOverviewShard },
             { id: 'newsfeed', component: NewsfeedShard },
         ],
