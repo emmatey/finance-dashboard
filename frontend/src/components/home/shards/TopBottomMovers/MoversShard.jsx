@@ -1,5 +1,7 @@
 import useHoldings from "../Portfolio/Holdings/useHoldings"
-import { unsortedTestData, sortedTestData, thresholdBugData } from './testData.js'
+import { unsortedTestData, sortedTestData } from './testData.js'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
 
 function updateThresholdState(highGroup, lowGroup) {
@@ -38,7 +40,7 @@ function updateThresholdState(highGroup, lowGroup) {
 
 export default function MoversShard() {
     //const { loading, data, error } = useHoldings();
-    const data = thresholdBugData;
+    const data = unsortedTestData;
     let highGroup = [];
     let lowGroup = [];
 
@@ -78,8 +80,27 @@ export default function MoversShard() {
     console.log(lowGroup);
 
     return (
-        <>
-            <span> TEST </span>
-        </>
+        <Card>
+            <CardHeader>
+                <CardTitle>Your Top Movers</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {highGroup.map((company) => (
+                    <div key={company.symbol}>
+                        <p>{company.symbol}</p>
+                        <p>{company.name}</p>
+                    </div>
+                ))}
+
+                <Separator />
+
+                {lowGroup.map((company) => (
+                    <div key={company.symbol}>
+                        <p>{company.symbol}</p>
+                        <p>{company.name}</p>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
     )
 }
