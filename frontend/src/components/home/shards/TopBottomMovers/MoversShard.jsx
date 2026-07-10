@@ -27,7 +27,7 @@ export default function MoversShard() {
     let tops = [];
     let bottoms = [];
     if (sortedHoldings) {
-        if (sortedHoldings.length > 6) {
+        if (sortedHoldings.length >= 6) {
             tops = sortedHoldings.slice(0, 3);
             bottoms = sortedHoldings.slice(-3);
         } else {
@@ -42,13 +42,15 @@ export default function MoversShard() {
             {!loading && !error && (
                 <>
                     <CardHeader>
-                        Your top and bottom movers
+                        <CardTitle className="text-base font-bold">
+                            Your top and bottom movers
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div>
+                        <div className="grid grid-cols-[2fr_1fr_1fr] gap-4 px-2 pb-2 text-xs text-muted-foreground">
                             <small>Symbol</small>
-                            <small>Today's gain/loss</small>
-                            <small>Last Price</small>
+                            <small className="text-right">Today's gain/loss</small>
+                            <small className="text-right">Last Price</small>
                         </div>
                         {
                             tops && tops.map((company) => (
