@@ -70,7 +70,7 @@ export default function MoversShard() {
                         <button
                             type="button"
                             onClick={() => setActiveGroupId('portfolio')}
-                            className="text-sm text-blue-600 underline underline-offset-4 dark:text-blue-400"
+                            className="cursor-pointer text-sm text-blue-600 underline underline-offset-4 dark:text-blue-400"
                         >
                             All positions
                         </button>
