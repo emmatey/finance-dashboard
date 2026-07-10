@@ -2,14 +2,17 @@ import TableSkeleton from "@/components/TableSkeleton";
 import useHoldings from "../Portfolio/Holdings/useHoldings"
 import MoversCard from "./MoversCard";
 import { unsortedTestData, sortedTestData } from './testData.js'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { useShardNav } from "@/context/ShardNavContext.jsx";
 import { useMemo } from "react";
 
 
 
 export default function MoversShard() {
     const { loading, data, error } = useHoldings();
+    const { setActiveGroupId } = useShardNav();
     const sortedHoldings = useMemo(() => {
         if (!data) return;
         return [...data].sort((a, b) => {
@@ -64,6 +67,11 @@ export default function MoversShard() {
                             ))
                         }
                     </CardContent>
+                    <CardFooter>
+                        <Button variant="link" size="sm" onClick={() => setActiveGroupId('portfolio')}>
+                            All positions
+                        </Button>
+                    </CardFooter>
                 </>
             )}
         </Card>
