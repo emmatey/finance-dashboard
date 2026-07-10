@@ -1,81 +1,69 @@
+import TableSkeleton from "@/components/TableSkeleton";
 import useHoldings from "../Portfolio/Holdings/useHoldings"
+import MoversCard from "./MoversCard";
 import { unsortedTestData, sortedTestData } from './testData.js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from "@/components/ui/separator";
+import { useMemo } from "react";
 
 
-function updateThresholdState(highGroup, lowGroup) {
-    let lowestValue = null;
-    let lowIndex = null;
-    if (highGroup.length > 0) {
-        highGroup.forEach((company, index) => {
-            const todaysChangePct = Number(company.todays_gain_loss_pct);
-            if (lowIndex === null) {
-                lowestValue = todaysChangePct;
-                lowIndex = index;
-            };
-            if (todaysChangePct < lowestValue) {
-                lowestValue = todaysChangePct;
-                lowIndex = index;
-            };
-        });
-    };
-    let highestValue = null;
-    let highIndex = null;
-    if (lowGroup.length > 0) {
-        lowGroup.forEach((company, index) => {
-            const todaysChangePct = Number(company.todays_gain_loss_pct);
-            if (highIndex === null) {
-                highestValue = todaysChangePct;
-                highIndex = index;
-            };
-            if (todaysChangePct > highestValue) {
-                highestValue = todaysChangePct;
-                highIndex = index;
-            };
-        });
-    }
-    return [lowestValue, lowIndex, highestValue, highIndex]
-}
 
 export default function MoversShard() {
     const { loading, data, error } = useHoldings();
-    let highGroup = [];
-    let lowGroup = [];
-
-    if (data) {
-        let highGroupThreshold = null;
-        let highGroupThresholdIndex = null;
-
-        let lowGroupThreshold = null;
-        let lowGroupThresholdIndex = null;
-
-        for (const company of data) {
-            [highGroupThreshold, highGroupThresholdIndex, lowGroupThreshold, lowGroupThresholdIndex] = updateThresholdState(highGroup, lowGroup);
-            const todaysChangePct = Number(company.todays_gain_loss_pct);
-
-            // Prime the pump
-            if ((highGroup.length < 3) && (todaysChangePct >= 0)) {
-                highGroup.push(company);
-                continue;
+    const sortedHoldings = useMemo(() => {
+        if (!data) return;
+        return [...data].sort((a, b) => {
+            // on return value ... positive swap, negative don't swap, zero don't swap.
+            if (Number(a.todays_gain_loss_pct) < Number(b.todays_gain_loss_pct)) {
+                return 1;
+            } else if ((Number(a.todays_gain_loss_pct) > Number(b.todays_gain_loss_pct))) {
+                return -1;
+            } else {
+                return 0;
             };
-            if ((lowGroup.length < 3) && (todaysChangePct < 0)) {
-                lowGroup.push(company);
-                continue;
-            };
+        })
+    }, [data]);
 
-            if (todaysChangePct > highGroupThreshold) {
-                highGroup.splice(highGroupThresholdIndex, 1);
-                highGroup.push(company);
-            } else if (todaysChangePct < lowGroupThreshold) {
-                lowGroup.splice(lowGroupThresholdIndex, 1);
-                lowGroup.push(company);
-            };
+    let tops = [];
+    let bottoms = [];
+    if (sortedHoldings) {
+        if (sortedHoldings.length > 6) {
+            tops = sortedHoldings.slice(0, 3);
+            bottoms = sortedHoldings.slice(-3);
+        } else {
+            tops = sortedHoldings;
         };
     };
 
     return (
         <Card>
-            
+            {loading && <TableSkeleton />}
+            {error && <CardTitle>{error}</CardTitle>}
+            {!loading && !error && (
+                <>
+                    <CardHeader>
+                        Your top and bottom movers
+                    </CardHeader>
+                    <CardContent>
+                        <div>
+                            <small>Symbol</small>
+                            <small>Today's gain/loss</small>
+                            <small>Last Price</small>
+                        </div>
+                        {
+                            tops && tops.map((company) => (
+                                <MoversCard key={company.symbol} data={company}></MoversCard>
+                            ))
+                        }
+                        {bottoms && <Separator />}
+                        {
+                            bottoms && bottoms.map((company) => (
+                                <MoversCard key={company.symbol} data={company}></MoversCard>
+                            ))
+                        }
+                    </CardContent>
+                </>
+            )}
         </Card>
     )
 }
