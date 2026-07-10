@@ -57,7 +57,7 @@ export default function BalanceHistoryChart({ data, activeLine, onActiveLineChan
                     </ToggleGroupItem>
                 ))}
             </ToggleGroup>
-            <ChartContainer config={CHART_CONFIG} className="h-56 pt-4">
+            <ChartContainer config={CHART_CONFIG} className="h-56 w-full pt-4">
                 <LineChart data={rangedData} onMouseMove={handleMouseMove} onMouseLeave={() => onHoverChange(null)}>
                     <XAxis dataKey="snap_datetime" tickFormatter={formatUTCSeconds} />
                     <YAxis tickFormatter={formatCurrencyUSD} width={80} />
