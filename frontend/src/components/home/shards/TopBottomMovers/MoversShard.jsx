@@ -4,7 +4,6 @@ import MoversCard from "./MoversCard";
 import { unsortedTestData, sortedTestData } from './testData.js'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
 import { useShardNav } from "@/context/ShardNavContext.jsx";
 import { useMemo } from "react";
 
@@ -50,7 +49,7 @@ export default function MoversShard() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-[2fr_1fr_1fr] gap-4 px-2 pb-2 text-xs text-muted-foreground">
+                        <div className="grid grid-cols-[2fr_1.5fr_1fr] gap-4 px-2 pb-2 text-xs text-muted-foreground">
                             <small>Symbol</small>
                             <small className="text-right">Today's gain/loss</small>
                             <small className="text-right">Last Price</small>
@@ -68,9 +67,13 @@ export default function MoversShard() {
                         }
                     </CardContent>
                     <CardFooter>
-                        <Button variant="link" size="sm" onClick={() => setActiveGroupId('portfolio')}>
+                        <button
+                            type="button"
+                            onClick={() => setActiveGroupId('portfolio')}
+                            className="text-sm text-blue-600 underline underline-offset-4 dark:text-blue-400"
+                        >
                             All positions
-                        </Button>
+                        </button>
                     </CardFooter>
                 </>
             )}
