@@ -17,6 +17,11 @@ export const SHARD_GROUPS = [
             { id: 'marketOverview', component: MarketOverviewShard },
             { id: 'newsfeed', component: NewsfeedShard },
         ],
+        columns: [
+            ['userSummary', 'moversShard'],
+            ['marketOverview'],
+            ['newsfeed'],
+        ],
     },
     {
         id: 'portfolio',
