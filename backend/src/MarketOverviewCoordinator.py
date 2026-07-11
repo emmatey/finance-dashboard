@@ -95,38 +95,35 @@ class MarketOverviewCoordinator(CommonQueries):
 
         logger.info(f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}")
 
-    def screener_data_update_orchestrator(self, screener_names=YQ_SCREENER_NAMES, screener_count=100, yqs_instance=None, dbio_instance=None):
+    def fetch_and_filter_screeners(self, screener_names, screener_count=100, yqs_instance=None):
         """
-        Checks the age of screener data and updates if stale.
-        Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
+        Fetch the given screener names from yahooquery and apply the standard
+        quality filters (see YahooQueryService._filter_screener_data).
 
-        Note: All screeners will have the same age as the screener metadata table is cleared on each update.
+        Pure fetch+filter - takes a list of any size (one screener for a lazy,
+        on-demand refresh; many for a bulk/background sweep) and hands back a
+        filtered screeners dict. Callers decide what to do with the result
+        (merge in derived/custom screeners, persist it, etc).
+        """
+        if yqs_instance is None:
+            yqs_instance = yqs()
+
+        screeners = yqs_instance.yq_screener_fetch_screeners(screeners=screener_names, count=screener_count)
+        return yqs_instance._filter_screener_data(screeners)
+
+    def write_screener_data(self, filtered_screeners, yqs_instance=None, dbio_instance=None):
+        """
+        Persist an already-filtered screeners dict: extracts metadata/rankings
+        and price/financial data, upserts symbols, and writes screener
+        rankings + per-screener ages.
+
+        Works for both real (yq-sourced) and derived/custom screener dicts,
+        since it only cares about the filtered screener shape, not its origin.
         """
         if yqs_instance is None:
             yqs_instance = yqs()
         if dbio_instance is None:
             dbio_instance = io()
-            
-        age_sql = """
-        SELECT UNIXEPOCH(MIN(last_updated)) AS last_updated
-        FROM screener_results
-        """
-        rows = self.select_query(age_sql, ())
-        last_updated = 0
-        if rows and isinstance(rows, list) and len(rows) >= 1:
-            last_updated = rows[0].get("last_updated") or 0
-        
-        age = time.time() - last_updated
-        if age < TableLifetimes.SCREENER_UPDATE_FREQUENCY.value:
-            logger.info(f"Screeners up to date! age = {age}. Update frequency = {TableLifetimes.SCREENER_UPDATE_FREQUENCY.value}")
-            return None
-
-        screeners = yqs_instance.yq_screener_fetch_screeners(screeners=screener_names, count=screener_count)
-        filtered_screeners = yqs_instance._filter_screener_data(screeners)
-
-        # Add custom volume spike screeners
-        volume_spike_screeners = yqs_instance.extract_volume_spike_screeners(filtered_screeners)
-        filtered_screeners.update(volume_spike_screeners)
 
         # Extract metadata and rankings
         metadata = yqs_instance.extract_screener_metadata(filtered_screeners)
@@ -137,11 +134,43 @@ class MarketOverviewCoordinator(CommonQueries):
         # Upsert symbols first (screener rankings reference symbol_id)
         dbio_instance.upsert_symbols(price_modules)
 
-        # Insert screener rankings (clears table first, so all get same timestamp)
+        # Insert screener rankings + refresh their ages (scoped to these screener names)
         dbio_instance.set_screeners_metadata(metadata)
 
         # Update financial metrics (incomplete data, don't update last_updated timestamp)
         dbio_instance.set_financial_metrics(financial_metrics, from_screeners=True)
+
+    def screener_data_update_orchestrator(self, screener_names=YQ_SCREENER_NAMES, screener_count=100, yqs_instance=None, dbio_instance=None):
+        """
+        Checks the age of screener data and updates if stale.
+        Updates all screeners if data is older than SCREENER_UPDATE_FREQUENCY.
+        """
+        if yqs_instance is None:
+            yqs_instance = yqs()
+        if dbio_instance is None:
+            dbio_instance = io()
+
+        age_sql = """
+        SELECT UNIXEPOCH(MIN(last_updated)) AS last_updated
+        FROM screener_results
+        """
+        rows = self.select_query(age_sql, ())
+        last_updated = 0
+        if rows and isinstance(rows, list) and len(rows) >= 1:
+            last_updated = rows[0].get("last_updated") or 0
+
+        age = time.time() - last_updated
+        if age < TableLifetimes.SCREENER_UPDATE_FREQUENCY.value:
+            logger.info(f"Screeners up to date! age = {age}. Update frequency = {TableLifetimes.SCREENER_UPDATE_FREQUENCY.value}")
+            return None
+
+        filtered_screeners = self.fetch_and_filter_screeners(screener_names, screener_count, yqs_instance)
+
+        # Add custom volume spike screeners
+        volume_spike_screeners = yqs_instance.extract_volume_spike_screeners(filtered_screeners)
+        filtered_screeners.update(volume_spike_screeners)
+
+        self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)
 
         logger.info(f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers")
         
