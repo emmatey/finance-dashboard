@@ -125,8 +125,8 @@ class MarketOverviewCoordinator(CommonQueries):
         filtered_screeners = yqs_instance._filter_screener_data(screeners)
 
         # Add custom volume spike screeners
-        relative_volumes_screener = yqs_instance.extract_relative_volumes(filtered_screeners)
-        filtered_screeners.update(relative_volumes_screener)
+        volume_spike_screeners = yqs_instance.extract_volume_spike_screeners(filtered_screeners)
+        filtered_screeners.update(volume_spike_screeners)
 
         # Extract metadata and rankings
         metadata = yqs_instance.extract_screener_metadata(filtered_screeners)

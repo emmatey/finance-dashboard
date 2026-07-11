@@ -662,7 +662,7 @@ class YahooQueryService:
         
         return dict(filtered_screeners)
  
-    def extract_relative_volumes(self, screeners: Dict, qty: int = 25) -> Dict[str, List[Dict]]:
+    def extract_volume_spike_screeners(self, screeners: Dict, qty: int = 25) -> Dict[str, List[Dict]]:
         """
         Find stocks with largest volume spikes, split by price direction.
         
@@ -696,7 +696,7 @@ class YahooQueryService:
             - Results sorted by relative volume (highest spike first)
         
         Example:
-            >>> volume_screeners = yqs.get_relative_volumes(filtered, qty=25)
+            >>> volume_screeners = yqs.extract_volume_spike_screeners(filtered, qty=25)
             >>> filtered.update(volume_screeners)
             >>> # Now filtered has 'volume_spike_bullish' and 'volume_spike_bearish'
         """

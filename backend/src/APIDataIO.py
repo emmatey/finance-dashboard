@@ -471,13 +471,13 @@ class APIDataIO(DbManager):
         
         Example:
                  # Full pipeline
-            >>> raw = yqs.yq_screener_get_screeners(['day_gainers', 'most_actives'], count=n)
+            >>> raw = yqs.yq_screener_fetch_screeners(['day_gainers', 'most_actives'], count=n)
             >>> filtered = yqs._filter_screener_data(raw)
-            >>> volume_swings = yqs.get_relative_volumes(filtered)
+            >>> volume_swings = yqs.extract_volume_spike_screeners(filtered)
             >>> filtered.update(volume_swings)
-            >>> screener_data = yqs.extract_screener_data_for_db(filtered)
-            >>> db_io.set_screeners(screener_data, yqs)
-            INFO: Inserted 50 fresh screener results across 2 screeners
+            >>> metadata = yqs.extract_screener_metadata(filtered)
+            >>> db_io.set_screeners_metadata(metadata)
+            INFO: Inserted 50 screener results across 2 screeners
         """
         # Clear old screener data
         self.modify_query("DELETE FROM screener_results")
