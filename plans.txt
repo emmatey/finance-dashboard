@@ -105,6 +105,71 @@ I'm thinking I should examine the way the screener data is currently captured an
             also just add every screener name to the codebase and that would allow me to remove some
             instead of just saying get all. 
 
+    Okay, so after investigating the YahooQuery codebase with Claude's help, we were able to discover
+    that the YahooQuery library is calling requests for the screeners literally. Meaning that, because of
+    the implementation of yahoos API, we cant ask for many screeners at a time and have them returned in a shape
+    approximating log time like with the Tickers class. We are tied to linear.
+    I don't want to use threads to make parallel requests because I'm worried about getting blocked by this unpaid API.
+
+    My idea to adapt to this by changing the internal finance-dashboard API structure.
+    Currently we just hit /screeners and everything is sent back. 
+    
+    I propose that we use two endpoints, one to request the list of screeners we can ask for
+    and use that to populate filtration controls.
+
+    and a second endpoint that checks screener age, and only calls to refresh it when its over x age.
+
+    This means that the screener name itself and not the 'metadata' involving the companies associated with the 
+    screeners is all that we need.
+
+    In order to implement this I need to 
+        1. Remove the screener metadata table.
+        2. Replace it with a table that has screener_name: age timestamp in the same format as the rest of the db.
+            Call this screener ages.
+        3. In the update orchestrator 
+    wait.. shit this would mean that I need a different way to update my custom screeners too, because their updating
+    was essentially a side effect of the bulk update process. 
+    I think that I could instead change this screener to look at the database internally.
+    This introduces either the risk of looking at stale data, or the complexity of checking if the data you're
+    looking at is associated with valid screeners which would involve keeping the screener metadata table.
+    I like this idea better though because it aligns more with the collect all data and then look within
+    architecture that this is moving towards.
+    Note: extract relative volumes needs to be renamed.
+        Okay nevermind, so the new plan is ...
+            1. Add a table that has screener_name: ages
+                a. Include the custom screeners with this. 
+                My issue now is, that if i let too many screeners get stale waiting fo someone to look at them
+                my custom screeners become less accurate. But if I have satan.py look at this screeners table and
+                keep things up to date, im just moving the hangup from calling them all when i open screeners page.
+                to a random request. And im not sure if that's any better behavior. I guess it would make the pause 
+                smaller though. Like its only hitting for the screeners nobody is looking at vs all of them.
+                so the more traffic, the less severe this effect. 
+                I guess the question becomes is the complexity of this whole screener age system worth this?
+                What is the benefit? Well the benefit is that we need this system to allow the user to redirect
+                to our db instead of yahooquery.
+                Okay so the extra complexity is exclusively that we're checking against the screener metadata to
+                see if the stocks were looking at to construct our subset screeners are up to date.
+                If we go for a background update against the screener age table that follows our codebase convention
+                and has the effect that we can rely on the data.
+                OKAY! so we DONT need the screener metadata table after all?? Or wait, shit we do.
+                because we need to use it to select the screeners from the db.
+
+
+                Okay okay. So the final plan is
+                Two routes: 
+                    api/screeners/available
+                        This route returns the list of screeners available so that the frontend can populate
+                        a menu which shows the users their options.
+                    api/screeners/screener?screener={str}
+                        Checks for the age of the requested screener, and fetches if it's fresh.
+                        If not, request from the yahooquery api for the screener in question. and 
+                        feed it through the update screeners loop.
+                        Note:
+                            If a custom screener is selected we should redirect to a method that Extracts
+                            the relevant data from the db internally instead of from the screeners incoming.
+
+                        If the data is fresh, just get it from the internal db and dont call yq.
+
 
     After Class:
         Read about the 'factory pattern' and then review the utility of this implementation on
