@@ -467,8 +467,10 @@ class APIDataIO(DbManager):
 
     def set_screeners_metadata(self, screener_metadata: Dict[str, List[str]]) -> None:
         """
-        Insert screener metadata to db.
-        
+        Insert screener metadata to db, scoped to the screener names present in
+        screener_metadata. Only those screeners' rows/ages are touched - other
+        screeners already in the db are left as-is.
+
         Example:
                  # Full pipeline
             >>> raw = yqs.yq_screener_fetch_screeners(['day_gainers', 'most_actives'], count=n)
@@ -479,8 +481,16 @@ class APIDataIO(DbManager):
             >>> db_io.set_screeners_metadata(metadata)
             INFO: Inserted 50 screener results across 2 screeners
         """
-        # Clear old screener data
-        self.modify_query("DELETE FROM screener_results")
+        screener_names = list(screener_metadata.keys())
+        if not screener_names:
+            return
+
+        # Clear old rows for only the screeners being refreshed
+        placeholders = ", ".join(["?"] * len(screener_names))
+        self.modify_query(
+            f"DELETE FROM screener_results WHERE screener_name IN ({placeholders})",
+            tuple(screener_names)
+        )
 
         # Insert fresh screener results
         sql = """
@@ -495,6 +505,15 @@ class APIDataIO(DbManager):
                 screener_tuples.append((screener_name, rank, ticker))
 
         self.bulk_query(sql, screener_tuples)
+
+        # Refresh per-screener ages
+        age_sql = """
+            INSERT INTO screener_ages (screener_name, last_updated)
+            VALUES (?, CURRENT_TIMESTAMP)
+            ON CONFLICT(screener_name) DO UPDATE SET last_updated = CURRENT_TIMESTAMP
+        """
+        self.bulk_query(age_sql, [(name,) for name in screener_names])
+
         logger.info(f"Inserted {len(screener_tuples)} screener results across {len(screener_metadata)} screeners")
 
     ### GETTERS ###

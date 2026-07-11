@@ -181,8 +181,13 @@ CREATE TABLE screener_results (
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (symbol_id) REFERENCES symbols(id)
 );
-CREATE UNIQUE INDEX idx_screener_symbol 
+CREATE UNIQUE INDEX idx_screener_symbol
 ON screener_results(screener_name, symbol_id);
+
+CREATE TABLE 'screener_ages' (
+    screener_name TEXT PRIMARY KEY,
+    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 CREATE TABLE 'insider_trades' (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
