@@ -112,20 +112,27 @@ class MarketOverviewCoordinator(CommonQueries):
             Fresh = True
             Stale = False
         """
-        now = time.time()
+        now = int(time.time())
         update_frequency = TableLifetimes.SCREENER_UPDATE_FREQUENCY.value
         fresh_report = {screener_name: False for screener_name in screener_names}
         
         placeholders = ",".join(["?" for _ in screener_names])
         last_updated_sql = f"""
-        SELECT screener_name, last_updated
+        SELECT screener_name, unixepoch(last_updated) AS last_updated
         FROM screener_ages
         WHERE screener_name IN ({placeholders})
         """
         rows = self.select_query(query=last_updated_sql, placeholders=tuple(screener_names))
         for row in rows:
-            for screener_name, last_updated in row.items():
-                age = 
+            screener_name = row["screener_name"]
+            last_updated = row["last_updated"]
+            age = now - int(last_updated)
+            if age < update_frequency:
+                fresh_report[screener_name] = True
+            else:
+                fresh_report[screener_name] = False
+
+        return fresh_report
 
     def fetch_and_filter_screeners(
         self, screener_names, screener_count=100, yqs_instance=None
@@ -196,10 +203,8 @@ class MarketOverviewCoordinator(CommonQueries):
         if dbio_instance is None:
             dbio_instance = io()
 
-
-        filtered_screeners = self.fetch_and_filter_screeners(
-            screener_names, screener_count, yqs_instance
-        )
+        fresh_report = self.screener_age_fresh_report()
+        stale_screeners = [screener_name for screener_name, fresh_bool in fresh_report.items() if not fresh_bool]
 
         # Add custom volume spike screeners
         volume_spike_screeners = yqs_instance.extract_volume_spike_screeners(
