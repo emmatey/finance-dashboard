@@ -174,3 +174,16 @@ I'm thinking I should examine the way the screener data is currently captured an
     After Class:
         Read about the 'factory pattern' and then review the utility of this implementation on
         lines 29-31 in the YahooQueryService.py module.
+
+7/12:
+    I want the final shape of this mechanism to serve the screeners route
+    to be able to 
+        1. Take a list of screeners to fetch
+        2. Check which of these screeners are stale
+        3. Pass the stale subset to the fetch, filter, upsert pipeline
+            a. This pipeline needs to be able to recognize "custom screeners"
+            if present, and update those afterwards.
+        4. Serve the entire initial list from the db.
+    The daemon.py will also be able to just call this list on every screener
+    and all the fresh ones will be skipped automatically.
+    This one method should work in both places.

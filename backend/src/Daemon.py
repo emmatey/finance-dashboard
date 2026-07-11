@@ -4,19 +4,23 @@ import time
 from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
 from enum import Enum
-from MarketOverviewCoordinator import MarketOverviewCoordinator, SYMBOLS
+from MarketOverviewCoordinator import (
+    MarketOverviewCoordinator,
+    REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP,
+)
 from YahooQueryService import YahooQueryService
 
-
-
 logger = logging.getLogger(__name__)
+
 
 class UpdateFrequency(Enum):
     """
     Specifies the age at which any given DB table should be updated.
     """
-    price = 300 # symbols table
+
+    price = 300  # symbols table
     balance_snapshot = 86400  # 24 hours
+
 
 class Daemon(CommonQueries):
     """
@@ -29,9 +33,10 @@ class Daemon(CommonQueries):
 
     Uses the global_events table to check whether updates are due before running.
     """
+
     def run(self):
         """
-        Decide which functions to call. 
+        Decide which functions to call.
         Write to db as complete immediately to block parallel requests from performing the same actions,
         revert to NULL on exception.
         Update again on success to reflect true completion time.
@@ -48,15 +53,15 @@ class Daemon(CommonQueries):
         if not status or len(status) != 1:
             logger.critical(f"Error reading global_events...Skipping updates.")
             return
-        
-        to_update = [] #(global_events_sql_name, func)
+
+        to_update = []  # (global_events_sql_name, func)
 
         price_time = status[0].get("price")
         if not price_time:
             price_time = 0
         if time.time() - price_time > UpdateFrequency.price.value:
             to_update.append(("last_price_update", self.price_updater))
-        snap_time =  status[0].get("snap")
+        snap_time = status[0].get("snap")
         if not snap_time:
             snap_time = 0
         if time.time() - snap_time > UpdateFrequency.balance_snapshot.value:
@@ -64,7 +69,7 @@ class Daemon(CommonQueries):
         if not to_update:
             logger.debug("All satan tables up to date, skipping...")
             return
-        
+
         # Update all global event tables which need to be written to with current time to prevent other requests from doing the same work.
         lock_placeholders = ", ".join(f"{i[0]} = ?" for i in to_update)
         lock_sql = f"""
@@ -72,8 +77,8 @@ class Daemon(CommonQueries):
         SET {lock_placeholders}
         WHERE id = 1
         """
-        utc_now = time.gmtime() 
-        params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in to_update]
+        utc_now = time.gmtime()
+        params = [time.strftime("%Y-%m-%d %H:%M:%S", utc_now) for _ in to_update]
         self.modify_query(lock_sql, tuple(params))
 
         failed = []
@@ -85,9 +90,9 @@ class Daemon(CommonQueries):
                 failed.append(func_tuple[0])
             else:
                 updated.append(func_tuple[0])
-        
+
         if failed:
-            failed_placeholders = ', '.join(f'{i} = NULL' for i in failed)
+            failed_placeholders = ", ".join(f"{i} = NULL" for i in failed)
             revert_sql = f"""
             UPDATE global_events
             SET {failed_placeholders}
@@ -102,9 +107,9 @@ class Daemon(CommonQueries):
             SET {timestamp_placeholders}
             WHERE id = 1
             """
-            utc_now = time.gmtime() 
-            params = [time.strftime('%Y-%m-%d %H:%M:%S', utc_now) for _ in updated]
-            self.modify_query(timestamp_sql , tuple(params))
+            utc_now = time.gmtime()
+            params = [time.strftime("%Y-%m-%d %H:%M:%S", utc_now) for _ in updated]
+            self.modify_query(timestamp_sql, tuple(params))
 
     def balance_snapshot_all_users(self) -> bool:
         """
@@ -116,26 +121,27 @@ class Daemon(CommonQueries):
         try:
             # {id: val, id: val}
             holdings = self.get_all_users_holdings_values()
-            
+
             # Get cash balance
             cash_sql = """
             SELECT id, cash
             FROM users
             """
-            #[{id, val}, {id, val}]
+            # [{id, val}, {id, val}]
             cash_rows = self.select_query(cash_sql, ())
 
             # Zip values
             # Goal shape = [(id, cash, holdings), ...]
             snapshot_tuples = []
             for row in cash_rows:
-                id = row.get('id')
+                id = row.get("id")
                 if id is None:
                     logger.warning(
                         f"Corrupt row in users table {row}."
-                        f"Unable to record balance snapshot.")
+                        f"Unable to record balance snapshot."
+                    )
                     continue
-                cash = row.get('cash', 0)
+                cash = row.get("cash", 0)
                 portfolio_value = holdings.get(id, 0)
 
                 snapshot_tuples.append((id, cash, portfolio_value))
@@ -176,13 +182,17 @@ class Daemon(CommonQueries):
         """
         if yq_service is None:
             yq_service = YahooQueryService()
-            
+
         try:
             logger.info("Starting price update cycle.")
 
             # SYMBOLS is a constant from MarketOverviewCoordinator
-            placeholders = ", ".join(["?"for _ in SYMBOLS.values()])
-            moc_symbols = tuple([s for s in SYMBOLS.values()])
+            placeholders = ", ".join(
+                ["?" for _ in REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP.values()]
+            )
+            moc_symbols = tuple(
+                [s for s in REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP.values()]
+            )
             # Query DB for all active symbols
             tickers_query = f"""
             SELECT DISTINCT s.ticker
@@ -199,7 +209,7 @@ class Daemon(CommonQueries):
             # Reduces time yahooquery takes as checking 1000+ tickers takes over 50 seconds
             # A good place to update later, the source of price data in specific.
             query = self.select_query(tickers_query, moc_symbols)
-            tickers = [row.get('ticker', "") for row in query]
+            tickers = [row.get("ticker", "") for row in query]
 
             if not tickers:
                 logger.info("No active symbols to update.")
@@ -211,10 +221,12 @@ class Daemon(CommonQueries):
             change_metrics = {}
 
             # Call through API gateway with exception handling
-            modules_dict = yq_service.yq_ticker_fetch_modules(tickers, ['price'])
+            modules_dict = yq_service.yq_ticker_fetch_modules(tickers, ["price"])
             # modules_dict returns None if circuit breaker is active
             if modules_dict is None:
-                logger.warning("Modules fetch returned None - API may be down or circuit breaker active")
+                logger.warning(
+                    "Modules fetch returned None - API may be down or circuit breaker active"
+                )
                 return False
             for symbol, modules in modules_dict.items():
                 symbol_safe = str(symbol).strip().upper()
@@ -224,7 +236,9 @@ class Daemon(CommonQueries):
                     updated_symbols.append(symbol_safe)
                     change_metrics[symbol_safe] = {
                         "todays_change": price_module.get("regularMarketChange"),
-                        "todays_change_pct": price_module.get("regularMarketChangePercent"),
+                        "todays_change_pct": price_module.get(
+                            "regularMarketChangePercent"
+                        ),
                     }
                 else:
                     # Error message from API or price not available
@@ -243,7 +257,9 @@ class Daemon(CommonQueries):
             if change_metrics:
                 io.set_financial_metrics(change_metrics, from_screeners=True)
 
-            logger.info(f"Price update complete. Updated: {len(updated_symbols)}, Failed: {len(failed_symbols)}")
+            logger.info(
+                f"Price update complete. Updated: {len(updated_symbols)}, Failed: {len(failed_symbols)}"
+            )
             return True
 
         except Exception:

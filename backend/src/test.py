@@ -60,7 +60,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    dae.price_updater()
+    moc.screener_age_fresh_report()
 
     filler_page = """
         <body style="background-color: black; color: green;">

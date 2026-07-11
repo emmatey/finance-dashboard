@@ -3,7 +3,10 @@ import logging
 from flask import Blueprint, jsonify
 
 from APIDataIO import APIDataIO
-from MarketOverviewCoordinator import MarketOverviewCoordinator, SYMBOLS
+from MarketOverviewCoordinator import (
+    MarketOverviewCoordinator,
+    REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,18 +37,30 @@ def market_overview():
         moc.initialize_regional_etfs(dbio_instance=io)
     except Exception as e:
         logger.exception(e)
-        return jsonify({
-            "success": False,
-            "message": "Server error updating regional ETF data. See finance.log for details..."
-        }), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Server error updating regional ETF data. See finance.log for details...",
+                }
+            ),
+            500,
+        )
 
     try:
-        results = io.get_regional_overview(symbols=SYMBOLS)
+        results = io.get_regional_overview(
+            symbols=REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP
+        )
     except Exception as e:
         logger.exception(e)
-        return jsonify({
-            "success": False,
-            "message": "Database error fetching regional overview. See finance.log for details..."
-        }), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Database error fetching regional overview. See finance.log for details...",
+                }
+            ),
+            500,
+        )
 
     return jsonify({"success": True, "data": results}), 200

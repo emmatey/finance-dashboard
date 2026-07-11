@@ -488,7 +488,10 @@ class APIDataIO(DbManager):
         # Clear old rows for only the screeners being refreshed
         placeholders = ", ".join(["?"] * len(screener_names))
         self.modify_query(
-            f"DELETE FROM screener_results WHERE screener_name IN ({placeholders})",
+            f"""
+            DELETE FROM screener_results
+            WHERE screener_name IN ({placeholders})
+            """,
             tuple(screener_names)
         )
 

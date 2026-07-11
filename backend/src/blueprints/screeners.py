@@ -10,14 +10,16 @@ logger = logging.getLogger(__name__)
 screeners_bp = Blueprint("screeners", __name__, url_prefix="/api")
 
 
-@screeners_bp.route("/screeners")
-def screeners():
+@screeners_bp.route("/screeners/available" method=["GET"])
+def screeners_available():
     """
-    Updates (if stale, defined in MarketOverviewCoordinator class) screener data
-    and returns information about screened companies organized by screener.
+    Returns the list of screeners that the frontend can select from.
+    """
+    
 
-    Query Parameters:
-        None
+@screeners_bp.route("/screeners/fetch" method=["GET"])
+def screeners_fetch():
+    """
 
     Returns:
         200 - {
@@ -39,27 +41,3 @@ def screeners():
             }
         500 - Server error
     """
-    io = APIDataIO()
-    moc = MarketOverviewCoordinator()
-
-    # Update screeners
-    try:
-        moc.screener_data_update_orchestrator(dbio_instance=io)
-    except Exception as e:
-        logger.exception(e)
-        return jsonify({
-            "success": False,
-            "message": "Server error, unable to update screeners. See finance.log for details..."
-        }), 500
-
-    # Get screeners
-    screener_data = []
-    try:
-        screener_data = io.get_screener_results()
-    except Exception as e:
-        logger.exception(e)
-        return jsonify({
-            "success": False,
-            "message": "Database error, unable to retrieve screener data. See finance.log for details..."
-        }), 500
-    return jsonify(screener_data), 200
