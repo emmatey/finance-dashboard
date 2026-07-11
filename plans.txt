@@ -183,6 +183,17 @@ I'm thinking I should examine the way the screener data is currently captured an
         3. Pass the stale subset to the fetch, filter, upsert pipeline
             a. This pipeline needs to be able to recognize "custom screeners"
             if present, and update those afterwards.
+            Note: i already have a method that extracts the bullish and bearish spikes
+            just need to change the data source from the incoming datastream of fresh screeners
+            to the database. Although... I could just keep it as is? No, that wont work
+            because it needs to be able to get updated on an hourly basis like the others.
+            So i guess the ideal is to just have it called at the end of the 'sweep' updates
+            that daemon.py does, instead of being called from the standard update orchestrator.
+            This means it will just be re-calculated every time the data is fresh.
+            This means I should probably just ignore the age of these custom screeners.
+            Will make the other parts of the pipeline simpler probably as well.
+            Ill have a post processing step that's similar to the research insider Sentiment pattern.
+            
         4. Serve the entire initial list from the db.
     The daemon.py will also be able to just call this list on every screener
     and all the fresh ones will be skipped automatically.

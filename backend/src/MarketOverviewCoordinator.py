@@ -40,9 +40,11 @@ CUSTOM_SCREENERS = [
 ]
 ALL_SCREENERS = CUSTOM_SCREENERS + YQ_SCREENER_NAMES
 
+
 class TableLifetimes(Enum):
     REGION_ETFS_UPDATE_FREQUENCY = 3600  # 1 hour
     SCREENER_UPDATE_FREQUENCY = 3600  # 1 hour
+
 
 class MarketOverviewCoordinator(CommonQueries):
     """
@@ -105,7 +107,7 @@ class MarketOverviewCoordinator(CommonQueries):
             f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}"
         )
 
-    def screener_age_fresh_report(self, screener_names=ALL_SCREENERS):
+    def screener_fresh_report(self, screener_names=ALL_SCREENERS):
         """
         Checks the age of the screeners to be fetched.
         Returns: [{screener: bool}, ...]
@@ -115,14 +117,16 @@ class MarketOverviewCoordinator(CommonQueries):
         now = int(time.time())
         update_frequency = TableLifetimes.SCREENER_UPDATE_FREQUENCY.value
         fresh_report = {screener_name: False for screener_name in screener_names}
-        
+
         placeholders = ",".join(["?" for _ in screener_names])
         last_updated_sql = f"""
         SELECT screener_name, unixepoch(last_updated) AS last_updated
         FROM screener_ages
         WHERE screener_name IN ({placeholders})
         """
-        rows = self.select_query(query=last_updated_sql, placeholders=tuple(screener_names))
+        rows = self.select_query(
+            query=last_updated_sql, placeholders=tuple(screener_names)
+        )
         for row in rows:
             screener_name = row["screener_name"]
             last_updated = row["last_updated"]
@@ -203,14 +207,14 @@ class MarketOverviewCoordinator(CommonQueries):
         if dbio_instance is None:
             dbio_instance = io()
 
-        fresh_report = self.screener_age_fresh_report()
-        stale_screeners = [screener_name for screener_name, fresh_bool in fresh_report.items() if not fresh_bool]
+        fresh_report = self.screener_fresh_report()
+        stale_screeners = [
+            screener_name
+            for screener_name, fresh_bool in fresh_report.items()
+            if not fresh_bool
+        ]
 
-        # Add custom volume spike screeners
-        volume_spike_screeners = yqs_instance.extract_volume_spike_screeners(
-            filtered_screeners
-        )
-        filtered_screeners.update(volume_spike_screeners)
+    
 
         self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)
 

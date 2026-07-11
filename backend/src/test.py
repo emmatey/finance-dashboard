@@ -20,7 +20,6 @@ import logging
 import os
 import sys
 
-
 # export FLASK_APP=test.py
 app = Flask(__name__)
 app.config["DATABASE"] = "finance.db"
@@ -28,20 +27,27 @@ app.config["TESTING"] = True
 load_dotenv()
 api_key = os.getenv("NEWS_API_KEY")
 
+
 @app.route("/")
 def home():
     # Configure Logging
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG) # Let handlers filter levels, parent level supersedes handlers.
+    logger.setLevel(
+        logging.DEBUG
+    )  # Let handlers filter levels, parent level supersedes handlers.
 
-    fh = logging.FileHandler('finance.log', mode='a')
+    fh = logging.FileHandler("finance.log", mode="a")
     fh.setLevel(logging.WARNING)
-    fh_formatter = logging.Formatter("%(asctime)s - %(levelname)s: %(module)s: %(funcName)s: %(message)s")
+    fh_formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s: %(module)s: %(funcName)s: %(message)s"
+    )
     fh.setFormatter(fh_formatter)
 
     sh = logging.StreamHandler(sys.stdout)
     sh.setLevel(logging.DEBUG)
-    sh_formatter = logging.Formatter("%(levelname)s: %(module)s: %(funcName)s: %(message)s")
+    sh_formatter = logging.Formatter(
+        "%(levelname)s: %(module)s: %(funcName)s: %(message)s"
+    )
     sh.setFormatter(sh_formatter)
 
     logger.addHandler(fh)
@@ -60,7 +66,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    print(moc.screener_age_fresh_report())
+    print(moc.screener_fresh_report())
 
     filler_page = """
         <body style="background-color: black; color: green;">
@@ -68,4 +74,3 @@ def home():
         </body>
     """
     return filler_page
-
