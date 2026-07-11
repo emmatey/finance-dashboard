@@ -591,7 +591,7 @@ class YahooQueryService:
         
         # Track filtering stats
         total_processed = 0
-        total_filtered = 0
+        processed_successfully = 0
         filter_reasons = defaultdict(int)  # Track why stocks were filtered
         
         for screener_name, data in screeners.items():
@@ -619,27 +619,27 @@ class YahooQueryService:
                 # Apply filters with logging
                 if share_price < 1.00:
                     filter_reasons['price_too_low'] += 1
-                    logger.debug(f"  Filtered {symbol}: Price ${share_price:.2f} < $1.00")
+                    logger.debug(f"  Removed {symbol}: Price ${share_price:.2f} < $1.00")
                     continue
                 
                 if market_cap < 50_000_000:
                     filter_reasons['market_cap_too_low'] += 1
-                    logger.debug(f"  Filtered {symbol}: Market cap ${market_cap:,.0f} < $50M")
+                    logger.debug(f"  Removed {symbol}: Market cap ${market_cap:,.0f} < $50M")
                     continue
                 
                 if exchange in ['PNK', 'OTC']:
                     filter_reasons['excluded_exchange'] += 1
-                    logger.debug(f"  Filtered {symbol}: Exchange '{exchange}' is Pink Sheets/OTC")
+                    logger.debug(f"  Removed {symbol}: Exchange '{exchange}' is Pink Sheets/OTC")
                     continue
                 
                 if avg_volume_10d < 200_000:
                     filter_reasons['volume_too_low'] += 1
-                    logger.debug(f"  Filtered {symbol}: Avg volume {avg_volume_10d:,.0f} < 200,000")
+                    logger.debug(f"  Removed {symbol}: Avg volume {avg_volume_10d:,.0f} < 200,000")
                     continue
                 
                 # Passed all filters
                 filtered_screeners[screener_name].append(quote)
-                total_filtered += 1
+                processed_successfully += 1
             
             final_count = len(filtered_screeners[screener_name])
             filtered_out = initial_count - final_count
@@ -651,8 +651,8 @@ class YahooQueryService:
         
         # Summary logging
         logger.info(
-            f"Filtering complete: {total_filtered}/{total_processed} quotes passed filters "
-            f"({total_processed - total_filtered} filtered out)"
+            f"Filtering complete: {processed_successfully}/{total_processed} quotes passed filters "
+            f"({total_processed - processed_successfully} filtered out)"
         )
         
         if filter_reasons:

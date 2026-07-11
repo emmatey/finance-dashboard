@@ -1302,26 +1302,7 @@ def screeners():
             "success": False,
             "message": "Database error, unable to retrieve screener data. See finance.log for details..."
         }), 500
-
-    # Return
-    grouped = {}
-    broken = []
-    for screener in screener_data:
-        screener_name = screener.get("screener_name")
-        if not screener_name:
-            broken.append(screener)
-            logger.warning(f"Screener {screener} is malformed, doesn't contain screener_name field.")
-            continue
-        else:
-            try:
-                grouped[screener_name].append(screener)
-            except KeyError:
-                grouped[screener_name] = [screener]
-    
-    grouped["success"] = True
-    if broken:
-        grouped['broken'] = broken
-    return jsonify(grouped), 200
+    return jsonify(screener_data), 200
 
 @app.route("/api/search", methods=["GET"])
 def search():
