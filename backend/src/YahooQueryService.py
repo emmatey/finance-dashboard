@@ -18,28 +18,7 @@ class YahooQueryService:
 
     Provides methods to fetch stock data, news, and financial metrics
     using yahooquery library.
-
-    Attributes:
-        ticker_factory: Callable that creates yahooquery Ticker instances
-        search_factory: Callable that creates yahooquery Search instances
     """
-
-    def __init__(
-            self,
-            ticker_factory = yq.Ticker,
-            search_factory = yq.search,
-            screener_factory = yq.Screener
-            ) -> None:
-        """
-        Initialize the Yahoo Query Service.
-
-        Args:
-            ticker_factory: Factory function for creating Ticker instances (default: yq.Ticker)
-            search_factory: Factory function for creating Search queries (default: yq.search)
-        """
-        self.ticker_factory = ticker_factory
-        self.search_factory = search_factory
-        self.screener_factory = screener_factory
 
     @yq_exception_handler()
     def yq_search(self, query: str, quotes_count: int = 20, news_count: int = 0) -> dict | None:
@@ -108,7 +87,7 @@ class YahooQueryService:
         elif isinstance(modules, list):
             safe_modules = [str(i) for i in modules]
 
-        ticker = self.ticker_factory(symbols)
+        ticker = yq.Ticker(symbols)
         raw_modules = ticker.get_modules(safe_modules)
 
         if not isinstance(raw_modules, dict):
@@ -162,7 +141,7 @@ class YahooQueryService:
             https://yahooquery.dpguthrie.com/guide/ticker/historical/
         """
         symbol = symbol.upper()
-        ticker = self.ticker_factory(symbol)
+        ticker = yq.Ticker(symbol)
         df = ticker.history(period=period, interval=interval, adj_ohlc=True, adj_timezone=False)
 
         if isinstance(df, pd.DataFrame) and not df.empty:
@@ -222,7 +201,7 @@ class YahooQueryService:
         else:
             symbols = [i.upper() for i in symbols]
 
-        t = self.ticker_factory(symbols)
+        t = yq.Ticker(symbols)
         df = t.history(period=period)
 
         if df.empty or 'splits' not in df.columns:
@@ -262,7 +241,7 @@ class YahooQueryService:
         if not isinstance(symbol, str):
             raise ValueError("'symbol' must be a string ticker e.g. 'AAPL'")
         
-        raw = self.search_factory(symbol.upper())
+        raw = yq.search(symbol.upper())
         if not raw:
             return []
         
@@ -572,21 +551,9 @@ class YahooQueryService:
 
         Screener Format: https://yahooquery.dpguthrie.com/guide/screener/#get_screeners
         """
-        # Clean input.
-        safe_input = []
-        if isinstance(screeners, str):
-            safe_input.append(screeners.strip())
-        elif isinstance(screeners, list):
-            for i in screeners:
-                safe_input.append(str(i).strip())
-        else:
-            raise ValueError(
-                "yq_screener_get_screeners 'screeners' parameter must be a str, or list of strs which represent screener names.\n\
-                https://yahooquery.dpguthrie.com/guide/screener/#get_screeners")
-    
         # Call get_screeners
-        s = self.screener_factory()
-        screener_results = s.get_screeners(safe_input, count)
+        s = yq.Screener()
+        screener_results = s.get_screeners(screeners, count)
 
         return screener_results
 
