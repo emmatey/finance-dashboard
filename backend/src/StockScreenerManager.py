@@ -230,9 +230,9 @@ class StockScreenerManager(CommonQueries):
 
         # Clear old rows for these two derived screeners before reinserting
         self.modify_query(
-            """
+            f"""
             DELETE FROM screener_results
-            WHERE screener_name IN (?, ?)
+            WHERE screener_name IN ({",".join(['?' for _ in CUSTOM_SCREENERS])})
             """,
             tuple(CUSTOM_SCREENERS)
         )
