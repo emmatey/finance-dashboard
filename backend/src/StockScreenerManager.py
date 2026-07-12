@@ -272,7 +272,7 @@ class StockScreenerManager(CommonQueries):
     from already-stored data like 'volume_spike_bullish').
     """
 
-    def screener_fresh_report(self, screener_names=YQ_SCREENER_NAMES):
+    def screener_fresh_report(self, screener_names):
         """
         Checks the age of the screeners to be fetched.
         Returns: [{screener: bool}, ...]
@@ -318,6 +318,10 @@ class StockScreenerManager(CommonQueries):
         on-demand refresh; many for a bulk/background sweep) and hands back a
         filtered screeners dict. Callers decide what to do with the result
         (merge in derived/custom screeners, persist it, etc).
+
+        Returns:
+            Filtered screeners dict, or None if the fetch failed (API down or
+            circuit breaker active - see yq_screener_fetch_screeners).
         """
         if yqs_instance is None:
             yqs_instance = yqs()
@@ -328,6 +332,11 @@ class StockScreenerManager(CommonQueries):
         screeners = yqs_instance.yq_screener_fetch_screeners(
             screeners=screener_names, count=screener_count
         )
+        # yq_screener_fetch_screeners returns None if the API is down or the
+        # circuit breaker is active.
+        if screeners is None:
+            logger.warning("Screener fetch returned None - API may be down or circuit breaker active")
+            return None
         return yqs_instance._filter_screener_data(screeners)
 
     def write_screener_data(
@@ -372,6 +381,7 @@ class StockScreenerManager(CommonQueries):
 
     def screener_data_update_orchestrator(
         self,
+        screener_names=YQ_SCREENER_NAMES,
         yqs_instance=None,
         dbio_instance=None,
     ):
@@ -384,7 +394,7 @@ class StockScreenerManager(CommonQueries):
         if dbio_instance is None:
             dbio_instance = io()
 
-        fresh_report = self.screener_fresh_report()
+        fresh_report = self.screener_fresh_report(screener_names)
         stale_screeners = [
             screener for screener, fresh_bool in fresh_report.items() if not fresh_bool
         ]
@@ -397,6 +407,9 @@ class StockScreenerManager(CommonQueries):
             f"{len(fresh_report) - len(stale_screeners)} fresh."
         )
         filtered_screeners = self.fetch_and_filter_screeners(stale_screeners)
+        if filtered_screeners is None:
+            logger.warning("Screener data update orchestrator aborted - fetch failed.")
+            return
 
         self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)
         logger.info("Screener data update orchestrator complete.")
