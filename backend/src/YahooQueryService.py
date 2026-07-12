@@ -5,6 +5,7 @@ import yahooquery as yq
 from collections import defaultdict
 from DbManager import DbManager
 from helpers import TickerNotFoundError
+from logging_utils import fmt_data
 from ResearchDataCoordinator import ResearchDataCoordinator
 from typing import List, Tuple, Dict, Union, Any, Optional
 from YahooAPIClient import yq_exception_handler
@@ -605,45 +606,51 @@ class YahooQueryService:
             
             initial_count = len(quotes)
             logger.debug(f"  Initial quotes: {initial_count}")
-            
+
+            removed_by_reason: Dict[str, List[str]] = defaultdict(list)
+
             for quote in quotes:
                 total_processed += 1
-                
+
                 # Extract filter criteria
                 share_price = quote.get('regularMarketPrice', 0)
                 market_cap = quote.get('marketCap', 0)
                 exchange = quote.get('exchange', '').upper()
                 avg_volume_10d = quote.get('averageDailyVolume10Day', 0)
                 symbol = quote.get('symbol', 'UNKNOWN')
-                
-                # Apply filters with logging
+
+                # Apply filters, grouping removed symbols by reason instead of
+                # logging one line per rejected stock (can be hundreds per screener).
                 if share_price < 1.00:
                     filter_reasons['price_too_low'] += 1
-                    logger.debug(f"  Removed {symbol}: Price ${share_price:.2f} < $1.00")
+                    removed_by_reason['price_too_low'].append(symbol)
                     continue
-                
+
                 if market_cap < 50_000_000:
                     filter_reasons['market_cap_too_low'] += 1
-                    logger.debug(f"  Removed {symbol}: Market cap ${market_cap:,.0f} < $50M")
+                    removed_by_reason['market_cap_too_low'].append(symbol)
                     continue
-                
+
                 if exchange in ['PNK', 'OTC']:
                     filter_reasons['excluded_exchange'] += 1
-                    logger.debug(f"  Removed {symbol}: Exchange '{exchange}' is Pink Sheets/OTC")
+                    removed_by_reason['excluded_exchange'].append(symbol)
                     continue
-                
+
                 if avg_volume_10d < 200_000:
                     filter_reasons['volume_too_low'] += 1
-                    logger.debug(f"  Removed {symbol}: Avg volume {avg_volume_10d:,.0f} < 200,000")
+                    removed_by_reason['volume_too_low'].append(symbol)
                     continue
-                
+
                 # Passed all filters
                 filtered_screeners[screener_name].append(quote)
                 processed_successfully += 1
-            
+
+            for reason, symbols in removed_by_reason.items():
+                logger.debug(f"  {reason} ({len(symbols)}): {fmt_data(symbols)}")
+
             final_count = len(filtered_screeners[screener_name])
             filtered_out = initial_count - final_count
-            
+
             logger.info(
                 f"Screener '{screener_name}': {final_count}/{initial_count} passed filters "
                 f"({filtered_out} filtered out)"

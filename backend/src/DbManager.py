@@ -6,17 +6,10 @@ from flask import g, current_app
 from functools import wraps
 from pathlib import Path
 
+from logging_utils import fmt_data
+
 
 logger = logging.getLogger(__name__)
-
-
-LOG_FULL_DATA = False  # set True to log complete param lists and result sets without truncation
-
-
-def _fmt_data(data) -> str:
-    if LOG_FULL_DATA or not hasattr(data, '__len__') or len(data) <= 10:
-        return repr(data)
-    return f"{repr(data[:10])[:-1]}, ... (+{len(data) - 10} more)"
 
 
 class DbManager:
@@ -129,11 +122,11 @@ class DbManager:
         cur = con.cursor()
 
         try:
-            logger.debug(f"Params: {_fmt_data(placeholders)}")
+            logger.debug(f"Params: {fmt_data(placeholders)}")
             logger.debug(f"Executing SELECT Query: {query}")
             cur.execute(query, placeholders)
             rows = cur.fetchall()
-            logger.debug(f"Result: {len(rows)} rows | Data: {_fmt_data(rows)}\n")
+            logger.debug(f"Result: {len(rows)} rows | Data: {fmt_data(rows)}\n")
             return rows
 
         except Exception:
@@ -161,7 +154,7 @@ class DbManager:
         cur = con.cursor()
 
         try:
-            logger.debug(f"Params: {_fmt_data(placeholders)}")
+            logger.debug(f"Params: {fmt_data(placeholders)}")
             logger.debug(f"Executing MODIFY Query: {query}")
             cur.execute(query, placeholders)
             row_count = cur.rowcount
@@ -178,20 +171,26 @@ class DbManager:
             cur.close()
 
     @time_method
-    def bulk_query(self, query: str, data_list: list[tuple]):
+    def bulk_query(self, query: str, data_list: list[tuple], label: str | None = None):
         """
         Executes a query many times in a single transaction.
         data_list should be a list of tuples.
+
+        Args:
+            label: Optional short name (e.g. table name) included in the INFO
+                   success line, so consecutive bulk writes are distinguishable
+                   in the terminal instead of all reading identically.
         """
         con = self.get_db()
         cur = con.cursor()
         try:
-            logger.debug(f"Params: {_fmt_data(data_list)}")
+            logger.debug(f"Params: {fmt_data(data_list)}")
             logger.debug(f"Executing Query: {query}")
             cur.executemany(query, data_list)
             con.commit()
             logger.debug(f"Result: {cur.rowcount} rows affected\n")
-            logger.info(f"Bulk Query Success: {cur.rowcount} rows affected.")
+            tag = f" [{label}]" if label else ""
+            logger.info(f"Bulk Query Success{tag}: {cur.rowcount} rows affected.")
             return cur.rowcount
         except Exception:
             con.rollback()

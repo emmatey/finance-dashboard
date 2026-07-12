@@ -1,5 +1,6 @@
 from DbManager import DbManager
 from functools import wraps
+from logging_utils import fmt_data
 from requests.exceptions import ConnectionError, Timeout, HTTPError
 from curl_cffi.requests.exceptions import Timeout as CurlTimeout, ConnectionError as CurlConnectionError, HTTPError as CurlHTTPError
 from time import sleep, time
@@ -15,7 +16,7 @@ class YahooAPIClient(DbManager):
     All Yahoo API calls should go through this class.
     """
     def __init__(self):
-        logger.info("Initializing YahooAPIClient...")
+        logger.debug("Initializing YahooAPIClient...")
 
     def api_status(self) -> tuple[bool, bool]:
         """
@@ -29,7 +30,7 @@ class YahooAPIClient(DbManager):
         FROM global_events
         """
         result = self.select_query(query, ())
-        print(result)
+        logger.debug(f"api_status: {fmt_data(result)}")
         if not result:
             logger.error("global_events row missing")
             return (False, False)

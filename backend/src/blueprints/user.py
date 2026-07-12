@@ -126,6 +126,7 @@ def portfolio_view():
     try:
         portfolio_view = rm.get_portfolio_view(user_id=user_id)
     except Exception:
+        logger.exception(f"portfolio_view failed for user {user_id}")
         return jsonify({
             "success": False,
             "message": f"Database error..."
@@ -179,6 +180,7 @@ def transaction_history():
     try:
         tx_history = rm.get_transaction_history(user_id=user_id)
     except Exception:
+        logger.exception(f"transaction_history failed for user {user_id}")
         return jsonify({
             "success": False,
             "message": "Database error, see finance.log for more information"}), 500
@@ -252,6 +254,7 @@ def balance_snapshots():
     try:
         rows = rm.get_balance_snapshot_history(user_id=user_id)
     except Exception:
+        logger.exception(f"balance_snapshots failed for user {user_id}")
         return jsonify({
             "success": False,
             "message": "Database error... See finance.log for more info"

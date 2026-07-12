@@ -58,6 +58,7 @@ def research_local():
     try:
         fetched = rdc.get_research_data(ticker=ticker, tables_to_get=tables_to_fetch, db_io_instance=io)
     except Exception:
+        logger.exception(f"research_local failed for {ticker}")
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
     # 'symbol' is stock ticker, 'symbols' is table containing data about ticker like price and name and exchange.
@@ -183,6 +184,7 @@ def research_online():
         # Get all research data after refreshing
         results = rdc.get_research_data(ticker=ticker, db_io_instance=io)
     except Exception:
+        logger.exception(f"research_online db fetch failed for {ticker}")
         return jsonify({"success": False, "message": "Database error, see finance.log"}), 500
 
     results["success"] = True # type: ignore
