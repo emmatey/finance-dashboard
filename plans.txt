@@ -198,3 +198,21 @@ I'm thinking I should examine the way the screener data is currently captured an
     The daemon.py will also be able to just call this list on every screener
     and all the fresh ones will be skipped automatically.
     This one method should work in both places.
+
+    7/12:
+        Goals:
+            Have Daemon.py update screeners on an hourly cycle using the fresh_report 
+            mechanism.
+            Call the volume_spike_screeners method and other screeners who are derived
+            from the yq screeners updating.
+                1. Add last_screeners_update col to the global events table.
+                2. Add screener lifecycle to update_frequencies enum.
+                3. Add age check of screeners to run() function
+                    - Potential break deriving each UpdateFrequency member's age into
+                    functions
+                4. Call screener pipeline if needed
+                5. Call functions to derive and insert custom screeners,
+                
+            Write the api endpoints to return the valid options for screeners and put them
+            in categories. 
+            And to actually fetch, parse, upsert, and select the data and send it.

@@ -68,9 +68,9 @@ def home():
     cc = CommonQueries()
     ssm = StockScreenerManager()
 
-    ret = ssm.volume_spike_screeners()
-    print(ret)
 
+    ret = ssm.screener_data_update_orchestrator()
+    
     filler_page = """
         <body style="background-color: black; color: green;">
             hi mom.
