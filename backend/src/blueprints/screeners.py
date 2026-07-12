@@ -1,25 +1,41 @@
 import logging
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 from APIDataIO import APIDataIO
-from StockScreenerManager import StockScreenerManager
+from StockScreenerManager import SCREENER_CATEGORIES
 
 logger = logging.getLogger(__name__)
 
 screeners_bp = Blueprint("screeners", __name__, url_prefix="/api")
 
+# Flat set of every valid screener name, for validating ?screener=.
+_ALL_SCREENERS = {name for names in SCREENER_CATEGORIES.values() for name in names}
+
 
 @screeners_bp.route("/screeners/available", methods=["GET"])
 def screeners_available():
     """
-    Returns the list of screeners that the frontend can select from.
+    Returns the list of screeners that the frontend can select from, grouped
+    by category.
+
+    Returns:
+        200 - {"success": True, "data": {category_name: [screener_name, ...], ...}}
     """
-    
+    return jsonify({"success": True, "data": SCREENER_CATEGORIES}), 200
+
 
 @screeners_bp.route("/screeners/fetch", methods=["GET"])
 def screeners_fetch():
     """
+    Fetch a single screener, a whole category, or everything.
+
+    Query Parameters:
+        ?screener=str   - A single screener name (e.g. 'day_gainers')
+        ?category=str   - A category name from SCREENER_CATEGORIES (e.g. 'movers')
+        ?limit=int      - Max rows per screener (default: 10)
+        Provide at most one of 'screener'/'category'. With neither, returns
+        every tracked screener.
 
     Returns:
         200 - {
@@ -39,5 +55,56 @@ def screeners_fetch():
                 'three_month_avg_volume': int,
                 'volume_change_pct': float
             }
+        400 - Invalid category/screener, both given, or bad 'limit'
         500 - Server error
     """
+    screener = request.args.get("screener")
+    category = request.args.get("category")
+
+    if screener and category:
+        return jsonify({
+            "success": False,
+            "message": "Provide only one of 'screener' or 'category', not both."
+        }), 400
+
+    limit = request.args.get("limit", 10)
+    try:
+        limit = int(limit)
+    except ValueError:
+        logger.exception(f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT")
+        return jsonify({
+            "success": False,
+            "message": f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT"
+        }), 400
+
+    if category:
+        if category not in SCREENER_CATEGORIES:
+            return jsonify({
+                "success": False,
+                "message": f"Unknown category '{category}'. See /api/screeners/available for valid categories."
+            }), 400
+        screener_names = SCREENER_CATEGORIES[category]
+    elif screener:
+        if screener not in _ALL_SCREENERS:
+            return jsonify({
+                "success": False,
+                "message": f"Unknown screener '{screener}'. See /api/screeners/available for valid screeners."
+            }), 400
+        screener_names = screener
+    else:
+        screener_names = None
+
+    try:
+        rows = APIDataIO().get_screener_results(screener_names=screener_names, limit=limit)
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({
+            "success": False,
+            "message": "Server error fetching screener results. (/screeners/fetch)"
+        }), 500
+
+    grouped: dict[str, list] = {}
+    for row in rows:
+        grouped.setdefault(row["screener_name"], []).append(row)
+
+    return jsonify(grouped), 200
