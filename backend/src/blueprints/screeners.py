@@ -3,21 +3,21 @@ import logging
 from flask import Blueprint, jsonify
 
 from APIDataIO import APIDataIO
-from MarketOverviewCoordinator import MarketOverviewCoordinator
+from StockScreenerManager import StockScreenerManager
 
 logger = logging.getLogger(__name__)
 
 screeners_bp = Blueprint("screeners", __name__, url_prefix="/api")
 
 
-@screeners_bp.route("/screeners/available" method=["GET"])
+@screeners_bp.route("/screeners/available", methods=["GET"])
 def screeners_available():
     """
     Returns the list of screeners that the frontend can select from.
     """
     
 
-@screeners_bp.route("/screeners/fetch" method=["GET"])
+@screeners_bp.route("/screeners/fetch", methods=["GET"])
 def screeners_fetch():
     """
 

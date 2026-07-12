@@ -914,7 +914,7 @@ class APIDataIO(DbManager):
         Note:
             - Requires fresh data from set_screeners_metadata() and set_financial_metrics()
         """
-        from MarketOverviewCoordinator import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
+        from StockScreenerManager import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
         valid_screeners = YQ_SCREENER_NAMES + CUSTOM_SCREENERS
         if screener_names is None:
             screener_names = valid_screeners

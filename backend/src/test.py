@@ -1,6 +1,6 @@
 from flask import Flask
 from CommonQueries import CommonQueries
-from CustomScreenerManager import CustomScreenerManager
+from StockScreenerManager import StockScreenerManager
 from AccountManager import AccountManager
 from DbManager import DbManager
 from dotenv import load_dotenv
@@ -66,9 +66,9 @@ def home():
     moc = MarketOverviewCoordinator()
     sm = SearchManager()
     cc = CommonQueries()
-    csm = CustomScreenerManager()
+    ssm = StockScreenerManager()
 
-    ret = csm.volume_spike_screeners()
+    ret = ssm.volume_spike_screeners()
     print(ret)
 
     filler_page = """
