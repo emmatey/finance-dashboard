@@ -113,6 +113,7 @@ class StockScreenerManager(CommonQueries):
 
         # Extract metadata and rankings
         metadata = yqs_instance.extract_screener_metadata(filtered_screeners)
+        screeners_present: list[str] = list(metadata.keys())
 
         # Extract price and financial data
         price_modules, financial_metrics = yqs_instance.extract_screener_data(
@@ -124,7 +125,7 @@ class StockScreenerManager(CommonQueries):
 
         # Insert screener rankings + refresh their ages (scoped to these screener names)
         dbio_instance.set_screener_results(metadata)
-        dbio_instance.set_screener_ages(metadata.keys())
+        dbio_instance.set_screener_ages(screeners_present)
 
         # Update financial metrics (incomplete data, don't update last_updated timestamp)
         dbio_instance.set_financial_metrics(financial_metrics, from_screeners=True)
@@ -160,7 +161,7 @@ class StockScreenerManager(CommonQueries):
         self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)
         logger.info("Screener data update orchestrator complete.")
 
-    def volume_spike_screeners(self):
+    def volume_spike_screeners(self) -> bool:
         """
         Find stocks with largest volume spikes, split by price direction.
 
@@ -171,84 +172,94 @@ class StockScreenerManager(CommonQueries):
         Intended to be run immediately after all yahooquery screeners are updated
         (see screener_data_update_orchestrator), since it reads from financial_metrics
         rows that update populates.
+
+        Returns:
+            True on success, False on failure.
         """
-
-        sql = """
-        SELECT s.last_price, s.id, fm.prev_close, fm.todays_volume, fm.three_month_avg_volume
-        FROM financial_metrics AS fm
-        JOIN symbols AS s
-        ON s.id = fm.symbol_id
-        WHERE unixepoch(s.last_updated) > ?
-        """
-        age_threshold = int(time.time()) - int(
-            TableLifetimes.SCREENER_UPDATE_FREQUENCY.value
-        )
-        rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
-
-        # Calculate relative volume and separate by price direction
-        bullish_spikes: list[dict] = []  # Volume spike + price up
-        bearish_spikes: list[dict] = []  # Volume spike + price down
-
-        for quote in rows:
-            current_vol = quote.get("todays_volume", 0)
-            avg_vol_3m = quote.get("three_month_avg_volume", 1)
-
-            # Price change
-            current_price = quote.get("last_price", 0)
-            prev_close = quote.get("prev_close", 0)
-
-            if (
-                avg_vol_3m > 0 and prev_close > 0
-            ):  # Prevent divide by 0, crashing with corrupt data
-                relative_volume = current_vol / avg_vol_3m
-                price_change_pct = ((current_price - prev_close) / prev_close) * 100
-
-                # Only include significant volume spikes (> 1.5x normal)
-                if relative_volume > 1.5:
-                    spike_data = {
-                        "symbol_id": quote.get("id"),
-                        "relative_volume": relative_volume,
-                    }
-
-                    # Separate by price direction
-                    if price_change_pct > 0:
-                        bullish_spikes.append(spike_data)
-                    else:
-                        bearish_spikes.append(spike_data)
-
-        # Sort by relative volume (highest spike first)
-        bullish_spikes.sort(key=lambda x: x["relative_volume"], reverse=True)
-        bearish_spikes.sort(key=lambda x: x["relative_volume"], reverse=True)
-
-        # Add Rank
-        for idx, company in enumerate(bullish_spikes, start=1):
-            company["rank"] = idx
-            company["screener_name"] = "volume_spike_bullish"
-        for idx, company in enumerate(bearish_spikes, start=1):
-            company["screener_name"] = "volume_spike_bearish"
-            company["rank"] = idx
-
-        # Clear old rows for these two derived screeners before reinserting
-        self.modify_query(
-            f"""
-            DELETE FROM screener_results
-            WHERE screener_name IN ({",".join(['?' for _ in CUSTOM_SCREENERS])})
-            """,
-            tuple(CUSTOM_SCREENERS)
-        )
-
-        # Insert into DB
-        insert_sql = """
-            INSERT INTO screener_results (symbol_id, screener_name, rank)
-            VALUES (?, ?, ?)
-        """
-        screener_tuples = []
-        for screener in bullish_spikes + bearish_spikes:
-            screener_result = (
-                screener["symbol_id"],
-                screener["screener_name"],
-                screener["rank"],
+        try:
+            sql = """
+            SELECT s.last_price, s.id, fm.prev_close, fm.todays_volume, fm.three_month_avg_volume
+            FROM financial_metrics AS fm
+            JOIN symbols AS s
+            ON s.id = fm.symbol_id
+            WHERE unixepoch(s.last_updated) > ?
+            """
+            age_threshold = int(time.time()) - int(
+                TableLifetimes.SCREENER_UPDATE_FREQUENCY.value
             )
-            screener_tuples.append(screener_result)
+            rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
 
-        self.bulk_query(query=insert_sql, data_list=screener_tuples, label="screener_results")
+            # Calculate relative volume and separate by price direction
+            bullish_spikes: list[dict] = []  # Volume spike + price up
+            bearish_spikes: list[dict] = []  # Volume spike + price down
+
+            for quote in rows:
+                current_vol = quote.get("todays_volume", 0)
+                avg_vol_3m = quote.get("three_month_avg_volume", 1)
+
+                # Price change
+                current_price = quote.get("last_price", 0)
+                prev_close = quote.get("prev_close", 0)
+
+                if (
+                    avg_vol_3m > 0 and prev_close > 0
+                ):  # Prevent divide by 0, crashing with corrupt data
+                    relative_volume = current_vol / avg_vol_3m
+                    price_change_pct = ((current_price - prev_close) / prev_close) * 100
+
+                    # Only include significant volume spikes (> 1.5x normal)
+                    if relative_volume > 1.5:
+                        spike_data = {
+                            "symbol_id": quote.get("id"),
+                            "relative_volume": relative_volume,
+                        }
+
+                        # Separate by price direction
+                        if price_change_pct > 0:
+                            bullish_spikes.append(spike_data)
+                        else:
+                            bearish_spikes.append(spike_data)
+
+            # Sort by relative volume (highest spike first)
+            bullish_spikes.sort(key=lambda x: x["relative_volume"], reverse=True)
+            bearish_spikes.sort(key=lambda x: x["relative_volume"], reverse=True)
+
+            # Add Rank
+            for idx, company in enumerate(bullish_spikes, start=1):
+                company["rank"] = idx
+                company["screener_name"] = "volume_spike_bullish"
+            for idx, company in enumerate(bearish_spikes, start=1):
+                company["screener_name"] = "volume_spike_bearish"
+                company["rank"] = idx
+
+            # Clear old rows for these two derived screeners before reinserting
+            self.modify_query(
+                f"""
+                DELETE FROM screener_results
+                WHERE screener_name IN ({",".join(['?' for _ in CUSTOM_SCREENERS])})
+                """,
+                tuple(CUSTOM_SCREENERS)
+            )
+
+            # Insert into DB
+            insert_sql = """
+                INSERT INTO screener_results (symbol_id, screener_name, rank)
+                VALUES (?, ?, ?)
+            """
+            screener_tuples = []
+            for screener in bullish_spikes + bearish_spikes:
+                screener_result = (
+                    screener["symbol_id"],
+                    screener["screener_name"],
+                    screener["rank"],
+                )
+                screener_tuples.append(screener_result)
+
+            self.bulk_query(query=insert_sql, data_list=screener_tuples, label="screener_results")
+
+            logger.info("Volume spike screeners updated successfully.")
+            return True
+
+        except Exception:
+            logger.exception("volume_spike_screeners failed")
+            return False

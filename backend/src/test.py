@@ -45,7 +45,7 @@ def home():
     fh.setFormatter(fh_formatter)
 
     sh = logging.StreamHandler(sys.stdout)
-    sh.setLevel(logging.DEBUG)
+    sh.setLevel(logging.INFO)
     sh_formatter = logging.Formatter(
         "%(levelname)s: %(module)s: %(funcName)s: %(message)s"
     )
@@ -69,7 +69,7 @@ def home():
     ssm = StockScreenerManager()
 
 
-    ret = ssm.volume_spike_screeners()
+    dae.run()
     
     filler_page = """
         <body style="background-color: black; color: green;">

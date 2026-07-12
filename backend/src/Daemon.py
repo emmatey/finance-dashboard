@@ -8,6 +8,7 @@ from MarketOverviewCoordinator import (
     MarketOverviewCoordinator,
     REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP,
 )
+from StockScreenerManager import StockScreenerManager
 from YahooQueryService import YahooQueryService
 
 logger = logging.getLogger(__name__)
@@ -58,25 +59,23 @@ class Daemon(CommonQueries):
         to_update = []  # (global_events_sql_name, func)
 
         now = time.time()
-        def _check_price_fresh(self):
-            price_time = status[0].get("price")
-            if not price_time:
-                price_time = 0
-            if now - price_time > UpdateFrequency.price.value:
-                to_update.append(("last_price_update", self.price_updater))
-        def _check_snapshots_fresh(self):
-            snap_time = status[0].get("snap")
-            if not snap_time:
-                snap_time = 0
-            if now - snap_time > UpdateFrequency.balance_snapshot.value:
-                to_update.append(("last_snapshot_update", self.balance_snapshot_all_users))
-        def _check_screeners_fresh(self):
-            screener_time = status[0].get("screener")
-            if not screener_time:
-                screener_time = 0
-            if now - screener_time > UpdateFrequency.screener.value:
-                to_update.append(("screener", self.balance_snapshot_all_users))
-
+        price_time = status[0].get("price")
+        if not price_time:
+            price_time = 0
+        if now - price_time > UpdateFrequency.price.value:
+            to_update.append(("last_price_update", self.price_updater))
+    
+        snap_time = status[0].get("snap")
+        if not snap_time:
+            snap_time = 0
+        if now - snap_time > UpdateFrequency.balance_snapshot.value:
+            to_update.append(("last_snapshot_update", self.balance_snapshot_all_users))
+    
+        screener_time = status[0].get("screener")
+        if not screener_time:
+            screener_time = 0
+        if now - screener_time > UpdateFrequency.screener.value:
+            to_update.append(("last_screener_update", StockScreenerManager().volume_spike_screeners))
         
         if not to_update:
             logger.debug("All satan tables up to date, skipping...")
@@ -97,7 +96,7 @@ class Daemon(CommonQueries):
         updated = []
         for func_tuple in to_update:
             ret = func_tuple[1]()
-            if ret is False:
+            if not ret:
                 logger.error(f"Failed to update {func_tuple[0]}.")
                 failed.append(func_tuple[0])
             else:
