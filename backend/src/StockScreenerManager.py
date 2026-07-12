@@ -115,7 +115,8 @@ class StockScreenerManager(CommonQueries):
         dbio_instance.upsert_symbols(price_modules)
 
         # Insert screener rankings + refresh their ages (scoped to these screener names)
-        dbio_instance.set_screeners_metadata(metadata)
+        dbio_instance.set_screener_results(metadata)
+        dbio_instance.set_screener_ages(metadata.keys())
 
         # Update financial metrics (incomplete data, don't update last_updated timestamp)
         dbio_instance.set_financial_metrics(financial_metrics, from_screeners=True)
@@ -167,7 +168,7 @@ class StockScreenerManager(CommonQueries):
         """
 
         sql = """
-        SELECT s.last_price, s.ticker, fm.prev_close, fm.todays_volume, fm.three_month_avg_volume
+        SELECT s.last_price, s.id, fm.prev_close, fm.todays_volume, fm.three_month_avg_volume
         FROM financial_metrics AS fm
         JOIN symbols AS s
         ON s.id = fm.symbol_id
@@ -179,8 +180,8 @@ class StockScreenerManager(CommonQueries):
         rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
 
         # Calculate relative volume and separate by price direction
-        bullish_spikes = []  # Volume spike + price up
-        bearish_spikes = []  # Volume spike + price down
+        bullish_spikes: list[dict] = []  # Volume spike + price up
+        bearish_spikes: list[dict] = []  # Volume spike + price down
 
         for quote in rows:
             current_vol = quote.get("todays_volume", 0)
@@ -197,7 +198,7 @@ class StockScreenerManager(CommonQueries):
                 # Only include significant volume spikes (> 1.5x normal)
                 if relative_volume > 1.5:
                     spike_data = {
-                        "symbol": quote.get("ticker"),
+                        "symbol_id": quote.get("id"),
                         "relative_volume": relative_volume,
                     }
 
@@ -212,13 +213,29 @@ class StockScreenerManager(CommonQueries):
         bearish_spikes.sort(key=lambda x: x["relative_volume"], reverse=True)
 
         # Add Rank
-        for idx, company in enumerate(bullish_spikes):
-            company["rank"] = idx + 1
-        for idx, company in enumerate(bearish_spikes):
-            company["rank"] = idx + 1
+        for idx, company in enumerate(bullish_spikes, start=1):
+            company["rank"] = idx
+            company["screener_name"] = 'bullish_spikes'
+        for idx, company in enumerate(bearish_spikes, start=1):
+            company["screener_name"] = 'bearish_spikes'
+            company["rank"] = idx
 
-        # Return both screeners
-        return {
-            "volume_spike_bullish": bullish_spikes,
-            "volume_spike_bearish": bearish_spikes,
-        }
+
+        # Insert into DB
+        insert_sql = """
+            INSERT INTO screener_results (symbol_id, screener_name, rank)
+            SELECT s.id, ?, ?
+            FROM symbols AS s
+            WHERE ticker = ?
+        """
+        screener_tuples = []
+        for screener in bullish_spikes + bearish_spikes:
+            screener_result = (
+                screener["symbol_id"],
+                screener["screener_name"],
+                screener["rank"]
+            )
+            screener_tuples.append(screener_result)
+            print(screener_result)
+            
+        self.bulk_query(query=insert_sql, data_list=screener_tuples)

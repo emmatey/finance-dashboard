@@ -70,7 +70,6 @@ def home():
 
 
     ret = ssm.volume_spike_screeners()
-    print(ret)
     
     filler_page = """
         <body style="background-color: black; color: green;">

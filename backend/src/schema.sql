@@ -179,7 +179,6 @@ CREATE TABLE screener_results (
     screener_name TEXT NOT NULL,  -- 'day_gainers', 'most_active', etc.
     symbol_id INTEGER NOT NULL,
     rank INTEGER,  -- position in screener (1 = top)
-    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (symbol_id) REFERENCES symbols(id)
 );
 CREATE UNIQUE INDEX idx_screener_symbol

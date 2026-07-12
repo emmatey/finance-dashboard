@@ -75,7 +75,7 @@ class Daemon(CommonQueries):
             if not screener_time:
                 screener_time = 0
             if now - screener_time > UpdateFrequency.screener.value:
-                to_update.append(("screener", self.))
+                to_update.append(("screener", self.balance_snapshot_all_users))
 
         
         if not to_update:

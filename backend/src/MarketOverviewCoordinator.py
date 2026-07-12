@@ -25,7 +25,6 @@ REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP = {
     "Oil": "CL=F",
 }
 
-
 class TableLifetimes(Enum):
     REGION_ETFS_UPDATE_FREQUENCY = 3600  # 1 hour
 
