@@ -41,7 +41,11 @@ class StockScreenerManager(CommonQueries):
         """
         now = int(time.time())
         update_frequency = TableLifetimes.SCREENER_UPDATE_FREQUENCY.value
-        fresh_report = {screener_name: False for screener_name in screener_names}
+        fresh_report = {
+            screener_name: False
+            for screener_name in screener_names
+            if screener_name not in CUSTOM_SCREENERS
+        }
 
         placeholders = ",".join(["?" for _ in screener_names])
         last_updated_sql = f"""
@@ -78,7 +82,9 @@ class StockScreenerManager(CommonQueries):
         if yqs_instance is None:
             yqs_instance = yqs()
 
-        logger.info(f"Fetching {len(screener_names)} screeners: {fmt_data(screener_names)}")
+        logger.info(
+            f"Fetching {len(screener_names)} screeners: {fmt_data(screener_names)}"
+        )
         screeners = yqs_instance.yq_screener_fetch_screeners(
             screeners=screener_names, count=screener_count
         )
@@ -101,7 +107,9 @@ class StockScreenerManager(CommonQueries):
             dbio_instance = io()
 
         total_symbols = sum(len(v) for v in filtered_screeners.values())
-        logger.info(f"Writing screener data: {len(filtered_screeners)} screeners, {total_symbols} symbols")
+        logger.info(
+            f"Writing screener data: {len(filtered_screeners)} screeners, {total_symbols} symbols"
+        )
 
         # Extract metadata and rankings
         metadata = yqs_instance.extract_screener_metadata(filtered_screeners)
@@ -137,9 +145,7 @@ class StockScreenerManager(CommonQueries):
 
         fresh_report = self.screener_fresh_report()
         stale_screeners = [
-            screener
-            for screener, fresh_bool in fresh_report.items()
-            if not fresh_bool
+            screener for screener, fresh_bool in fresh_report.items() if not fresh_bool
         ]
         if not stale_screeners:
             logger.info("All screeners up to date, skipping refresh.")
@@ -191,7 +197,9 @@ class StockScreenerManager(CommonQueries):
             current_price = quote.get("last_price", 0)
             prev_close = quote.get("prev_close", 0)
 
-            if avg_vol_3m > 0 and prev_close > 0: # Prevent divide by 0, crashing with corrupt data
+            if (
+                avg_vol_3m > 0 and prev_close > 0
+            ):  # Prevent divide by 0, crashing with corrupt data
                 relative_volume = current_vol / avg_vol_3m
                 price_change_pct = ((current_price - prev_close) / prev_close) * 100
 
@@ -215,27 +223,32 @@ class StockScreenerManager(CommonQueries):
         # Add Rank
         for idx, company in enumerate(bullish_spikes, start=1):
             company["rank"] = idx
-            company["screener_name"] = 'bullish_spikes'
+            company["screener_name"] = "volume_spike_bullish"
         for idx, company in enumerate(bearish_spikes, start=1):
-            company["screener_name"] = 'bearish_spikes'
+            company["screener_name"] = "volume_spike_bearish"
             company["rank"] = idx
 
+        # Clear old rows for these two derived screeners before reinserting
+        self.modify_query(
+            """
+            DELETE FROM screener_results
+            WHERE screener_name IN (?, ?)
+            """,
+            tuple(CUSTOM_SCREENERS)
+        )
 
         # Insert into DB
         insert_sql = """
             INSERT INTO screener_results (symbol_id, screener_name, rank)
-            SELECT s.id, ?, ?
-            FROM symbols AS s
-            WHERE ticker = ?
+            VALUES (?, ?, ?)
         """
         screener_tuples = []
         for screener in bullish_spikes + bearish_spikes:
             screener_result = (
                 screener["symbol_id"],
                 screener["screener_name"],
-                screener["rank"]
+                screener["rank"],
             )
             screener_tuples.append(screener_result)
-            print(screener_result)
-            
-        self.bulk_query(query=insert_sql, data_list=screener_tuples)
+
+        self.bulk_query(query=insert_sql, data_list=screener_tuples, label="screener_results")
