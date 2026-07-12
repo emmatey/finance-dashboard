@@ -49,14 +49,12 @@ class APIDataIO(DbManager):
         symbols_tuples: list[tuple] = []
         for symbol, modules in modules_dict.items():
             if not isinstance(modules, dict):
-                logger.error(f"Malformed module for {symbol}...skipping")
-                logger.error(modules)
+                logger.error(f"Malformed module for {symbol}: expected dict, got {type(modules).__name__} ({modules!r})")
                 continue
 
             price_module = modules.get('price')
             if not isinstance(price_module, dict):
-                logger.error(f"Malformed module for {symbol}...skipping")
-                logger.error(modules)
+                logger.error(f"Malformed module for {symbol}: missing/invalid 'price' key. Keys present: {list(modules.keys())}")
                 continue
             
             if price_module:
@@ -80,8 +78,8 @@ class APIDataIO(DbManager):
             else:
                 logger.warning(f"'price' module not found for {symbol}.")
 
-        self.bulk_query(sql, symbols_tuples)
-        
+        self.bulk_query(sql, symbols_tuples, label="symbols")
+
     ### SETTERS ###
 
     @ResearchDataCoordinator.register_as_research('stock_splits', i=True)
@@ -107,7 +105,7 @@ class APIDataIO(DbManager):
             last_updated = CURRENT_TIMESTAMP
         """
 
-        self.bulk_query(sql, stock_split_data)
+        self.bulk_query(sql, stock_split_data, label="stock_splits")
 
     @ResearchDataCoordinator.register_as_research('historical_prices', i=True)
     def set_historical_prices(self, price_data):
@@ -138,7 +136,7 @@ class APIDataIO(DbManager):
             END
         """
 
-        self.bulk_query(sql, price_data)
+        self.bulk_query(sql, price_data, label="historical_prices")
 
     @ResearchDataCoordinator.register_as_research('financial_metrics', i=True)
     def set_financial_metrics(
@@ -214,7 +212,7 @@ class APIDataIO(DbManager):
             {update_time} {excluded_cols_str}
             """
 
-        self.bulk_query(sql, data_tuples)
+        self.bulk_query(sql, data_tuples, label="financial_metrics")
 
     @ResearchDataCoordinator.register_as_research('news', i=True)
     def set_news(self, news_data: List[Dict[str, Any]]) -> None:
@@ -277,7 +275,7 @@ class APIDataIO(DbManager):
         DO UPDATE SET
         timeInserted=CURRENT_TIMESTAMP, {excluded_cols_str}
         """
-        self.bulk_query(insert_news_sql, news_tuples)
+        self.bulk_query(insert_news_sql, news_tuples, label="news")
 
         # Associate news stories to ticker symbols
         related_uuids = {}
@@ -315,7 +313,7 @@ class APIDataIO(DbManager):
             VALUES ('UNKNOWN', ?, ?)
             ON CONFLICT(ticker) DO NOTHING
             """
-            self.bulk_query(minimal_sql, [(t, t) for t in unknown_tickers])
+            self.bulk_query(minimal_sql, [(t, t) for t in unknown_tickers], label="news (new tickers)")
             # re-run ticker query to get new ids
             ticker_rows = self.select_query(ticker_sql, tuple(ticker_set))
             ticker_cipher = {i.get('ticker'): i.get('symbol_id') for i in ticker_rows}
@@ -345,7 +343,7 @@ class APIDataIO(DbManager):
         ON CONFLICT(news_id, symbol_id)
         DO NOTHING
         """
-        self.bulk_query(news_symbols_sql, news_symbols_tuples)
+        self.bulk_query(news_symbols_sql, news_symbols_tuples, label="news_symbols")
 
     @ResearchDataCoordinator.register_as_research('company_profile', i=True)
     def set_company_profile(
@@ -414,7 +412,7 @@ class APIDataIO(DbManager):
         DO UPDATE SET
         last_updated=CURRENT_TIMESTAMP, {excluded_cols_str}
         """
-        self.bulk_query(sql, summary_tuples)
+        self.bulk_query(sql, summary_tuples, label="company_profile")
 
     @ResearchDataCoordinator.register_as_research('insider_trades', i=True)
     def set_insider_trades(self, trade_data: dict):
@@ -463,7 +461,7 @@ class APIDataIO(DbManager):
         ON CONFLICT(symbol_id, transaction_date, filer_name, shares)
         DO NOTHING
         """
-        self.bulk_query(sql, insider_tuples)
+        self.bulk_query(sql, insider_tuples, label="insider_trades")
 
     def set_screeners_metadata(self, screener_metadata: Dict[str, List[str]]) -> None:
         """
@@ -507,7 +505,7 @@ class APIDataIO(DbManager):
             for rank, ticker in enumerate(tickers, start=1):
                 screener_tuples.append((screener_name, rank, ticker))
 
-        self.bulk_query(sql, screener_tuples)
+        self.bulk_query(sql, screener_tuples, label="screener_results")
 
         # Refresh per-screener ages
         age_sql = """
@@ -515,7 +513,7 @@ class APIDataIO(DbManager):
             VALUES (?, CURRENT_TIMESTAMP)
             ON CONFLICT(screener_name) DO UPDATE SET last_updated = CURRENT_TIMESTAMP
         """
-        self.bulk_query(age_sql, [(name,) for name in screener_names])
+        self.bulk_query(age_sql, [(name,) for name in screener_names], label="screener_ages")
 
         logger.info(f"Inserted {len(screener_tuples)} screener results across {len(screener_metadata)} screeners")
 
@@ -926,13 +924,13 @@ class APIDataIO(DbManager):
                     safe_screener_names.append(str(n))
             except Exception as e:
                 logger.exception(e)
-                ValueError("'screener_names' must be a str or list of strs.")
+                raise ValueError("'screener_names' must be a str or list of strs.") from e
         elif not isinstance(screener_names, str):
             try:
                 safe_screener_names.append(str(n))
             except Exception as e:
                 logger.exception(e)
-                ValueError("'screener_names' must be a str or list of strs.")
+                raise ValueError("'screener_names' must be a str or list of strs.") from e
         else:
             safe_screener_names.append(screener_names)
         

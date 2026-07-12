@@ -196,7 +196,7 @@ class ResearchDataCoordinator(CommonQueries):
         symbol = fresh_report.get('symbol')
         assert isinstance(symbol, str)
         if not symbol:
-            logger.info(f"fresh_report invalid, no company name found. {fresh_report}")
+            logger.error(f"fresh_report invalid, no company name found. {fresh_report}")
             raise RuntimeError("Malformed fresh_report, no symbol found.")
         if not yqs_instance or not db_io_instance:
             raise ValueError("research_data_update_orchestrator requires YahooQueryService and APIDataIO instances.")
@@ -245,6 +245,7 @@ class ResearchDataCoordinator(CommonQueries):
                 logger.error(f"Incomplete registry registration for table '{table}'")
                 raise RuntimeError(f"Incomplete registry registration for table '{table}'")
 
+            logger.info(f"Updating '{table}' for {symbol}...")
             if modules_required:
                 data = api_func(yqs_instance, modules)
                 in_func(db_io_instance, data)

@@ -1,5 +1,9 @@
+import logging
+
 from CommonQueries import CommonQueries
 from werkzeug.security import check_password_hash, generate_password_hash
+
+logger = logging.getLogger(__name__)
 
 
 class AccountManager(CommonQueries):
@@ -13,15 +17,17 @@ class AccountManager(CommonQueries):
         rows = self.select_query(
             "SELECT * FROM users WHERE username = ?", (username, )
             )
-        
+
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(
             rows[0]["hash"], password
         ):
+            logger.warning(f"Failed login attempt for username '{username}'")
             return False
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
+        logger.info(f"User '{username}' logged in (user_id={rows[0]['id']})")
         return True
 
     def register(self, username: str, password: str) -> int:
@@ -36,10 +42,13 @@ class AccountManager(CommonQueries):
             "SELECT username FROM users WHERE username = ?", (username, )
                                 )
         if check_name:
+            logger.info(f"Registration rejected: username '{username}' already in use")
             return 0
 
         hash = generate_password_hash(password)
         # update DB with username and pw hash.
-        return self.modify_query(
+        result = self.modify_query(
             "INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash)
             )
+        logger.info(f"User '{username}' registered")
+        return result

@@ -76,11 +76,11 @@ class TransactionManager(CommonQueries):
             logger.exception(f"Failed to record buy for user {user_id}: {e}")
             return None
         
-        info_str = f"""BUY recorded: User {user_id} bought {qty} shares of {ticker}.
-            at ${unit_price:.2f} (total: ${tx_value:.2f}). 
-            Cash: ${balance:.2f} → ${new_balance:.2f}
-        """
-        logger.info(info_str)
+        logger.info(
+            f"BUY recorded: User {user_id} bought {qty} shares of {ticker} "
+            f"at ${unit_price:.2f} (total: ${tx_value:.2f}). "
+            f"Cash: ${balance:.2f} → ${new_balance:.2f}"
+        )
 
         return {
             "success": True,

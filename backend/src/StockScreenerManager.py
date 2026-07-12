@@ -3,6 +3,7 @@ import time
 from APIDataIO import APIDataIO as io
 from CommonQueries import CommonQueries
 from enum import Enum
+from logging_utils import fmt_data
 from YahooQueryService import YahooQueryService as yqs
 
 logger = logging.getLogger(__name__)
@@ -77,6 +78,7 @@ class StockScreenerManager(CommonQueries):
         if yqs_instance is None:
             yqs_instance = yqs()
 
+        logger.info(f"Fetching {len(screener_names)} screeners: {fmt_data(screener_names)}")
         screeners = yqs_instance.yq_screener_fetch_screeners(
             screeners=screener_names, count=screener_count
         )
@@ -97,6 +99,9 @@ class StockScreenerManager(CommonQueries):
             yqs_instance = yqs()
         if dbio_instance is None:
             dbio_instance = io()
+
+        total_symbols = sum(len(v) for v in filtered_screeners.values())
+        logger.info(f"Writing screener data: {len(filtered_screeners)} screeners, {total_symbols} symbols")
 
         # Extract metadata and rankings
         metadata = yqs_instance.extract_screener_metadata(filtered_screeners)
@@ -130,15 +135,23 @@ class StockScreenerManager(CommonQueries):
             dbio_instance = io()
 
         fresh_report = self.screener_fresh_report()
-        filtered_screeners = self.fetch_and_filter_screeners(
-            [
-                screener
-                for screener, fresh_bool in fresh_report.items()
-                if not fresh_bool
-            ]
+        stale_screeners = [
+            screener
+            for screener, fresh_bool in fresh_report.items()
+            if not fresh_bool
+        ]
+        if not stale_screeners:
+            logger.info("All screeners up to date, skipping refresh.")
+            return
+
+        logger.info(
+            f"Screener refresh: {len(stale_screeners)} stale, "
+            f"{len(fresh_report) - len(stale_screeners)} fresh."
         )
+        filtered_screeners = self.fetch_and_filter_screeners(stale_screeners)
 
         self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)
+        logger.info("Screener data update orchestrator complete.")
 
     def volume_spike_screeners(self):
         """
