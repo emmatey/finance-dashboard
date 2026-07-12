@@ -262,8 +262,8 @@ YQ_SCREENER_NAMES = [
 
 
 class TableLifetimes(Enum):
-    SCREENER_UPDATE_FREQUENCY = 3600  # 1 hour
-
+    YQ_SCREENER_UPDATE_FREQUENCY = 60 * 60
+    CUSTOM_SCREENER_UPDATE_FREQUENCY = 30 * 60
 
 class StockScreenerManager(CommonQueries):
     """
@@ -272,7 +272,7 @@ class StockScreenerManager(CommonQueries):
     from already-stored data like 'volume_spike_bullish').
     """
 
-    def screener_fresh_report(self, screener_names):
+    def screener_fresh_report(self, screener_names, limit=None):
         """
         Checks the age of the screeners to be fetched.
         Returns: [{screener: bool}, ...]
@@ -280,7 +280,7 @@ class StockScreenerManager(CommonQueries):
             Stale = False
         """
         now = int(time.time())
-        update_frequency = TableLifetimes.SCREENER_UPDATE_FREQUENCY.value
+        update_frequency = TableLifetimes.YQ_SCREENER_UPDATE_FREQUENCY.value
         fresh_report = {
             screener_name: False
             for screener_name in screener_names
@@ -292,6 +292,7 @@ class StockScreenerManager(CommonQueries):
         SELECT screener_name, unixepoch(last_updated) AS last_updated
         FROM screener_ages
         WHERE screener_name IN ({placeholders})
+        LIMIT {limit}
         """
         rows = self.select_query(
             query=last_updated_sql, placeholders=tuple(screener_names)
@@ -437,9 +438,7 @@ class StockScreenerManager(CommonQueries):
             ON s.id = fm.symbol_id
             WHERE unixepoch(s.last_updated) > ?
             """
-            age_threshold = int(time.time()) - int(
-                TableLifetimes.SCREENER_UPDATE_FREQUENCY.value
-            )
+            age_threshold = int(time.time()) - int(60 * 30)
             rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
 
             # Calculate relative volume and separate by price direction

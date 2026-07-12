@@ -19,10 +19,10 @@ class UpdateFrequency(Enum):
     Specifies the age at which any given DB table should be updated.
     """
 
-    price = 300  # symbols table
-    screener = 3600 # 1 hour
-    balance_snapshot = 86400  # 24 hours
-
+    price = 5 * 60
+    last_custom_screeners_update = 60 * 60 
+    balance_snapshot = 24 * 60 * 60 
+    
 class Daemon(CommonQueries):
     """
     Background task runner for periodic price and balance snapshot updates.
@@ -42,85 +42,50 @@ class Daemon(CommonQueries):
         revert to NULL on exception.
         Update again on success to reflect true completion time.
         """
+        fresh_report = self.fresh_report()
+
+        # {UpdateFrequency member: [function(), ...]}
+        action_map = {
+            'price': [self.price_updater],
+            'last_custom_screeners_update': [StockScreenerManager().volume_spike_screeners],
+            'balance_snapshot': [self.balance_snapshot_all_users]
+        }
+
+        # Always try to update a chunk of screeners.
+
+    def fresh_report(self):       
         status_sql = """
         SELECT 
             unixepoch(last_price_update) AS price,
-            unixepoch(last_snapshot_update) AS snap,
-            unixepoch(last_screener_update) AS screener
+            unixepoch(last_snapshot_update) AS balance_snapshot,
+            unixepoch(last_custom_screeners_update) AS last_custom_screeners_update
         FROM global_events
         WHERE id = 1
         """
-        logger.debug("Daemon is running...")
-        status = self.select_query(status_sql, ())
-        if not status or len(status) != 1:
+        rows = self.select_query(status_sql, ())
+        if not rows or len(rows) != 1:
             logger.critical(f"Error reading global_events...Skipping updates.")
             return
-
-        to_update = []  # (global_events_sql_name, func)
+        status = rows[0]
 
         now = time.time()
-        price_time = status[0].get("price")
-        if not price_time:
-            price_time = 0
-        if now - price_time > UpdateFrequency.price.value:
-            to_update.append(("last_price_update", self.price_updater))
-    
-        snap_time = status[0].get("snap")
-        if not snap_time:
-            snap_time = 0
-        if now - snap_time > UpdateFrequency.balance_snapshot.value:
-            to_update.append(("last_snapshot_update", self.balance_snapshot_all_users))
-    
-        screener_time = status[0].get("screener")
-        if not screener_time:
-            screener_time = 0
-        if now - screener_time > UpdateFrequency.screener.value:
-            to_update.append(("last_screener_update", StockScreenerManager().volume_spike_screeners))
-        
-        if not to_update:
-            logger.debug("All satan tables up to date, skipping...")
-            return
-
-        # Update all global event tables which need to be written to with current time to prevent other requests from doing the same work.
-        lock_placeholders = ", ".join(f"{i[0]} = ?" for i in to_update)
-        lock_sql = f"""
-        UPDATE global_events
-        SET {lock_placeholders}
-        WHERE id = 1
-        """
-        utc_now = time.gmtime()
-        params = [time.strftime("%Y-%m-%d %H:%M:%S", utc_now) for _ in to_update]
-        self.modify_query(lock_sql, tuple(params))
-
-        failed = []
-        updated = []
-        for func_tuple in to_update:
-            ret = func_tuple[1]()
-            if not ret:
-                logger.error(f"Failed to update {func_tuple[0]}.")
-                failed.append(func_tuple[0])
+        fresh_report = {task_name : False for task_name in status}
+        for event_name, age in status.items():
+            if age < (now - UpdateFrequency[event_name].value):
+                fresh_report[event_name] = False
             else:
-                updated.append(func_tuple[0])
-
-        if failed:
-            failed_placeholders = ", ".join(f"{i} = NULL" for i in failed)
-            revert_sql = f"""
-            UPDATE global_events
-            SET {failed_placeholders}
-            WHERE id = 1
-            """
-            self.modify_query(revert_sql, ())
-
-        if updated:
-            timestamp_placeholders = ", ".join(f"{i} = ?" for i in updated)
-            timestamp_sql = f"""
-            UPDATE global_events
-            SET {timestamp_placeholders}
-            WHERE id = 1
-            """
-            utc_now = time.gmtime()
-            params = [time.strftime("%Y-%m-%d %H:%M:%S", utc_now) for _ in updated]
-            self.modify_query(timestamp_sql, tuple(params))
+                fresh_report[event_name] = True
+        
+        return fresh_report
+    
+    def update_screener_subset(self, limit=10):
+        """
+        Updates a portion of the 200+ screeners on every request to share the delay and make it less noticeable. 
+        The time to fill a screeners request to the yahoo  API grows lineally because the URLs are constructed
+        one at a time in a loop, as the endpoint doesn't support lists of tickers.
+        """
+        fresh_report = StockScreenerManager().screener_fresh_report(limit=limit)
+        
 
     def balance_snapshot_all_users(self) -> bool:
         """
