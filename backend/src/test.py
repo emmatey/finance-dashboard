@@ -69,7 +69,8 @@ def home():
     ssm = StockScreenerManager()
 
 
-    ret = ssm.screener_data_update_orchestrator()
+    ret = ssm.volume_spike_screeners()
+    print(ret)
     
     filler_page = """
         <body style="background-color: black; color: green;">

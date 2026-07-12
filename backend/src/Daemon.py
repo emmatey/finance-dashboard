@@ -19,8 +19,8 @@ class UpdateFrequency(Enum):
     """
 
     price = 300  # symbols table
+    screener = 3600 # 1 hour
     balance_snapshot = 86400  # 24 hours
-
 
 class Daemon(CommonQueries):
     """
@@ -44,11 +44,12 @@ class Daemon(CommonQueries):
         status_sql = """
         SELECT 
             unixepoch(last_price_update) AS price,
-            unixepoch(last_snapshot_update) AS snap
+            unixepoch(last_snapshot_update) AS snap,
+            unixepoch(last_screener_update) AS screener
         FROM global_events
         WHERE id = 1
         """
-        logger.debug("Satan is running...")
+        logger.debug("Daemon is running...")
         status = self.select_query(status_sql, ())
         if not status or len(status) != 1:
             logger.critical(f"Error reading global_events...Skipping updates.")
@@ -56,16 +57,27 @@ class Daemon(CommonQueries):
 
         to_update = []  # (global_events_sql_name, func)
 
-        price_time = status[0].get("price")
-        if not price_time:
-            price_time = 0
-        if time.time() - price_time > UpdateFrequency.price.value:
-            to_update.append(("last_price_update", self.price_updater))
-        snap_time = status[0].get("snap")
-        if not snap_time:
-            snap_time = 0
-        if time.time() - snap_time > UpdateFrequency.balance_snapshot.value:
-            to_update.append(("last_snapshot_update", self.balance_snapshot_all_users))
+        now = time.time()
+        def _check_price_fresh(self):
+            price_time = status[0].get("price")
+            if not price_time:
+                price_time = 0
+            if now - price_time > UpdateFrequency.price.value:
+                to_update.append(("last_price_update", self.price_updater))
+        def _check_snapshots_fresh(self):
+            snap_time = status[0].get("snap")
+            if not snap_time:
+                snap_time = 0
+            if now - snap_time > UpdateFrequency.balance_snapshot.value:
+                to_update.append(("last_snapshot_update", self.balance_snapshot_all_users))
+        def _check_screeners_fresh(self):
+            screener_time = status[0].get("screener")
+            if not screener_time:
+                screener_time = 0
+            if now - screener_time > UpdateFrequency.screener.value:
+                to_update.append(("screener", self.))
+
+        
         if not to_update:
             logger.debug("All satan tables up to date, skipping...")
             return

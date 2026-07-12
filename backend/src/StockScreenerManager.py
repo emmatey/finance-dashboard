@@ -165,6 +165,7 @@ class StockScreenerManager(CommonQueries):
         (see screener_data_update_orchestrator), since it reads from financial_metrics
         rows that update populates.
         """
+
         sql = """
         SELECT s.last_price, s.ticker, fm.prev_close, fm.todays_volume, fm.three_month_avg_volume
         FROM financial_metrics AS fm
@@ -189,7 +190,7 @@ class StockScreenerManager(CommonQueries):
             current_price = quote.get("last_price", 0)
             prev_close = quote.get("prev_close", 0)
 
-            if avg_vol_3m > 0 and prev_close > 0:
+            if avg_vol_3m > 0 and prev_close > 0: # Prevent divide by 0, crashing with corrupt data
                 relative_volume = current_vol / avg_vol_3m
                 price_change_pct = ((current_price - prev_close) / prev_close) * 100
 
@@ -209,6 +210,12 @@ class StockScreenerManager(CommonQueries):
         # Sort by relative volume (highest spike first)
         bullish_spikes.sort(key=lambda x: x["relative_volume"], reverse=True)
         bearish_spikes.sort(key=lambda x: x["relative_volume"], reverse=True)
+
+        # Add Rank
+        for idx, company in enumerate(bullish_spikes):
+            company["rank"] = idx + 1
+        for idx, company in enumerate(bearish_spikes):
+            company["rank"] = idx + 1
 
         # Return both screeners
         return {
