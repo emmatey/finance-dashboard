@@ -34,11 +34,7 @@ YQ_SCREENER_NAMES = [
     "fifty_two_wk_losers",
 ]
 # Screeners derived from YQ data
-CUSTOM_SCREENERS = [
-    "volume_spike_bullish", 
-    "volume_spike_bearish"
-]
-ALL_SCREENERS = CUSTOM_SCREENERS + YQ_SCREENER_NAMES
+CUSTOM_SCREENERS = ["volume_spike_bullish", "volume_spike_bearish"]
 
 
 class TableLifetimes(Enum):
@@ -107,7 +103,7 @@ class MarketOverviewCoordinator(CommonQueries):
             f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}"
         )
 
-    def screener_fresh_report(self, screener_names=ALL_SCREENERS):
+    def screener_fresh_report(self, screener_names=YQ_SCREENER_NAMES):
         """
         Checks the age of the screeners to be fetched.
         Returns: [{screener: bool}, ...]
@@ -193,8 +189,6 @@ class MarketOverviewCoordinator(CommonQueries):
 
     def screener_data_update_orchestrator(
         self,
-        screener_names=YQ_SCREENER_NAMES,
-        screener_count=100,
         yqs_instance=None,
         dbio_instance=None,
     ):
@@ -208,18 +202,12 @@ class MarketOverviewCoordinator(CommonQueries):
             dbio_instance = io()
 
         fresh_report = self.screener_fresh_report()
-        stale_screeners = [
-            screener_name
-            for screener_name, fresh_bool in fresh_report.items()
-            if not fresh_bool
-        ]
-
-    
-
-        self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)
-
-        logger.info(
-            f"Successfully updated {len(filtered_screeners)} screeners with {len(price_modules)} unique tickers"
+        filtered_screeners = self.fetch_and_filter_screeners(
+            [
+                screener
+                for screener, fresh_bool in fresh_report.items()
+                if not fresh_bool
+            ]
         )
 
-        return None
+        self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)

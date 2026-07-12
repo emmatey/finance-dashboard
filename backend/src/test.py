@@ -66,7 +66,7 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
 
-    print(moc.screener_fresh_report())
+    moc.screener_data_update_orchestrator()
 
     filler_page = """
         <body style="background-color: black; color: green;">
