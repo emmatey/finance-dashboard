@@ -605,6 +605,14 @@ class StockScreenerManager(CommonQueries):
         reflect fund ownership snapshots rather than actual reported insider
         transactions.
 
+        NOT market-wide: insider_trades is only populated per-ticker by
+        ResearchDataCoordinator when a user visits that ticker's research page
+        or trades it (see blueprints/research.py, blueprints/trade.py) - the
+        daemon never refreshes it proactively. So this only ever surfaces
+        insider activity among whatever handful of tickers users have recently
+        looked up, not the full symbol universe. Expect it to look sparse,
+        especially early on or during low traffic.
+
         Returns:
             True on success, False on failure.
         """
