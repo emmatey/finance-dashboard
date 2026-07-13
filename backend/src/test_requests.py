@@ -33,7 +33,13 @@ def register_user(username, password):
 
 
 s = requests.Session()
-res = s.post(f"{BASE_URL}/api/auth/login", json={'username': 'emma', 'password': '123Pass'})
+res = s.post(
+    f"{BASE_URL}/api/auth/login", json={"username": "emma", "password": "123Pass"}
+)
 print(res.text)
-res = s.get(f"{BASE_URL}/api/trade?ticker=mane")
+
+res = s.get(f"{BASE_URL}/api/screeners/available")
+print(res.text)
+
+res = s.get(f"{BASE_URL}/api/screeners/fetch?category=institutional_activity")
 print(res.text)
