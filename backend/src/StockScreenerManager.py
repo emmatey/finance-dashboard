@@ -263,7 +263,6 @@ YQ_SCREENER_NAMES = [
 
 class TableLifetimes(Enum):
     YQ_SCREENER_UPDATE_FREQUENCY = 60 * 60
-    CUSTOM_SCREENER_UPDATE_FREQUENCY = 30 * 60
 
 class StockScreenerManager(CommonQueries):
     """
@@ -292,8 +291,9 @@ class StockScreenerManager(CommonQueries):
         SELECT screener_name, unixepoch(last_updated) AS last_updated
         FROM screener_ages
         WHERE screener_name IN ({placeholders})
-        LIMIT {limit}
         """
+        if limit:
+            last_updated_sql = last_updated_sql + f"LIMIT {limit}"
         rows = self.select_query(
             query=last_updated_sql, placeholders=tuple(screener_names)
         )

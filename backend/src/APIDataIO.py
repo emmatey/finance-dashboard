@@ -490,6 +490,8 @@ class APIDataIO(DbManager):
             SELECT s.id, ?, ?
             FROM symbols AS s
             WHERE ticker = ?
+            ON CONFLICT(screener_name, symbol_id)
+            DO UPDATE SET rank = EXCLUDED.rank
         """
         screener_tuples: List[Tuple[str, int, str]] = []
         for screener_name, tickers in screener_metadata.items():

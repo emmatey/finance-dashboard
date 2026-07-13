@@ -19,9 +19,9 @@ class UpdateFrequency(Enum):
     Specifies the age at which any given DB table should be updated.
     """
 
-    price = 5 * 60
-    last_custom_screeners_update = 60 * 60 
-    balance_snapshot = 24 * 60 * 60 
+    last_price_update = 5 * 60
+    last_custom_screeners_update = 60 * 60
+    last_snapshot_update = 24 * 60 * 60
     
 class Daemon(CommonQueries):
     """
@@ -37,27 +37,43 @@ class Daemon(CommonQueries):
 
     def run(self):
         """
-        Decide which functions to call.
-        Write to db as complete immediately to block parallel requests from performing the same actions,
-        revert to NULL on exception.
-        Update again on success to reflect true completion time.
+        Runs functions associated with different events in the 'UpdateFrequency'
+        table. Always tries to update a chunk of screeners.
+
+        Each updater is responsible for recording its own completion in
+        global_events on success, so this loop doesn't need to track
+        success/failure itself.
         """
         fresh_report = self.fresh_report()
 
-        # {UpdateFrequency member: [function(), ...]}
+        # {UpdateFrequency member name: [function(), ...]}
         action_map = {
-            'price': [self.price_updater],
-            'last_custom_screeners_update': [StockScreenerManager().volume_spike_screeners],
-            'balance_snapshot': [self.balance_snapshot_all_users]
+            'last_price_update': [self.price_updater],
+            'last_custom_screeners_update': [
+                StockScreenerManager().volume_spike_screeners,
+                self.mark_custom_screeners_updated,
+            ],
+            'last_snapshot_update': [self.balance_snapshot_all_users],
         }
 
         # Always try to update a chunk of screeners.
+        self.update_screener_subset()
 
-    def fresh_report(self):       
+        for action, fresh in fresh_report.items():
+            if fresh:
+                continue
+            for func in action_map[action]:
+                try:
+                    func()
+                except Exception:
+                    logger.exception(f"{action} update failed calling {func.__name__}.")
+                    break
+
+    def fresh_report(self):
         status_sql = """
-        SELECT 
-            unixepoch(last_price_update) AS price,
-            unixepoch(last_snapshot_update) AS balance_snapshot,
+        SELECT
+            unixepoch(last_price_update) AS last_price_update,
+            unixepoch(last_snapshot_update) AS last_snapshot_update,
             unixepoch(last_custom_screeners_update) AS last_custom_screeners_update
         FROM global_events
         WHERE id = 1
@@ -65,11 +81,11 @@ class Daemon(CommonQueries):
         rows = self.select_query(status_sql, ())
         if not rows or len(rows) != 1:
             logger.critical(f"Error reading global_events...Skipping updates.")
-            return
+            return {}
         status = rows[0]
+        fresh_report = {task_name : False for task_name in status}
 
         now = time.time()
-        fresh_report = {task_name : False for task_name in status}
         for event_name, age in status.items():
             if age < (now - UpdateFrequency[event_name].value):
                 fresh_report[event_name] = False
@@ -84,8 +100,35 @@ class Daemon(CommonQueries):
         The time to fill a screeners request to the yahoo  API grows lineally because the URLs are constructed
         one at a time in a loop, as the endpoint doesn't support lists of tickers.
         """
-        fresh_report = StockScreenerManager().screener_fresh_report(limit=limit)
-        
+
+        sql = f"""
+        SELECT screener_name
+        FROM screener_ages
+        WHERE unixepoch(last_updated) < ?
+        LIMIT {limit}
+        """
+        age_threshold = int(time.time()) - UpdateFrequency.last_custom_screeners_update.value
+        rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
+        screener_names = [row["screener_name"] for row in rows]
+        if screener_names:
+            StockScreenerManager().screener_data_update_orchestrator(screener_names=screener_names)
+        else:
+            # Call to update all to initialize in the case of screener_ages table being empty.
+            StockScreenerManager().screener_data_update_orchestrator()
+
+    def mark_custom_screeners_updated(self) -> None:
+        """
+        Records that the custom screener refresh (volume_spike_screeners) ran.
+
+        volume_spike_screeners lives on StockScreenerManager, not Daemon, so it
+        has no access to global_events bookkeeping - this is appended after it
+        in run()'s action_map instead.
+        """
+        self.modify_query(
+            "UPDATE global_events SET last_custom_screeners_update = CURRENT_TIMESTAMP WHERE id = 1",
+            (),
+        )
+        logger.info("Marked last_custom_screeners_update complete.")
 
     def balance_snapshot_all_users(self) -> bool:
         """
@@ -130,6 +173,10 @@ class Daemon(CommonQueries):
             """
             self.bulk_query(snap_sql, snapshot_tuples)
 
+            self.modify_query(
+                "UPDATE global_events SET last_snapshot_update = CURRENT_TIMESTAMP WHERE id = 1",
+                (),
+            )
             logger.info("All user snapshots completed successfully.")
             return True
 
@@ -189,6 +236,10 @@ class Daemon(CommonQueries):
 
             if not tickers:
                 logger.info("No active symbols to update.")
+                self.modify_query(
+                    "UPDATE global_events SET last_price_update = CURRENT_TIMESTAMP WHERE id = 1",
+                    (),
+                )
                 return True
 
             # Fetch price modules for all batches using YahooQueryService (with circuit breaker)
@@ -233,6 +284,10 @@ class Daemon(CommonQueries):
             if change_metrics:
                 io.set_financial_metrics(change_metrics, from_screeners=True)
 
+            self.modify_query(
+                "UPDATE global_events SET last_price_update = CURRENT_TIMESTAMP WHERE id = 1",
+                (),
+            )
             logger.info(
                 f"Price update complete. Updated: {len(updated_symbols)}, Failed: {len(failed_symbols)}"
             )

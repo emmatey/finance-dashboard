@@ -69,8 +69,8 @@ def home():
     ssm = StockScreenerManager()
 
 
-    res = dae.fresh_report()
-    print(res)
+    res = dae.update_screener_subset()
+    
     
     filler_page = """
         <body style="background-color: black; color: green;">
