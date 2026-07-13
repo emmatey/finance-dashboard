@@ -58,12 +58,12 @@ class APIDataIO(DbManager):
                 continue
             
             if price_module:
-                quote_type = price_module.get('quoteType', 'UNKNOWN')
+                quote_type = price_module.get('quoteType') or 'UNKNOWN'
                 if quote_type == 'UNKNOWN':
                     logger.debug(f"Missing quoteType for {symbol}, price_module keys: {list(price_module.keys())}")
                 exchange = price_module.get('exchangeName')
                 if not exchange:
-                    exchange = price_module.get("exchange", "UNKNOWN")
+                    exchange = price_module.get("exchange") or "UNKNOWN"
                 market_state = price_module.get('marketState')
                 company_name = (
                     price_module.get('longName') or

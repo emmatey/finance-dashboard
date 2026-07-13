@@ -597,9 +597,29 @@ class YahooQueryService:
         
         for screener_name, data in screeners.items():
             logger.debug(f"Processing screener: {screener_name}")
-            
+
+            # Institutional/analyst-sentiment screeners are pre-curated by Yahoo
+            # and returned under 'records' (not 'quotes') with a different field
+            # set (e.g. 'ticker' instead of 'symbol', no 'exchange'/volume-10d
+            # fields) - the price/cap/exchange/volume filters below don't apply
+            # to them, so pass them through as-is.
+            if data.get('useRecords'):
+                records: List[Dict] = data.get('records', [])
+                if not records:
+                    logger.warning(f"No quote data available for '{screener_name}'")
+                    continue
+
+                for record in records:
+                    record['symbol'] = record.get('ticker')
+
+                filtered_screeners[screener_name] = records
+                logger.info(
+                    f"Screener '{screener_name}': {len(records)} pre-curated records (filtering skipped)"
+                )
+                continue
+
             quotes: List[Dict] = data.get('quotes', [])
-            
+
             if not quotes:
                 logger.warning(f"No quote data available for '{screener_name}'")
                 continue

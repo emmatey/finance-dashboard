@@ -4,10 +4,8 @@ import time
 from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
 from enum import Enum
-from MarketOverviewCoordinator import (
-    MarketOverviewCoordinator,
-    REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP,
-)
+from logging_utils import fmt_data
+from MarketOverviewCoordinator import (REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP)
 from StockScreenerManager import StockScreenerManager
 from YahooQueryService import YahooQueryService
 
@@ -80,14 +78,15 @@ class Daemon(CommonQueries):
         """
         rows = self.select_query(status_sql, ())
         if not rows or len(rows) != 1:
-            logger.critical(f"Error reading global_events...Skipping updates.")
+            logger.critical("Error reading global_events...Skipping updates.")
             return {}
         status = rows[0]
         fresh_report = {task_name : False for task_name in status}
 
         now = time.time()
         for event_name, age in status.items():
-            if age < (now - UpdateFrequency[event_name].value):
+            # age is None when the column has never been stamped - treat as stale.
+            if age is None or age < (now - UpdateFrequency[event_name].value):
                 fresh_report[event_name] = False
             else:
                 fresh_report[event_name] = True
@@ -111,9 +110,13 @@ class Daemon(CommonQueries):
         rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
         screener_names = [row["screener_name"] for row in rows]
         if screener_names:
+            logger.info(f"Refreshing {len(screener_names)} stale screeners: {fmt_data(screener_names)}")
             StockScreenerManager().screener_data_update_orchestrator(screener_names=screener_names)
         else:
-            # Call to update all to initialize in the case of screener_ages table being empty.
+            # No rows past the age threshold - either everything's fresh or
+            # screener_ages is empty (first run). Fall back to a full catalog
+            # scan; screener_data_update_orchestrator will no-op on the fresh ones.
+            logger.info("No stale rows in screener_ages subset query, falling back to full catalog scan.")
             StockScreenerManager().screener_data_update_orchestrator()
 
     def mark_custom_screeners_updated(self) -> None:
