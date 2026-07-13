@@ -43,12 +43,15 @@ class Daemon(CommonQueries):
         success/failure itself.
         """
         fresh_report = self.fresh_report()
+        ssm = StockScreenerManager()
 
         # {UpdateFrequency member name: [function(), ...]}
         action_map = {
             'last_price_update': [self.price_updater],
             'last_custom_screeners_update': [
-                StockScreenerManager().volume_spike_screeners,
+                ssm.volume_spike_screeners,
+                ssm.volume_compression_screener,
+                ssm.insider_trading_surge_screeners,
                 self.mark_custom_screeners_updated,
             ],
             'last_snapshot_update': [self.balance_snapshot_all_users],

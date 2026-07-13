@@ -9,7 +9,13 @@ from YahooQueryService import YahooQueryService as yqs
 logger = logging.getLogger(__name__)
 
 # Screeners derived from already-stored data rather than fetched from yahooquery.
-CUSTOM_SCREENERS = ["volume_spike_bullish", "volume_spike_bearish"]
+CUSTOM_SCREENERS = [
+    "volume_spike_bullish",
+    "volume_spike_bearish",
+    "volume_compression",
+    "insider_buying_surge",
+    "insider_selling_surge",
+]
 
 # Screener names grouped by category, so the frontend can request a whole
 # category at once or a single screener within it. Scoped to US equities -
@@ -446,12 +452,12 @@ class StockScreenerManager(CommonQueries):
             bearish_spikes: list[dict] = []  # Volume spike + price down
 
             for quote in rows:
-                current_vol = quote.get("todays_volume", 0)
-                avg_vol_3m = quote.get("three_month_avg_volume", 1)
+                current_vol = quote.get("todays_volume") or 0
+                avg_vol_3m = quote.get("three_month_avg_volume") or 1
 
                 # Price change
-                current_price = quote.get("last_price", 0)
-                prev_close = quote.get("prev_close", 0)
+                current_price = quote.get("last_price") or 0
+                prev_close = quote.get("prev_close") or 0
 
                 if (
                     avg_vol_3m > 0 and prev_close > 0
@@ -484,13 +490,16 @@ class StockScreenerManager(CommonQueries):
                 company["screener_name"] = "volume_spike_bearish"
                 company["rank"] = idx
 
-            # Clear old rows for these two derived screeners before reinserting
+            # Clear old rows for these two derived screeners before reinserting.
+            # Scoped to just the names this method owns, not all of CUSTOM_SCREENERS,
+            # so it doesn't wipe out the other custom screeners' results.
+            owned_screener_names = ["volume_spike_bullish", "volume_spike_bearish"]
             self.modify_query(
                 f"""
                 DELETE FROM screener_results
-                WHERE screener_name IN ({",".join(['?' for _ in CUSTOM_SCREENERS])})
+                WHERE screener_name IN ({",".join(['?' for _ in owned_screener_names])})
                 """,
-                tuple(CUSTOM_SCREENERS)
+                tuple(owned_screener_names)
             )
 
             # Insert into DB
@@ -514,4 +523,154 @@ class StockScreenerManager(CommonQueries):
 
         except Exception:
             logger.exception("volume_spike_screeners failed")
+            return False
+
+    def volume_compression_screener(self) -> bool:
+        """
+        Find stocks trading at unusually low volume relative to their 3-month
+        average - the inverse signal to volume_spike_screeners. Low relative
+        volume often precedes a larger move.
+
+        Intended to be run immediately after all yahooquery screeners are updated
+        (see screener_data_update_orchestrator), since it reads from financial_metrics
+        rows that update populates.
+
+        Returns:
+            True on success, False on failure.
+        """
+        try:
+            sql = """
+            SELECT s.id, fm.todays_volume, fm.three_month_avg_volume
+            FROM financial_metrics AS fm
+            JOIN symbols AS s
+            ON s.id = fm.symbol_id
+            WHERE unixepoch(s.last_updated) > ?
+            """
+            age_threshold = int(time.time()) - int(60 * 30)
+            rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
+
+            compressed: list[dict] = []
+            for quote in rows:
+                current_vol = quote.get("todays_volume") or 0
+                avg_vol_3m = quote.get("three_month_avg_volume") or 0
+
+                if avg_vol_3m > 0:  # Prevent divide by 0, crashing with corrupt data
+                    relative_volume = current_vol / avg_vol_3m
+
+                    # Only include significant volume compression (< 0.5x normal)
+                    if relative_volume < 0.5:
+                        compressed.append({
+                            "symbol_id": quote.get("id"),
+                            "relative_volume": relative_volume,
+                        })
+
+            # Sort by relative volume (quietest first)
+            compressed.sort(key=lambda x: x["relative_volume"])
+
+            for idx, company in enumerate(compressed, start=1):
+                company["rank"] = idx
+                company["screener_name"] = "volume_compression"
+
+            self.modify_query(
+                "DELETE FROM screener_results WHERE screener_name = ?",
+                ("volume_compression",)
+            )
+
+            insert_sql = """
+                INSERT INTO screener_results (symbol_id, screener_name, rank)
+                VALUES (?, ?, ?)
+            """
+            screener_tuples = [
+                (c["symbol_id"], c["screener_name"], c["rank"]) for c in compressed
+            ]
+            self.bulk_query(query=insert_sql, data_list=screener_tuples, label="screener_results")
+
+            logger.info("Volume compression screener updated successfully.")
+            return True
+
+        except Exception:
+            logger.exception("volume_compression_screener failed")
+            return False
+
+    def insider_trading_surge_screeners(self) -> bool:
+        """
+        Find stocks with the largest recent insider buying and selling activity,
+        split by direction, ranked by total dollar value.
+
+        Restricted to actual open-market 'Purchase'/'Sale' transactions (excludes
+        grants, option exercises, gifts, and conversions, which aren't
+        discretionary buy/sell decisions at market price).
+
+        Distinct from yahooquery's institutional_activity screeners, which
+        reflect fund ownership snapshots rather than actual reported insider
+        transactions.
+
+        Returns:
+            True on success, False on failure.
+        """
+        try:
+            sql = """
+            SELECT
+                symbol_id,
+                SUM(CASE WHEN transaction_text LIKE 'Purchase%' THEN transaction_value ELSE 0 END) AS buy_value,
+                SUM(CASE WHEN transaction_text LIKE 'Sale%' THEN transaction_value ELSE 0 END) AS sell_value
+            FROM insider_trades
+            WHERE unixepoch(transaction_date) > ?
+            GROUP BY symbol_id
+            """
+            age_threshold = int(time.time()) - int(60 * 60 * 24 * 90)
+            rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
+
+            buying_surges: list[dict] = []
+            selling_surges: list[dict] = []
+
+            for row in rows:
+                symbol_id = row.get("symbol_id")
+                buy_value = row.get("buy_value") or 0
+                sell_value = row.get("sell_value") or 0
+
+                if buy_value > 0:
+                    buying_surges.append({"symbol_id": symbol_id, "total_value": buy_value})
+                if sell_value > 0:
+                    selling_surges.append({"symbol_id": symbol_id, "total_value": sell_value})
+
+            # Sort by total dollar value (largest surge first)
+            buying_surges.sort(key=lambda x: x["total_value"], reverse=True)
+            selling_surges.sort(key=lambda x: x["total_value"], reverse=True)
+
+            for idx, company in enumerate(buying_surges, start=1):
+                company["rank"] = idx
+                company["screener_name"] = "insider_buying_surge"
+            for idx, company in enumerate(selling_surges, start=1):
+                company["rank"] = idx
+                company["screener_name"] = "insider_selling_surge"
+
+            owned_screener_names = ["insider_buying_surge", "insider_selling_surge"]
+            self.modify_query(
+                f"""
+                DELETE FROM screener_results
+                WHERE screener_name IN ({",".join(['?' for _ in owned_screener_names])})
+                """,
+                tuple(owned_screener_names)
+            )
+
+            insert_sql = """
+                INSERT INTO screener_results (symbol_id, screener_name, rank)
+                VALUES (?, ?, ?)
+            """
+            screener_tuples = []
+            for screener in buying_surges + selling_surges:
+                screener_tuples.append((
+                    screener["symbol_id"],
+                    screener["screener_name"],
+                    screener["rank"],
+                ))
+
+            self.bulk_query(query=insert_sql, data_list=screener_tuples, label="screener_results")
+
+            logger.info("Insider trading surge screeners updated successfully.")
+            return True
+
+        except Exception:
+            logger.exception("insider_trading_surge_screeners failed")
             return False
