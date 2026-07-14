@@ -71,7 +71,7 @@ class MarketOverviewCoordinator(CommonQueries):
 
         age = time.time() - last_updated
         if age < TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value:
-            logger.info(
+            logger.debug(
                 f"Regional ETFs up to date! age = {age}. Update frequency = {TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value}"
             )
             return None

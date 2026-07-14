@@ -875,7 +875,7 @@ class APIDataIO(DbManager):
         logger.debug(f"Retrieved market data for {len(result)} regions")
         return result
     
-    def get_screener_results(self, screener_names: list[str] | str | None=None, limit: int = 10) -> List[Dict[str, Union[int, str, float]]]:
+    def get_screener_results(self, screener_names: list[str] | str | None=None) -> List[Dict[str, Union[int, str, float]]]:
         """
         Retrieve top N stocks from a screener with current market data.
 
@@ -888,7 +888,6 @@ class APIDataIO(DbManager):
                                   'most_watched_tickers', 'fifty_two_wk_gainers',
                                   'fifty_two_wk_losers', 'volume_spike_bullish',
                                   'volume_spike_bearish'
-            limit: Maximum number of results to return (default: 10)
 
         Returns:
             List of dicts containing screener results with current data:
@@ -944,7 +943,6 @@ class APIDataIO(DbManager):
             logger.warning(f"Screener parameters {invalid_screeners} are invalid...skipping")
 
         placeholders = ", ".join("?" for _ in safe_screener_names)
-        safe_screener_names.append(str(limit))
         sql = f"""
             WITH ranked AS (
                 SELECT

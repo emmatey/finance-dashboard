@@ -33,10 +33,8 @@ def screeners_fetch():
     Query Parameters:
         ?screener=str   - A single screener name (e.g. 'day_gainers')
         ?category=str   - A category name from SCREENER_CATEGORIES (e.g. 'movers')
-        ?limit=int      - Max rows per screener (default: 10)
         Provide at most one of 'screener'/'category'. With neither, returns
         every tracked screener.
-
     Returns:
         200 - {
             screener_name:[{company_data}, ...]
@@ -67,16 +65,6 @@ def screeners_fetch():
             "message": "Provide only one of 'screener' or 'category', not both."
         }), 400
 
-    limit = request.args.get("limit", 10)
-    try:
-        limit = int(limit)
-    except ValueError:
-        logger.exception(f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT")
-        return jsonify({
-            "success": False,
-            "message": f"Limit query parameter is invalid '{limit}' was provided. Value must be castable as INT"
-        }), 400
-
     if category:
         if category not in SCREENER_CATEGORIES:
             return jsonify({
@@ -95,7 +83,7 @@ def screeners_fetch():
         screener_names = None
 
     try:
-        rows = APIDataIO().get_screener_results(screener_names=screener_names, limit=limit)
+        rows = APIDataIO().get_screener_results(screener_names=screener_names)
     except Exception as e:
         logger.exception(e)
         return jsonify({
@@ -105,6 +93,10 @@ def screeners_fetch():
 
     grouped: dict[str, list] = {}
     for row in rows:
-        grouped.setdefault(row["screener_name"], []).append(row)
+        screener_name = str(row.get("screener_name")) or ""
+        if not screener_name not in row.keys():
+            grouped[screener_name] = [row]
+        else:
+            grouped[screener_name].append(row)
 
     return jsonify(grouped), 200

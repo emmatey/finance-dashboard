@@ -313,13 +313,9 @@ RESOURCES
             from - {success: true, data: {category_name: [screener_name, ...], ...}}
             categories: movers, value_growth, analyst_sentiment,
                         institutional_activity, sector, trending, industry, custom
-            note - full screener-name lists are long (movers alone has 14,
-                   industry has ~150) and change independently of this doc -
-                   call this route for the current authoritative list rather
-                   than hardcoding names against it.
             200 - success
         fetch
-            to   - GET /api/screeners/fetch  ?screener=str (optional)  ?category=str (optional)  ?limit=int (optional, default 10)
+            to   - GET /api/screeners/fetch  ?screener=str (optional)  ?category=str (optional)
             from - {
                 screener_name: [{
                     screener_name: str,
@@ -335,20 +331,6 @@ RESOURCES
                     volume_change_pct: float
                 }]
             }
-            note - deviates from the RESPONSE CONVENTIONS above: the 200 response
-                   is the grouped {screener_name: [...]} dict itself, not wrapped
-                   in {success, data}.
-            note - provide at most one of 'screener'/'category'; with neither,
-                   every tracked screener across all categories is returned.
-            note - custom screeners (category "custom": volume_spike_bullish,
-                   volume_spike_bearish, volume_compression, insider_buying_surge,
-                   insider_selling_surge) are derived from already-stored data
-                   rather than fetched live from yahooquery, and are refreshed by
-                   the daemon rather than on-request. insider_buying_surge /
-                   insider_selling_surge in particular only reflect tickers users
-                   have recently looked up (insider_trades is populated per-ticker
-                   on research/trade, never swept market-wide), so expect them to
-                   look sparse.
             200 - success
             400 - both 'screener' and 'category' given, unknown screener/category
                   name, or non-integer 'limit'
