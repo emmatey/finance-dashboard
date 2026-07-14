@@ -2,36 +2,11 @@ import { useEffect, useState } from "react";
 import { parseResponse } from "@/scripts/utils";
 
 
-export default function useScreenersData(category = null, screener = null) {
-    /*
-        When called without parameters, should return the "available screeners list"
-     */
-
-    const [availableLoading, setAvailableLoading] = useState(true);
+export default function useScreenerData(category = null, screener = null) {
     const [dataLoading, setDataLoading] = useState(false);
     const [errorMsg, setErrMsg] = useState("");
-    const [screenersAvailable, setScreenersAvailable] = useState(null);
     const [screenerData, setScreenerData] = useState(null);
 
-    // Get available screeners on mount.
-    useEffect(() => {
-        async function fetchScreenersAvailable() {
-            try {
-                const response = await fetch('/api/screeners/available', {
-                    method: "GET"
-                })
-                const data = await parseResponse(response);
-                setScreenersAvailable(data["data"]);
-            } catch (error) {
-                setErrMsg(error.message);
-            } finally {
-                setAvailableLoading(false);
-            };
-        }
-        fetchScreenersAvailable();
-    }, []);
-
-    // Get specific data on request.
     useEffect(() => {
         if (!category && !screener) return;
         async function fetchScreenerData() {
@@ -59,5 +34,5 @@ export default function useScreenersData(category = null, screener = null) {
         fetchScreenerData();
     }, [category, screener]);
 
-    return { availableLoading, dataLoading, errorMsg, screenersAvailable, screenerData }
+    return { dataLoading, errorMsg, screenerData }
 }
