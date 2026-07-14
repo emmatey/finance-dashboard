@@ -968,7 +968,6 @@ class APIDataIO(DbManager):
                 prev_close, price_change_pct, market_cap, todays_volume,
                 three_month_avg_volume, volume_change_pct
             FROM ranked
-            WHERE row_num <= ?
             ORDER BY screener_name, rank
         """
         rows = self.select_query(sql, tuple(safe_screener_names))

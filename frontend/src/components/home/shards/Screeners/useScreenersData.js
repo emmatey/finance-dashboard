@@ -19,6 +19,8 @@ export default function useScreenersData(category = null, screener = null) {
                 method: "GET"
             })
             const data = parseResponse(response);
+            console.log("this is the available side")
+            console.log(response.text);
             setScreenersAvailable(data);
         }
         fetchScreenersAvailable();
@@ -27,6 +29,7 @@ export default function useScreenersData(category = null, screener = null) {
     // Get specific data on request.
     useEffect(() => {
         async function fetchScreenerData() {
+            let url = "";
             if (category) {
                 url = `/api/screeners/?category=${String(category).trim()}`
             } else if (screener) {
@@ -35,9 +38,14 @@ export default function useScreenersData(category = null, screener = null) {
             const response = await fetch(url , {
                 method: "GET"
             });
+            console.log("this is the screeners data side");
+            console.log(response.text);
+            
             const data = parseResponse(response);
             setScreenersAvailable(data);
         }
-        fetchScreenersAvailable();
+        fetchScreenerData();
     }, [category, screener]);
+
+    return { loading, errorMsg, screenersAvailable, screenerData }
 }
