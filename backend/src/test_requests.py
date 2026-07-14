@@ -36,10 +36,10 @@ s = requests.Session()
 res = s.post(
     f"{BASE_URL}/api/auth/login", json={"username": "emma", "password": "123Pass"}
 )
-print(res.text)
+print(res.json())
 
 res = s.get(f"{BASE_URL}/api/screeners/available")
-print(res.text)
+print(res.json())
 
-res = s.get(f"{BASE_URL}/api/screeners/fetch?category=institutional_activity")
-print(res.text)
+#res = s.get(f"{BASE_URL}/api/screeners/fetch?category=institutional_activity")
+#print(res.json())

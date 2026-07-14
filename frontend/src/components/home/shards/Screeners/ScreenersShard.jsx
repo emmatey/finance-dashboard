@@ -4,11 +4,15 @@ import { useState } from "react";
 export default function ScreenersShard() {
     const [categoryParam, setCategoryParam] = useState(null);
     const [screenerParam, setScreenerParam] = useState(null);
-    const { loading, errorMsg, screenersAvailable, screenerData } = useScreenersData(categoryParam, screenerParam);
+    const { availableLoading, dataLoading, errorMsg, screenersAvailable, screenerData } = useScreenersData(categoryParam, screenerParam);
 
-    if (loading) return <div>Loading...</div>;
+    if (dataLoading) return <div>loading...</div>;
     if (errorMsg) return <p>{errorMsg}</p>;
 
+
+    if (!screenerParam) {
+        setScreenerParam("volume_spike_bearish");
+    }
     console.log(screenersAvailable);
     console.log(screenerData);
     return (

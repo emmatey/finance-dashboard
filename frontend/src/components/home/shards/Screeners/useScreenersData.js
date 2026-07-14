@@ -7,7 +7,8 @@ export default function useScreenersData(category = null, screener = null) {
         When called without parameters, should return the "available screeners list"
      */
 
-    const [loading, setLoading] = useState(true);
+    const [availableLoading, setAvailableLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(false);
     const [errorMsg, setErrMsg] = useState("");
     const [screenersAvailable, setScreenersAvailable] = useState(null);
     const [screenerData, setScreenerData] = useState(null);
@@ -15,37 +16,48 @@ export default function useScreenersData(category = null, screener = null) {
     // Get available screeners on mount.
     useEffect(() => {
         async function fetchScreenersAvailable() {
-            const response = await fetch('/api/screeners/available', {
-                method: "GET"
-            })
-            const data = parseResponse(response);
-            console.log("this is the available side")
-            console.log(response.text);
-            setScreenersAvailable(data);
+            try {
+                const response = await fetch('/api/screeners/available', {
+                    method: "GET"
+                })
+                const data = await parseResponse(response);
+                setScreenersAvailable(data["data"]);
+            } catch (error) {
+                setErrMsg(error.message);
+            } finally {
+                setAvailableLoading(false);
+            };
         }
         fetchScreenersAvailable();
     }, []);
 
     // Get specific data on request.
     useEffect(() => {
+        if (!category && !screener) return;
         async function fetchScreenerData() {
-            let url = "";
-            if (category) {
-                url = `/api/screeners/?category=${String(category).trim()}`
-            } else if (screener) {
-                url = `/api/screeners/?screener=${String(category).trim()}`
+            try {
+                setDataLoading(true);
+                let url = null;
+                if (category) {
+                    url = `/api/screeners/fetch?category=${encodeURIComponent(String(category).trim())}`
+                } else if (screener) {
+                    url = `/api/screeners/fetch?screener=${encodeURIComponent(String(screener).trim())}`
+                };
+                if (url) {
+                    const response = await fetch(url, {
+                        method: "GET"
+                    });
+                    const data = await parseResponse(response);
+                    setScreenerData(data["data"]);
+                };
+            } catch (error) {
+                setErrMsg(error.message);
+            } finally {
+                setDataLoading(false);
             };
-            const response = await fetch(url , {
-                method: "GET"
-            });
-            console.log("this is the screeners data side");
-            console.log(response.text);
-            
-            const data = parseResponse(response);
-            setScreenersAvailable(data);
         }
         fetchScreenerData();
     }, [category, screener]);
 
-    return { loading, errorMsg, screenersAvailable, screenerData }
+    return { availableLoading, dataLoading, errorMsg, screenersAvailable, screenerData }
 }
