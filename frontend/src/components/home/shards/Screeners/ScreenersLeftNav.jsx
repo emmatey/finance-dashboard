@@ -2,31 +2,48 @@ import { Card, CardAction, CardContent, CardHeader } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useShardNav } from '@/context/ShardNavContext'
+import { useScreenersSelection } from '@/context/ScreenersSelectionContext'
 import useAvailableScreeners from "./useAvailableScreeners";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ChevronDownIcon } from "@hugeicons/core-free-icons";
-import { cn } from "@/lib/utils";
+import { ChevronRightIcon, ChevronDownIcon, FileIcon, FolderIcon } from "lucide-react"
 
 
 export default function ScreenersLeftNav() {
-    const { setActiveGroupId, screenersSelected, setScreenersSelected } = useShardNav();
+    const { setActiveGroupId } = useShardNav();
     const { availableLoading, errorMsg, screenersAvailable } = useAvailableScreeners();
-    const [categoriesOpen, setCategoriesOpen] = useState([]);
+    const {
+        screenerCategoriesSelected,
+        setScreenerCategoriesSelected,
+        screenersSelected,
+        setScreenersSelected
+    } = useScreenersSelection();
 
-    const handleCategoryClick = (categoryName) => {
-        setCategoriesOpen((latestCategoriesOpen) => {
-            if (latestCategoriesOpen.includes(categoryName)) {
-                return latestCategoriesOpen.filter((screener) => (screener !== categoryName));
-            } else {
-                return [...latestCategoriesOpen, categoryName]
-            };
-        })
+    console.warn(screenersAvailable);
+    const renderItem = (node) => {
+        if (screenerCategoriesSelected.includes(node)) {
+            return (
+                <Collapsible key={node}>
+                    <CollapsibleTrigger>
+                        <div>
+                            {node}
+                        </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                        <div className="flex flex-col gap-1">
+                            {screenersAvailable.node.map((child) => renderItem(child))}
+                        </div>
+                    </CollapsibleContent>
+                </Collapsible>
+            )
+        }
+        return (
+            <CollapsibleTrigger>
+                <ChevronRightIcon />
+                {<Button> {node} </Button>}
+            </CollapsibleTrigger>
+        )
     }
 
-    const handleScreenerClick = (screenerName) => {
-    };
 
     let content;
     if (availableLoading) {
@@ -36,30 +53,11 @@ export default function ScreenersLeftNav() {
     } else if (screenersAvailable) {
         content = (
             <>
-                <button onClick={() => setActiveGroupId("home")}> Go Back </button>
-                {Object.entries(screenersAvailable).map(([categoryName, screenerNames]) => (
-                    <Collapsible key={categoryName}>
-                        <CollapsibleTrigger onClick={handleCategoryClick} className="flex w-full items-center justify-between">
-                            {categoryName}
-                            <HugeiconsIcon
-                                icon={ChevronDownIcon}
-                                className={cn(
-                                    "size-4 text-muted-foreground transition-transform duration-200",
-                                    !categoriesOpen.includes(categoryName) ? "-rotate-90" : "rotate-0"
-                                )}
-                            />
-                        </CollapsibleTrigger>
-                        {screenerNames.map((screenerName) => (
-                            <CollapsibleContent key={screenerName}>
-                                <div key={screenerName} onClick={handleScreenerClick} className={cn(
-                                    {}
-                                )}>
-
-                                </div>
-                            </CollapsibleContent>
-                        ))}
-                    </Collapsible>
-                ))}
+                <CardContent>
+                    <div className="flex flex-col gap-1">
+                        {screenersAvailable.map((item) => renderItem(item))}
+                    </div>
+                </CardContent>
             </>
         );
     }
