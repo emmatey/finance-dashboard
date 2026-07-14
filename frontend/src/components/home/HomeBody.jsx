@@ -14,7 +14,7 @@ export default function HomeBody() {
             <div className="flex h-screen flex-col">
                 <Header />
                 <div className="flex flex-1 min-h-0 gap-4 p-4">
-                    <ShardNav activeGroupId={activeGroupId} onSelectGroup={setActiveGroupId} />
+                    <ShardNav />
 
                     <main className="flex-1 min-h-0">
                         <Card className="h-full overflow-y-auto">
