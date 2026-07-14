@@ -4,11 +4,29 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useShardNav } from '@/context/ShardNavContext'
 import useAvailableScreeners from "./useAvailableScreeners";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ChevronDownIcon } from "@hugeicons/core-free-icons";
+import { cn } from "@/lib/utils";
 
 
 export default function ScreenersLeftNav() {
-    const { setActiveGroupId } = useShardNav();
+    const { setActiveGroupId, screenersSelected, setScreenersSelected } = useShardNav();
     const { availableLoading, errorMsg, screenersAvailable } = useAvailableScreeners();
+    const [categoriesOpen, setCategoriesOpen] = useState([]);
+
+    const handleCategoryClick = (categoryName) => {
+        setCategoriesOpen((latestCategoriesOpen) => {
+            if (latestCategoriesOpen.includes(categoryName)) {
+                return latestCategoriesOpen.filter((screener) => (screener !== categoryName));
+            } else {
+                return [...latestCategoriesOpen, categoryName]
+            };
+        })
+    }
+
+    const handleScreenerClick = (screenerName) => {
+    };
 
     let content;
     if (availableLoading) {
@@ -19,12 +37,25 @@ export default function ScreenersLeftNav() {
         content = (
             <>
                 <button onClick={() => setActiveGroupId("home")}> Go Back </button>
-                {screenersAvailable.map((category, i) => (
-                    <Collapsible key={i}>
-                        <CollapsibleTrigger> {">"} </CollapsibleTrigger>
-                        {category.map((company, j) => (
-                            <CollapsibleContent key={j}>
-                                <span> {company} </span>
+                {Object.entries(screenersAvailable).map(([categoryName, screenerNames]) => (
+                    <Collapsible key={categoryName}>
+                        <CollapsibleTrigger onClick={handleCategoryClick} className="flex w-full items-center justify-between">
+                            {categoryName}
+                            <HugeiconsIcon
+                                icon={ChevronDownIcon}
+                                className={cn(
+                                    "size-4 text-muted-foreground transition-transform duration-200",
+                                    !categoriesOpen.includes(categoryName) ? "-rotate-90" : "rotate-0"
+                                )}
+                            />
+                        </CollapsibleTrigger>
+                        {screenerNames.map((screenerName) => (
+                            <CollapsibleContent key={screenerName}>
+                                <div key={screenerName} onClick={handleScreenerClick} className={cn(
+                                    {}
+                                )}>
+
+                                </div>
                             </CollapsibleContent>
                         ))}
                     </Collapsible>

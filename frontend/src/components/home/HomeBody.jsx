@@ -7,10 +7,11 @@ import { ShardNavProvider } from '@/context/ShardNavContext.jsx'
 
 export default function HomeBody() {
     const [activeGroupId, setActiveGroupId] = useState(SHARD_GROUPS[0].id)
+    const [screenersSelected, setScreenersSelected] = useState([]);
     const activeGroup = SHARD_GROUPS.find((group) => group.id === activeGroupId)
 
     return (
-        <ShardNavProvider value={{ activeGroupId, setActiveGroupId }}>
+        <ShardNavProvider value={{ activeGroupId, setActiveGroupId, screenersSelected, setScreenersSelected }}>
             <div className="flex h-screen flex-col">
                 <Header />
                 <div className="flex flex-1 min-h-0 gap-4 p-4">
