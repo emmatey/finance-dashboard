@@ -59,15 +59,25 @@ class Daemon(CommonQueries):
             'last_screeners_up_to_date': [self.update_screener_subset],
         }
 
+        metadata = {
+            'actions_performed': [],
+        }
         for action, fresh in fresh_report.items():
             if fresh:
                 continue
+            elif not fresh:
+                metadata['actions_performed'].append(action)
             for func in action_map[action]:
                 try:
                     func()
                 except Exception:
                     logger.exception(f"{action} update failed calling {func.__name__}.")
                     break
+            
+        if len(metadata["actions_performed"]) == 0:
+            logger.info("All daemon tasks up to date. Skipping...")
+        else:
+            logger.info(f"Daemon Successfully completed {metadata['actions_performed']}")
 
     def fresh_report(self):
         event_cols = ", ".join(
@@ -95,7 +105,7 @@ class Daemon(CommonQueries):
         
         return fresh_report
     
-    def update_screener_subset(self, limit=10):
+    def update_screener_subset(self, limit=5):
         """
         Updates a portion of the 200+ screeners on every request to share the delay and make it less noticeable.
         The time to fill a screeners request to the yahoo  API grows lineally because the URLs are constructed
@@ -108,16 +118,18 @@ class Daemon(CommonQueries):
         """
 
         sql = f"""
-        SELECT screener_name
+        SELECT 
+            screener_name,
+            (SELECT COUNT(*) FROM screener_ages WHERE unixepoch(last_updated) < ?) as stale_count
         FROM screener_ages
         WHERE unixepoch(last_updated) < ?
         LIMIT {limit}
         """
         age_threshold = int(time.time()) - UpdateFrequency.last_custom_screeners_update.value
-        rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
+        rows = self.select_query(query=sql, placeholders=tuple([age_threshold, age_threshold]))
         screener_names = [row["screener_name"] for row in rows]
         if screener_names:
-            logger.info(f"Refreshing {len(screener_names)} stale screeners: {fmt_data(screener_names)}")
+            logger.info(f"Refreshing {limit} screeners. {rows[0]["stale_count"]} remain stale. ")
             StockScreenerManager().screener_data_update_orchestrator(screener_names=screener_names)
         else:
             # No rows past the age threshold - either everything's fresh or
