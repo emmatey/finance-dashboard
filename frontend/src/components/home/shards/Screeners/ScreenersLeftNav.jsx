@@ -18,33 +18,6 @@ export default function ScreenersLeftNav() {
         setScreenersSelected
     } = useScreenersSelection();
 
-    console.warn(screenersAvailable);
-    const renderItem = (node) => {
-        if (screenerCategoriesSelected.includes(node)) {
-            return (
-                <Collapsible key={node}>
-                    <CollapsibleTrigger>
-                        <div>
-                            {node}
-                        </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                        <div className="flex flex-col gap-1">
-                            {screenersAvailable.node.map((child) => renderItem(child))}
-                        </div>
-                    </CollapsibleContent>
-                </Collapsible>
-            )
-        }
-        return (
-            <CollapsibleTrigger>
-                <ChevronRightIcon />
-                {<Button> {node} </Button>}
-            </CollapsibleTrigger>
-        )
-    }
-
-
     let content;
     if (availableLoading) {
         content = <Spinner />;
@@ -53,11 +26,41 @@ export default function ScreenersLeftNav() {
     } else if (screenersAvailable) {
         content = (
             <>
-                <CardContent>
-                    <div className="flex flex-col gap-1">
-                        {screenersAvailable.map((item) => renderItem(item))}
-                    </div>
-                </CardContent>
+                {
+                    Object.entries(screenersAvailable).map(([key, value]) => {
+                        return (
+                            <Collapsible key={key}>
+                                <CollapsibleTrigger>
+                                    <Badge>{key}</Badge>
+                                </CollapsibleTrigger>
+                                {
+                                    value.map((screener) => {
+                                        return (
+                                            <CollapsibleContent key={screener}>
+                                                {<div className={
+                                                    screenersSelected.includes(screener)
+                                                        ?
+                                                        "text-primary font-medium"
+                                                        :
+                                                        "text-muted-foreground hover:text-foreground"
+                                                }
+                                                    onClick={() => {
+                                                        if (screenersSelected.includes(screener)) {
+                                                            setScreenersSelected(prev => prev.filter((i) => i !== screener));
+                                                        } else {
+                                                            setScreenersSelected(prev => [...prev, screener]);
+                                                        }
+                                                    }}>
+                                                    {screener}
+                                                </div>}
+                                            </CollapsibleContent>
+                                        )
+                                    })
+                                }
+                            </Collapsible>
+                        )
+                    })
+                }
             </>
         );
     }
@@ -65,7 +68,7 @@ export default function ScreenersLeftNav() {
     return (
         <Card className="flex h-full w-48 shrink-0 flex-col gap-1 p-4">
             <CardHeader>
-                <CardAction onClick={() => console.log("clicked")}>
+                <CardAction onClick={() => setActiveGroupId("home")}>
                     <Badge />
                 </CardAction>
             </CardHeader>
