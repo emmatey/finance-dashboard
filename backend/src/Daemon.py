@@ -20,7 +20,8 @@ class UpdateFrequency(Enum):
     last_price_update = 5 * 60
     last_custom_screeners_update = 60 * 60
     last_snapshot_update = 24 * 60 * 60
-    
+    last_screeners_up_to_date = 5 * 60
+
 class Daemon(CommonQueries):
     """
     Background task runner for periodic price and balance snapshot updates.
@@ -36,7 +37,7 @@ class Daemon(CommonQueries):
     def run(self):
         """
         Runs functions associated with different events in the 'UpdateFrequency'
-        table. Always tries to update a chunk of screeners.
+        table.
 
         Each updater is responsible for recording its own completion in
         global_events on success, so this loop doesn't need to track
@@ -55,10 +56,8 @@ class Daemon(CommonQueries):
                 self.mark_custom_screeners_updated,
             ],
             'last_snapshot_update': [self.balance_snapshot_all_users],
+            'last_screeners_up_to_date': [self.update_screener_subset],
         }
-
-        # Always try to update a chunk of screeners.
-        self.update_screener_subset()
 
         for action, fresh in fresh_report.items():
             if fresh:
@@ -71,11 +70,11 @@ class Daemon(CommonQueries):
                     break
 
     def fresh_report(self):
-        status_sql = """
-        SELECT
-            unixepoch(last_price_update) AS last_price_update,
-            unixepoch(last_snapshot_update) AS last_snapshot_update,
-            unixepoch(last_custom_screeners_update) AS last_custom_screeners_update
+        event_cols = ", ".join(
+            f"unixepoch({name}) AS {name}" for name in UpdateFrequency.__members__
+        )
+        status_sql = f"""
+        SELECT {event_cols}
         FROM global_events
         WHERE id = 1
         """
@@ -98,9 +97,14 @@ class Daemon(CommonQueries):
     
     def update_screener_subset(self, limit=10):
         """
-        Updates a portion of the 200+ screeners on every request to share the delay and make it less noticeable. 
+        Updates a portion of the 200+ screeners on every request to share the delay and make it less noticeable.
         The time to fill a screeners request to the yahoo  API grows lineally because the URLs are constructed
         one at a time in a loop, as the endpoint doesn't support lists of tickers.
+
+        Gated by last_screeners_up_to_date in the fresh_report/action_map: once
+        a pass finds nothing stale it stamps that column, so run() skips calling
+        this again until it's due - otherwise every request would repeat a full
+        catalog scan that finds nothing to do.
         """
 
         sql = f"""
@@ -121,6 +125,11 @@ class Daemon(CommonQueries):
             # scan; screener_data_update_orchestrator will no-op on the fresh ones.
             logger.info("No stale rows in screener_ages subset query, falling back to full catalog scan.")
             StockScreenerManager().screener_data_update_orchestrator()
+            self.modify_query(
+                "UPDATE global_events SET last_screeners_up_to_date = CURRENT_TIMESTAMP WHERE id = 1",
+                (),
+            )
+            logger.info("Marked last_screeners_up_to_date complete.")
 
     def mark_custom_screeners_updated(self) -> None:
         """
