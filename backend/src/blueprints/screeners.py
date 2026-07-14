@@ -60,24 +60,39 @@ def screeners_fetch():
     category = request.args.get("category")
 
     if screener and category:
-        return jsonify({
-            "success": False,
-            "message": "Provide only one of 'screener' or 'category', not both."
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Provide only one of 'screener' or 'category', not both.",
+                }
+            ),
+            400,
+        )
 
     if category:
         if category not in SCREENER_CATEGORIES:
-            return jsonify({
-                "success": False,
-                "message": f"Unknown category '{category}'. See /api/screeners/available for valid categories."
-            }), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"Unknown category '{category}'. See /api/screeners/available for valid categories.",
+                    }
+                ),
+                400,
+            )
         screener_names = SCREENER_CATEGORIES[category]
     elif screener:
         if screener not in _ALL_SCREENERS:
-            return jsonify({
-                "success": False,
-                "message": f"Unknown screener '{screener}'. See /api/screeners/available for valid screeners."
-            }), 400
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": f"Unknown screener '{screener}'. See /api/screeners/available for valid screeners.",
+                    }
+                ),
+                400,
+            )
         screener_names = screener
     else:
         screener_names = None
@@ -86,10 +101,15 @@ def screeners_fetch():
         rows = APIDataIO().get_screener_results(screener_names=screener_names)
     except Exception as e:
         logger.exception(e)
-        return jsonify({
-            "success": False,
-            "message": "Server error fetching screener results. (/screeners/fetch)"
-        }), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Server error fetching screener results. (/screeners/fetch)",
+                }
+            ),
+            500,
+        )
 
     grouped: dict[str, list] = {}
     for row in rows:
@@ -99,4 +119,4 @@ def screeners_fetch():
         else:
             grouped[screener_name].append(row)
 
-    return jsonify(grouped), 200
+    return jsonify({"success": True, "data": grouped}), 200
