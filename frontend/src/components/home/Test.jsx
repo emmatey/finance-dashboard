@@ -1,10 +1,12 @@
+import ShardNav from "./ShardNav";
 import ScreenersShard from "./shards/Screeners/ScreenersShard";
+import { useShardNav } from "@/context/ShardNavContext";
 
 export default function test() {
-
-    return(
+    console.log(useShardNav());
+    return (
         <>
-            <ScreenersShard />
+            <ShardNav />
         </>
     )
 }

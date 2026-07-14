@@ -9,15 +9,9 @@ export default function ScreenersShard() {
     if (dataLoading) return <div>loading...</div>;
     if (errorMsg) return <p>{errorMsg}</p>;
 
-
-    if (!screenerParam) {
-        setScreenerParam("volume_spike_bearish");
-    }
-    console.log(screenersAvailable);
-    console.log(screenerData);
     return (
         <>
-
+        
         </>
     )
 }

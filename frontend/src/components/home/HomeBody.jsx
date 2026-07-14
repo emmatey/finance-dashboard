@@ -23,14 +23,14 @@ export default function HomeBody() {
                                     ? activeGroup.columns.map((shardIds, i) => (
                                         <div key={i} className="flex min-w-[320px] flex-1 flex-col gap-4">
                                             {shardIds.map((shardId) => {
-                                                const { component: ShardComponent } = activeGroup.shards.find((shard) => shard.id === shardId)
-                                                return <ShardComponent key={shardId} />
+                                                const shard = activeGroup.shards.find((s) => s.id === shardId)
+                                                return <shard.component key={shardId} />
                                             })}
                                         </div>
                                     ))
-                                    : activeGroup.shards.map(({ id, component: ShardComponent }) => (
-                                        <div key={id} className="min-w-[320px] flex-1">
-                                            <ShardComponent />
+                                    : activeGroup.shards.map((shard) => (
+                                        <div key={shard.id} className="min-w-[320px] flex-1">
+                                            <shard.component />
                                         </div>
                                     ))}
                             </CardContent>
