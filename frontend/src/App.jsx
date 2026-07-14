@@ -6,12 +6,14 @@ import Auth from './pages/Auth.jsx'
 import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
+import Test from './components/home/Test.jsx'
 
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/test" element={<Test />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/search" element={<Search />} />
       <Route path="/research" element={<Research />} />

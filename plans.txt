@@ -216,3 +216,22 @@ I'm thinking I should examine the way the screener data is currently captured an
             Write the api endpoints to return the valid options for screeners and put them
             in categories. 
             And to actually fetch, parse, upsert, and select the data and send it.
+
+7/13:
+    Today's goal:
+        Consume the data from the new screeners route and render it on the frontend 
+        My idea for this ux, because there's many categories with varying quantities of values.
+            1. Each screener is a table in a tab group. selector will be color coded by section.
+            2. The selection menu will be a series of checkbox type elements. 
+                a. Imagining a series of squares or rectangles that have the name of a screener and will change color on select state.
+                b. These rectangles will be under headings.
+                c. there will be a search bar that filters out squares that aren't on the list.
+            3. Once the screeners are selected they will be toggled by a file tree type system that will populate the left panel
+                a. The left panel file tree system will allow up to n tabs to be toggled at any one time in the tab group.
+
+            Before beginning I need to look at how to store this screener state so that once they're fetched once, they aren't re-fetched unless
+            specifically requested to do so.
+            So the requirements are:
+                a. A central register of screener data. Organized as a key value pairs map. This is the shape it comes from the db in anyways.
+                b. A method to expose refreshing all the data
+                c. A method to add to the central register, update-inserting.

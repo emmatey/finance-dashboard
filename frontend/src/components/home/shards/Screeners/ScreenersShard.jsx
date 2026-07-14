@@ -1,17 +1,16 @@
-import ScreenersCard from "./ScreenersCard";
 import useScreenersData from "./useScreenersData";
 
 export default function ScreenersShard() {
-    const { loading, data, error } = useScreenersData();
+    const { loading, errorMsg, screenersAvailable, screenerData } = useScreenersData();
 
     if (loading) return <div>Loading...</div>;
-    if (error) return <p>{error}</p>;
+    if (errorMsg) return <p>{errorMsg}</p>;
 
+    console.log(screenersAvailable);
+    console.log(screenerData);
     return (
         <>
-            {Object.entries(data ?? {}).map(([categoryName, itemsArray], idx) => (
-                <ScreenersCard key={idx} title={categoryName} data={itemsArray} />
-            ))}
+
         </>
     )
 }

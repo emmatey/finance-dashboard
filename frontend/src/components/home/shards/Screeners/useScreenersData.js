@@ -2,33 +2,28 @@ import { useEffect, useState } from "react";
 import { parseResponse } from "@/scripts/utils";
 
 
-export default function useScreenersData() {
-    const [loading, setLoading] = useState(false);
-    const [data, setData] = useState(null);
-    const [error, setError] = useState(null);
-    const [responseCode, setResponseCode] = useState(null);
+export default function useScreenersData(category = null, screener = null) {
+    /*
+        When called without parameters, should return the "available screeners list"
+     */
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                setLoading(true);
-                const res = await fetch("/api/screeners");
-                const data = await parseResponse(res);
-                setData(data);
-            } catch (err) {
-                console.error(err);
-                setResponseCode(err.status ?? null);
-                if (err.status === 500) {
-                    setError("Could not load screeners data. Please try again later.");
-                } else {
-                    setError("An unexpected error occurred. Please try again.");
-                }
-            } finally {
-                setLoading(false);
-            }
+    const [loading, setLoading] = useState(true);
+    const [errorMsg, setErrMsg] = useState("");
+    const [screenersAvailable, setScreenersAvailable] = useState(null);
+    const [screenerData, setScreenerData] = useState(null);
+
+    if (!category && !screener) {
+        async function getScreenersAvailable() {
+            const response = await fetch('/api/screeners/available', {
+                method: "GET"
+            })
+            const data = parseResponse(response);
+            setScreenersAvailable(data);
         }
-        fetchData();
-    }, []);
-
-    return { loading, data, error, responseCode };
+        useEffect(() => {
+            getScreenersAvailable();
+        }, []);
+        
+        return { loading, errorMsg, screenersAvailable, screenerData }
+    };
 }
