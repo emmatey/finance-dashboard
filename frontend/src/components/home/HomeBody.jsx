@@ -10,12 +10,11 @@ export default function HomeBody() {
     const [activeGroupId, setActiveGroupId] = useState(SHARD_GROUPS[0].id);
     const activeGroup = SHARD_GROUPS.find((group) => group.id === activeGroupId);
 
-    const [screenerCategoriesSelected, setScreenerCategoriesSelected] = useState([]);
     const [screenersSelected, setScreenersSelected] = useState([]);
 
     return (
         <ShardNavProvider value={{ activeGroupId, setActiveGroupId }}>
-            <ScreenersSelectionProvider value={{ screenerCategoriesSelected, setScreenerCategoriesSelected, screenersSelected, setScreenersSelected }}>
+            <ScreenersSelectionProvider value={{ screenersSelected, setScreenersSelected }}>
                 <div className="flex h-screen flex-col">
                     <Header />
                     <div className="flex flex-1 min-h-0 gap-4 p-4">

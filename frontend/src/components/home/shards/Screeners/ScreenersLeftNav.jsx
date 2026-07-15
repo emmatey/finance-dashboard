@@ -11,12 +11,15 @@ import { ChevronRightIcon, ChevronDownIcon, FileIcon, FolderIcon } from "lucide-
 export default function ScreenersLeftNav() {
     const { setActiveGroupId } = useShardNav();
     const { availableLoading, errorMsg, screenersAvailable } = useAvailableScreeners();
-    const {
-        screenerCategoriesSelected,
-        setScreenerCategoriesSelected,
-        screenersSelected,
-        setScreenersSelected
-    } = useScreenersSelection();
+    const { screenersSelected, setScreenersSelected } = useScreenersSelection();
+
+    function toggleSelect(item) {
+        if (screenersSelected.includes(item)) {
+            setScreenersSelected(prev => prev.filter((i) => i !== item));
+        } else {
+            setScreenersSelected(prev => [...prev, item]);
+        };
+    }
 
     let content;
     if (availableLoading) {
@@ -44,13 +47,7 @@ export default function ScreenersLeftNav() {
                                                         :
                                                         "text-muted-foreground hover:text-foreground"
                                                 }
-                                                    onClick={() => {
-                                                        if (screenersSelected.includes(screener)) {
-                                                            setScreenersSelected(prev => prev.filter((i) => i !== screener));
-                                                        } else {
-                                                            setScreenersSelected(prev => [...prev, screener]);
-                                                        }
-                                                    }}>
+                                                    onClick={toggleSelect}>
                                                     {screener}
                                                 </div>}
                                             </CollapsibleContent>
