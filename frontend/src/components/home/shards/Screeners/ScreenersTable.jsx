@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table"
 
 
-export default function ScreenersTable(data) {
+export default function ScreenersTable({ data }) {
     //from - {
     //screener_name: [{
     //    screener_name: str,
@@ -24,10 +24,15 @@ export default function ScreenersTable(data) {
     //    three_month_avg_volume: int,
     //    volume_change_pct: float
     //}]
-
     return (
         <>
-            
+            {
+                data.map((companyObj) => {
+                    return (
+                        <div>{companyObj.company_name}</div>
+                    )
+                })
+            }
         </>
     )
 }

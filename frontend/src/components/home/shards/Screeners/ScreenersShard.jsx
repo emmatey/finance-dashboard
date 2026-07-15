@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useScreenersSelection } from "@/context/ScreenersSelectionContext";
+import { useScreenersSelection } from "@/context/ScreenersSelectionContext"
 import useScreenerData from "./useScreenerData";
 import TableSkeleton from "@/components/TableSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,11 +8,7 @@ import ScreenersTable from "./ScreenersTable";
 export default function ScreenersShard() {
     const { screenersSelected, setScreenersSelected } = useScreenersSelection();
     const { dataLoading, errorMsg, screenerData } = useScreenerData(screenersSelected);
-    
-    if (screenerData) {
-        console.log(screenerData.most_institutionally_held_large_cap_stocks)
-        console.log(screenerData);
-        };
+
     let content = null;
     if (dataLoading) {
         content = <TableSkeleton />
@@ -33,10 +29,13 @@ export default function ScreenersShard() {
                     </TabsList>
                     {
                         screenersSelected.map((screener) => {
-                            if (screenerData[screener]) {
+                            const companiesList = screenerData[screener];
+                            if (companiesList) {
                                 return (
                                     <TabsContent key={screener} value={screener}>
-                                    </TabsContent>)
+                                        <ScreenersTable data={companiesList} />
+                                    </TabsContent>
+                                )
                             } else {
                                 return (
                                     <TabsContent key={screener} value={screener}>
