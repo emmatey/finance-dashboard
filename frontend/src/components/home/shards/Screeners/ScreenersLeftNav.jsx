@@ -13,8 +13,7 @@ export default function ScreenersLeftNav() {
     const { availableLoading, errorMsg, screenersAvailable } = useAvailableScreeners();
     const { screenersSelected, setScreenersSelected } = useScreenersSelection();
 
-    function toggleSelect(e) {
-        const item = e.target.firstChild.data;
+    function toggleSelect(item) {
         if (screenersSelected.includes(item)) {
             setScreenersSelected(prev => prev.filter((i) => i !== item));
         } else {
@@ -48,7 +47,7 @@ export default function ScreenersLeftNav() {
                                                         :
                                                         "text-muted-foreground hover:text-foreground"
                                                 }
-                                                    onClick={toggleSelect}>
+                                                    onClick={() => toggleSelect(screener)}>
                                                     {screener}
                                                 </div>}
                                             </CollapsibleContent>

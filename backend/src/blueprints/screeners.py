@@ -116,7 +116,7 @@ def screeners_fetch():
     grouped: dict[str, list] = {}
     for row in rows:
         screener_name = str(row.get("screener_name"))
-        if screener_name not in row.keys():
+        if screener_name not in grouped:
             grouped[screener_name] = [row]
         else:
             grouped[screener_name].append(row)
