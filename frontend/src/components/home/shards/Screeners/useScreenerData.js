@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { parseResponse } from "@/scripts/utils";
 
 
-export default function useScreenerData(category = null, screener = null) {
+export default function useScreenerData(screener = null, category = null) {
     const [dataLoading, setDataLoading] = useState(false);
     const [errorMsg, setErrMsg] = useState("");
     const [screenerData, setScreenerData] = useState(null);

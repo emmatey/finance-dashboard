@@ -13,7 +13,8 @@ export default function ScreenersLeftNav() {
     const { availableLoading, errorMsg, screenersAvailable } = useAvailableScreeners();
     const { screenersSelected, setScreenersSelected } = useScreenersSelection();
 
-    function toggleSelect(item) {
+    function toggleSelect(e) {
+        const item = e.target.firstChild.data;
         if (screenersSelected.includes(item)) {
             setScreenersSelected(prev => prev.filter((i) => i !== item));
         } else {

@@ -1,17 +1,36 @@
+import { useScreenersSelection } from "@/context/ScreenersSelectionContext";
 import useScreenerData from "./useScreenerData";
-import { useState } from "react";
+import TableSkeleton from "@/components/TableSkeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger, TabsTriggerI } from "@/components/ui/tabs";
 
 export default function ScreenersShard() {
-    const [categoryParam, setCategoryParam] = useState(null);
-    const [screenerParam, setScreenerParam] = useState(null);
-    const { dataLoading, errorMsg, screenerData } = useScreenerData(categoryParam, screenerParam);
+    const { screenersSelected, setScreenersSelected } = useScreenersSelection();
+    const { dataLoading, errorMsg, screenerData } = useScreenerData(screenersSelected);
 
-    if (dataLoading) return <div>loading...</div>;
-    if (errorMsg) return <p>{errorMsg}</p>;
+    let content = null;
+    if (dataLoading) {
+        content = <TableSkeleton />
+    } else if (errorMsg) {
+        content = <h1>{errorMsg}</h1>
+    }
 
+    console.log(screenerData);
     return (
         <>
-        
+            {content && { content }}
+            {!content && (
+                <Tabs>
+                    <TabsList>
+                        {
+                            screenersSelected.map((screener) => {
+                                return (
+                                    <TabsTrigger key={screener} value={screener}>{screener}</TabsTrigger>
+                                )
+                            })
+                        }
+                    </TabsList>
+                </Tabs>
+            )}
         </>
     )
 }
