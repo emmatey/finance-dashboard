@@ -1,12 +1,13 @@
 import { useScreenersSelection } from "@/context/ScreenersSelectionContext";
 import useScreenerData from "./useScreenerData";
 import TableSkeleton from "@/components/TableSkeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger, TabsTriggerI } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ScreenersShard() {
     const { screenersSelected, setScreenersSelected } = useScreenersSelection();
-    const { dataLoading, errorMsg, screenerData } = useScreenerData(screenersSelected);
-
+    const { dataLoading, errorMsg, screenerData } = useScreenerData();
+    
+    console.log(screenersSelected);
     let content = null;
     if (dataLoading) {
         content = <TableSkeleton />
@@ -14,10 +15,9 @@ export default function ScreenersShard() {
         content = <h1>{errorMsg}</h1>
     }
 
-    console.log(screenerData);
     return (
         <>
-            {content && { content }}
+            {content && content}
             {!content && (
                 <Tabs>
                     <TabsList>

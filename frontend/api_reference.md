@@ -315,7 +315,7 @@ RESOURCES
                         institutional_activity, sector, trending, industry, custom
             200 - success
         fetch
-            to   - GET /api/screeners/fetch  ?screener=str (optional)  ?category=str (optional)
+            to   - GET /api/screeners/fetch  ?screener=str (optional, repeatable)  ?category=str (optional)
             from - {
                 screener_name: [{
                     screener_name: str,
@@ -332,7 +332,7 @@ RESOURCES
                 }]
             }
             200 - success
-            400 - both 'screener' and 'category' given, unknown screener/category
+            400 - both 'screener' and 'category' given, unknown screener(s)/category
                   name, or non-integer 'limit'
             500 - server error fetching screener results
 

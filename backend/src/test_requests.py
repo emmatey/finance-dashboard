@@ -43,3 +43,14 @@ print(res.json())
 
 #res = s.get(f"{BASE_URL}/api/screeners/fetch?category=institutional_activity")
 #print(res.json())
+
+res = s.get(f"{BASE_URL}/api/screeners/fetch?screener=day_gainers")
+print(list(res.json()["data"].keys()))
+
+res = s.get(
+    f"{BASE_URL}/api/screeners/fetch?screener=day_gainers&screener=day_losers"
+)
+print(list(res.json()["data"].keys()))
+
+res = s.get(f"{BASE_URL}/api/screeners/fetch?screener=day_gainers&screener=not_real")
+print(res.status_code, res.json())

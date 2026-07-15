@@ -31,7 +31,8 @@ def screeners_fetch():
     Fetch a single screener, a whole category, or everything.
 
     Query Parameters:
-        ?screener=str   - A single screener name (e.g. 'day_gainers')
+        ?screener=str   - One or more screener names (e.g. 'day_gainers'), repeat
+                          the param to request several (?screener=day_gainers&screener=day_losers)
         ?category=str   - A category name from SCREENER_CATEGORIES (e.g. 'movers')
         Provide at most one of 'screener'/'category'. With neither, returns
         every tracked screener.
@@ -53,10 +54,10 @@ def screeners_fetch():
                 'three_month_avg_volume': int,
                 'volume_change_pct': float
             }
-        400 - Invalid category/screener, both given, or bad 'limit'
+        400 - Invalid category/screener(s), both given, or bad 'limit'
         500 - Server error
     """
-    screener = request.args.get("screener")
+    screener = request.args.getlist("screener")
     category = request.args.get("category")
 
     if screener and category:
@@ -83,12 +84,13 @@ def screeners_fetch():
             )
         screener_names = SCREENER_CATEGORIES[category]
     elif screener:
-        if screener not in _ALL_SCREENERS:
+        unknown = [name for name in screener if name not in _ALL_SCREENERS]
+        if unknown:
             return (
                 jsonify(
                     {
                         "success": False,
-                        "message": f"Unknown screener '{screener}'. See /api/screeners/available for valid screeners.",
+                        "message": f"Unknown screener(s) {unknown}. See /api/screeners/available for valid screeners.",
                     }
                 ),
                 400,
