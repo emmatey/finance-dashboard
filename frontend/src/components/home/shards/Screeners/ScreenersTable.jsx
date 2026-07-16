@@ -29,7 +29,7 @@ export default function ScreenersTable({ data }) {
             {
                 data.map((companyObj) => {
                     return (
-                        <div>{companyObj.company_name}</div>
+                        <div key={companyObj.ticker}>{companyObj.company_name}</div>
                     )
                 })
             }

@@ -13,16 +13,16 @@ export default function ScreenersShard() {
     const { dataLoading, errorMsg, screenerData } = useScreenerData(toSearch);
 
     useEffect(() => {
-        let cache = {}
+        let cache = {...screenerCache};
         for (const [screener, data] of Object.entries(screenerData)) {
             cache[screener] = data;
         };
         setScreenerCache(cache);
-    }, []);
+    }, [screenerData]);
 
     return (
         <>
-            {screenerData && (
+            {screenerCache && (
                 <Tabs>
                     <TabsList>
                         {
@@ -33,7 +33,7 @@ export default function ScreenersShard() {
                     </TabsList>
                     {
                         screenersSelected.map((screener) => {
-                            const companiesObjectList = screenerData[screener];
+                            const companiesObjectList = screenerCache[screener];
                             if (companiesObjectList) {
                                 return (
                                     <TabsContent key={screener} value={screener}>
