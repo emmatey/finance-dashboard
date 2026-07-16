@@ -4,7 +4,7 @@ import { parseResponse } from "@/scripts/utils";
 export default function useScreenerData(screeners = [], category = null) {
     const [dataLoading, setDataLoading] = useState(false);
     const [errorMsg, setErrMsg] = useState("");
-    const [screenerData, setScreenerData] = useState(null);
+    const [screenerData, setScreenerData] = useState({});
 
     const screenersKey = screeners.join(",");
 

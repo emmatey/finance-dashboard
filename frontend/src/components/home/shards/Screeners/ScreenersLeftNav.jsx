@@ -66,7 +66,7 @@ export default function ScreenersLeftNav() {
         <Card className="flex h-full w-48 shrink-0 flex-col gap-1 p-4">
             <CardHeader>
                 <CardAction onClick={() => setActiveGroupId("home")}>
-                    <Badge />
+                    <Badge>{'X'}</Badge>
                 </CardAction>
             </CardHeader>
             <CardContent>

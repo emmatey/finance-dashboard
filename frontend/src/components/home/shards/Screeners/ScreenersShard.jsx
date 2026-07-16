@@ -4,21 +4,25 @@ import useScreenerData from "./useScreenerData";
 import TableSkeleton from "@/components/TableSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ScreenersTable from "./ScreenersTable";
+import { useState, useEffect } from "react";
 
 export default function ScreenersShard() {
     const { screenersSelected, setScreenersSelected } = useScreenersSelection();
-    const { dataLoading, errorMsg, screenerData } = useScreenerData(screenersSelected);
+    const [screenerCache, setScreenerCache] = useState({});
+    let toSearch = screenersSelected.filter((screener) => (!Object.keys(screenerCache).includes(screener)));
+    const { dataLoading, errorMsg, screenerData } = useScreenerData(toSearch);
 
-    let content = null;
-    if (dataLoading) {
-        content = <TableSkeleton />
-    } else if (errorMsg) {
-        content = <h1>{errorMsg}</h1>
-    }
+    useEffect(() => {
+        let cache = {}
+        for (const [screener, data] of Object.entries(screenerData)) {
+            cache[screener] = data;
+        };
+        setScreenerCache(cache);
+    }, []);
+
     return (
         <>
-            {content && content}
-            {!content && screenerData && (
+            {screenerData && (
                 <Tabs>
                     <TabsList>
                         {
@@ -29,11 +33,11 @@ export default function ScreenersShard() {
                     </TabsList>
                     {
                         screenersSelected.map((screener) => {
-                            const companiesList = screenerData[screener];
-                            if (companiesList) {
+                            const companiesObjectList = screenerData[screener];
+                            if (companiesObjectList) {
                                 return (
                                     <TabsContent key={screener} value={screener}>
-                                        <ScreenersTable data={companiesList} />
+                                        <ScreenersTable data={companiesObjectList} />
                                     </TabsContent>
                                 )
                             } else {
