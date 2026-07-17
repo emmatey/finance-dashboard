@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 scoreboard_bp = Blueprint("scoreboard", __name__, url_prefix="/api")
 
-
+# Implement server-side pagination later.
 @scoreboard_bp.route("/scoreboard", methods=["GET"])
 def scoreboard():
     """

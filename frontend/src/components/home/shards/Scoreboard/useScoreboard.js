@@ -4,8 +4,8 @@ import { parseResponse } from "@/scripts/utils";
 
 export default function useScoreboard() {
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState(null);
-    const [error, setError] = useState(null);
+    const [data, setData] = useState([]);
+    const [error, setError] = useState("");
     const [responseCode, setResponseCode] = useState(null);
 
     useEffect(() => {
@@ -14,9 +14,9 @@ export default function useScoreboard() {
                 setLoading(true);
                 const res = await fetch("/api/scoreboard");
                 const data = await parseResponse(res);
-                setData(data);
+                setData(data?.data);
             } catch (err) {
-                console.error(err);
+                console.error(err.message, err.data);
                 setResponseCode(err.status ?? null);
                 if (err.status === 500) {
                     setError("Could not load scoreboard. Please try again later.");
