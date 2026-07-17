@@ -5,6 +5,7 @@ import TableSkeleton from "@/components/TableSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ScreenersTable from "./ScreenersTable";
 import { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
 
 export default function ScreenersShard() {
     const { screenersSelected, setScreenersSelected } = useScreenersSelection();
@@ -20,9 +21,21 @@ export default function ScreenersShard() {
         setScreenerCache(cache);
     }, [screenerData]);
 
+    function refreshScreeners() {
+        setScreenerCache({});
+    }
+
+    function unSelectAllScreeners() {
+        setScreenersSelected([]);
+    }
+
     return (
         <>
-            {screenerCache && (
+            <div>
+                <Badge onClick={refreshScreeners}>Refresh</Badge>
+                <Badge onClick={unSelectAllScreeners}>Clear-All</Badge>
+            </div>
+            {screenersSelected.length > 0 ? (
                 <Tabs>
                     <TabsList>
                         {
@@ -34,28 +47,27 @@ export default function ScreenersShard() {
                     {
                         screenersSelected.map((screener) => {
                             const companiesObjectList = screenerCache[screener];
-                            if (companiesObjectList) {
-                                return (
-                                    <TabsContent key={screener} value={screener}>
+                            return (
+                                <TabsContent key={screener} value={screener}>
+                                    {companiesObjectList ? (
                                         <ScreenersTable data={companiesObjectList} />
-                                    </TabsContent>
-                                )
-                            } else {
-                                return (
-                                    <TabsContent key={screener} value={screener}>
+                                    ) : dataLoading ? (
+                                        <TableSkeleton />
+                                    ) : (
                                         <div className="flex">
                                             Oops {screener} is broken...
                                             <Button onClick={() => setScreenersSelected(screenersSelected.filter((i) => (i !== screener)))}>
                                                 Remove from selected
                                             </Button>
                                         </div>
-                                    </TabsContent>
-                                )
-                            }
+                                    )}
+                                </TabsContent>
+                            )
                         })
                     }
                 </Tabs>
-            )}
+            ) :
+            <p> Select screeners to begin. </p>}
         </>
     )
 }

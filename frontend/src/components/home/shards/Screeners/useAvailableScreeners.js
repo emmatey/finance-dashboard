@@ -4,8 +4,8 @@ import { parseResponse } from "@/scripts/utils";
 
 export default function useAvailableScreeners() {
     const [availableLoading, setAvailableLoading] = useState(true);
-    const [errorMsg, setErrMsg] = useState("");
-    const [screenersAvailable, setScreenersAvailable] = useState({});
+    const [errorMsg, setErrMsg] = useState(null);
+    const [screenersAvailable, setScreenersAvailable] = useState(null);
 
     useEffect(() => {
         async function fetchScreenersAvailable() {
