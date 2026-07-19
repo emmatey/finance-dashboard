@@ -1,4 +1,3 @@
-
 export function formatCurrencyUSD(n) {
     /*
         Formats a number as a USD currency string with full precision.
@@ -15,27 +14,6 @@ export function formatPercent(n) {
     */
     if (n == null) return 'N/A'
     return (Number(n) * 100).toFixed(2) + '%'
-}
-
-export function getMarketStateBadge(marketState) {
-    /*
-        Maps a raw yahooquery marketState string to a display label + Badge variant.
-        Returns null for 'REGULAR' (open market), since no badge is needed then.
-    */
-    switch (marketState) {
-        case 'REGULAR':
-            return null
-        case 'PRE':
-        case 'PREPRE':
-            return { label: 'Pre-Market', variant: 'outline' }
-        case 'POST':
-        case 'POSTPOST':
-            return { label: 'After Hours', variant: 'outline' }
-        case 'CLOSED':
-            return { label: 'Market Closed', variant: 'secondary' }
-        default:
-            return marketState ? { label: marketState, variant: 'secondary' } : null
-    }
 }
 
 export function formatUTCSeconds(timestamp) {
@@ -62,68 +40,6 @@ export function formatNumber(n, decimals = 2) {
     */
     if (n == null) return 'N/A'
     return Number(n).toLocaleString('en-US', { maximumFractionDigits: decimals })
-}
-
-export function formatLargeNumber(n) {
-    /*
-        Abbreviates large numbers using T/B/M suffixes (e.g. 2500000000 → "2.50B").
-        Falls back to locale-formatted output for values under 1 million.
-        Returns 'N/A' for null or undefined values.
-    */
-    if (n == null) return 'N/A'
-    const abs = Math.abs(n)
-    if (abs >= 1e12) return (n / 1e12).toFixed(2) + 'T'
-    if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'B'
-    if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M'
-    return Number(n).toLocaleString('en-US')
-}
-
-export function formatAnalystRating(rating) {
-    /*
-        Converts a raw analyst rating string (snake_case or camelCase) into a
-        human-readable title-cased label. Returns 'N/A' for falsy values.
-    */
-    if (!rating) return 'N/A'
-    return rating
-        .replace(/_/g, ' ')
-        .replace(/([a-z])([A-Z])/g, '$1 $2')
-        .replace(/\b\w/g, c => c.toUpperCase())
-}
-
-export function getAnalystRatingColorClass(rating) {
-    /*
-        Maps an analyst rating string to a Bootstrap text color utility class.
-        Buy-side ratings → success, sell-side → danger, everything else → warning.
-    */
-    if (!rating) return ''
-    const r = rating.toLowerCase()
-    if (r.includes('buy')) return 'text-success'
-    if (r.includes('sell') || r.includes('underperform')) return 'text-danger'
-    return 'text-warning'
-}
-
-export function getSentimentLabel(score) {
-    /*
-        Converts a numeric insider sentiment score in the range [-1, 1] to a
-        human-readable label. Returns 'No Data' for null or undefined values.
-    */
-    if (score == null) return 'No Data'
-    if (score > 0.5) return 'Strongly Bullish'
-    if (score > 0.15) return 'Bullish'
-    if (score > -0.15) return 'Neutral'
-    if (score > -0.5) return 'Bearish'
-    return 'Strongly Bearish'
-}
-
-export function getSentimentColorClass(score) {
-    /*
-        Maps a numeric insider sentiment score to a Bootstrap text color utility class.
-        Returns 'text-muted' for null or undefined values.
-    */
-    if (score == null) return 'text-muted'
-    if (score > 0.15) return 'text-success'
-    if (score < -0.15) return 'text-danger'
-    return 'text-warning'
 }
 
 export async function parseResponse(response) {

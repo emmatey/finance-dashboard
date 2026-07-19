@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import Header from '@/components/Header.jsx'
 import Footer from '@/components/Footer.jsx'
-import ResearchBody from '@/components/research/ResearchBody.jsx'
+import ResearchShard from '@/components/research/ResearchShard'
 
 export default function Research() {
     const [searchParams] = useSearchParams()
@@ -10,7 +10,7 @@ export default function Research() {
     return (
         <>
             <Header />
-            <ResearchBody ticker={ticker} />
+            <ResearchShard ticker={ticker} />
             <Footer />
         </>
     )
