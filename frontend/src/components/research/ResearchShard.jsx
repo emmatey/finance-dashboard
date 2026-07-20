@@ -37,7 +37,7 @@ export default function ResearchShard({ ticker }) {
                 <div className="lg:col-span-2">
                     <FinancialMetricsCard metrics={financialMetrics} />
                 </div>
-                <HoldingsCard />
+                <HoldingsCard ticker={ticker} />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
