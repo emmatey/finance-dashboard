@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { formatNumber, formatCurrencyUSD } from '@/scripts/utils.js'
 
@@ -63,6 +63,7 @@ export default function InsiderTradesCard({ insiderTrades }) {
                                 })}
                             </TableBody>
                         </Table>
+                        <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                 ) : (
                     <p className="text-sm text-muted-foreground">No insider trades available.</p>
