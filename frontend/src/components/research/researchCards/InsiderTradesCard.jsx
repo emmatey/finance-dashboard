@@ -5,7 +5,7 @@ export default function InsiderTradesCard({ insiderTrades }) {
         <div className="card h-100">
             <div className="card-body">
                 <h5 className="card-title">Insider Trades</h5>
-                {insiderTrades.length > 0 ? (
+                {insiderTrades?.length > 0 ? (
                     <div className="table-responsive overflow-auto" style={{ maxHeight: '400px' }}>
                         <table className="table table-sm mb-0">
                             <thead>

@@ -24,7 +24,8 @@ function getSentimentColorClass(score) {
     return 'text-warning'
 }
 
-export default function InsiderSentimentCard({ metrics }) {
+export default function InsiderSentimentCard({ financialMetrics }) {
+    const metrics = financialMetrics?.[0];
     return (
         <div className="card h-100">
             <div className="card-body">

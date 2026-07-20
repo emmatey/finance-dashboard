@@ -169,7 +169,8 @@ RESOURCES
                 financial_metrics: [{}],
                 news: [{}],
                 company_profile: [{}],
-                insider_trades: [{}]
+                insider_trades: [{}],
+                symbols: [{}]
             }
             200 - success
             400 - no ticker provided

@@ -3,7 +3,7 @@ export default function NewsCard({ news }) {
         <div className="card h-100">
             <div className="card-body">
                 <h5 className="card-title">News</h5>
-                {news.length > 0 ? (
+                {news?.length > 0 ? (
                     <ul className="list-unstyled mb-0 overflow-auto" style={{ maxHeight: '400px' }}>
                         {news.map((n, i) => (
                             <li key={n.uuid ?? i} className="d-flex gap-2 align-items-start py-2 border-bottom">

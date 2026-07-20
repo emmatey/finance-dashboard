@@ -24,7 +24,13 @@ function getAnalystRatingColorClass(rating) {
     return 'text-warning'
 }
 
-export default function AnalystSentimentCard({ metrics, lastPrice, analystUpside }) {
+export default function AnalystSentimentCard({ financialMetrics, quote }) {
+    const metrics = financialMetrics?.[0];
+    const lastPrice = quote?.[0]?.last_price;
+    const analystUpside = metrics?.target_price != null && lastPrice != null
+        ? ((metrics.target_price - lastPrice) / lastPrice) * 100
+        : null;
+
     return (
         <div className="card h-100">
             <div className="card-body">
