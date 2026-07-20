@@ -1,8 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { useMemo, useState } from 'react'
+import { Line, LineChart, XAxis, YAxis } from 'recharts'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { formatUTCSeconds, formatCurrencyUSD } from '@/scripts/utils.js'
 
 const RANGES = { '1yr': 31536000, '1mo': 2592000, '1wk': 604800 }
+
+// Single-series config just to satisfy ChartContainer's API; the line's
+// actual stroke color is set dynamically below (green/red by direction).
+const CHART_CONFIG = {
+    price: { label: 'Open Price' }
+}
 
 function getSubsetIdx(timestamps, timeDelta) {
     const now = Math.floor(Date.now() / 1000)
@@ -14,85 +23,77 @@ function getSubsetIdx(timestamps, timeDelta) {
 }
 
 export default function PriceChartCard({ prices }) {
-    const canvasRef = useRef(null)
-    const chartRef = useRef(null)
     const [range, setRange] = useState('1yr')
 
-    const sorted = prices?.length
-        ? [...prices].sort((a, b) => a.timestamp - b.timestamp)
-        : []
+    const sorted = useMemo(
+        () => (prices?.length ? [...prices].sort((a, b) => a.timestamp - b.timestamp) : []),
+        [prices]
+    )
 
-    useEffect(() => {
-        if (!sorted.length || !canvasRef.current) return
-
-        const Chart = window.Chart
-        if (!Chart) return
-
+    const rangedData = useMemo(() => {
+        if (!sorted.length) return []
         const idx = getSubsetIdx(sorted.map(p => p.timestamp), RANGES[range])
-        const data = sorted.slice(idx).length > 0 ? sorted.slice(idx) : sorted
-
-        const labels = data.map(d => new Date(d.timestamp * 1000).toLocaleDateString())
-        const openPrices = data.map(d => d.price)
-        const volumes = data.map(d => d.volume)
-        const isGain = openPrices[openPrices.length - 1] >= openPrices[0]
-        const lineColor = isGain ? '#16A34A' : '#FF534C'
-
-        if (chartRef.current) chartRef.current.destroy()
-
-        chartRef.current = new Chart(canvasRef.current, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Open Price',
-                    data: openPrices,
-                    borderColor: lineColor,
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: { display: true, text: `Open Price — ${range}` },
-                    legend: { display: false },
-                    tooltip: {
-                        displayColors: false,
-                        callbacks: {
-                            label: ctx => {
-                                const price = Number(ctx.parsed.y).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
-                                return `Open: ${price}`
-                            },
-                            afterBody: ctx => {
-                                const vol = volumes[ctx[0].dataIndex]
-                                return vol != null ? `Volume: ${Number(vol).toLocaleString()}` : ''
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: { ticks: { maxTicksLimit: 8 } },
-                    y: { ticks: { callback: v => '$' + Number(v).toLocaleString() } }
-                }
-            }
-        })
-
-        return () => {
-            chartRef.current?.destroy()
-            chartRef.current = null
-        }
+        const subset = sorted.slice(idx)
+        return subset.length > 0 ? subset : sorted
     }, [sorted, range])
+
+    const isGain = rangedData.length > 1 && rangedData[rangedData.length - 1].price >= rangedData[0].price
+    const lineColor = isGain ? 'var(--color-gain)' : 'var(--color-destructive)'
 
     return (
         <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Price History</CardTitle>
+            </CardHeader>
             <CardContent>
-                {!prices?.length ? (
+                {!rangedData.length ? (
                     <p className="text-sm text-muted-foreground">No price history available.</p>
                 ) : (
                     <>
-                        <canvas ref={canvasRef} />
+                        <ChartContainer config={CHART_CONFIG} className="h-56 w-full">
+                            <LineChart data={rangedData}>
+                                <XAxis
+                                    dataKey="timestamp"
+                                    tickFormatter={formatUTCSeconds}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <YAxis
+                                    tickFormatter={formatCurrencyUSD}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    width={80}
+                                />
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            labelFormatter={(_, payload) => formatUTCSeconds(payload?.[0]?.payload?.timestamp)}
+                                            formatter={(value, _name, item) => (
+                                                <div className="flex w-full flex-col gap-0.5">
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <span className="text-muted-foreground">Open</span>
+                                                        <span className="font-mono font-medium text-foreground">{formatCurrencyUSD(value)}</span>
+                                                    </div>
+                                                    {item.payload.volume != null && (
+                                                        <div className="flex items-center justify-between gap-4">
+                                                            <span className="text-muted-foreground">Volume</span>
+                                                            <span className="font-mono font-medium text-foreground">{Number(item.payload.volume).toLocaleString()}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        />
+                                    }
+                                />
+                                <Line
+                                    dataKey="price"
+                                    type="monotone"
+                                    stroke={lineColor}
+                                    strokeWidth={2}
+                                    dot={false}
+                                />
+                            </LineChart>
+                        </ChartContainer>
                         <ToggleGroup
                             type="single"
                             variant="outline"
