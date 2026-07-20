@@ -749,10 +749,6 @@ class YahooQueryService:
                     'fifty_day_average': quote.get('fiftyDayAverage'),
                     'two_hundred_day_average': quote.get('twoHundredDayAverage'),
                     'rating': quote.get('averageAnalystRating'),
-                    'analyst_count': None,
-                    'target_price': None,
-                    'current_ratio': None,
-                    'debt_to_equity': None,
                     'todays_volume': quote.get('regularMarketVolume'),
                     'ten_day_avg_volume': quote.get('averageDailyVolume10Day'),
                     'three_month_avg_volume': quote.get('averageDailyVolume3Month')
