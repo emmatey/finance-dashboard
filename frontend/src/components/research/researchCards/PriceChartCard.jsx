@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Line, LineChart, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { formatUTCSeconds, formatCurrencyUSD } from '@/scripts/utils.js'
 
-const RANGES = { '1yr': 31536000, '1mo': 2592000, '1wk': 604800 }
+const RANGES = { '5yr': 31536000 * 5, '1yr': 31536000, '1mo': 2592000, '1wk': 604800 }
 
 // Single-series config just to satisfy ChartContainer's API; the line's
 // actual stroke color is set dynamically below (green/red by direction).
@@ -23,7 +23,7 @@ function getSubsetIdx(timestamps, timeDelta) {
 }
 
 export default function PriceChartCard({ prices }) {
-    const [range, setRange] = useState('1yr')
+    const [range, setRange] = useState('5yr')
 
     const sorted = useMemo(
         () => (prices?.length ? [...prices].sort((a, b) => a.timestamp - b.timestamp) : []),
@@ -52,6 +52,7 @@ export default function PriceChartCard({ prices }) {
                     <>
                         <ChartContainer config={CHART_CONFIG} className="h-56 w-full">
                             <LineChart data={rangedData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis
                                     dataKey="timestamp"
                                     tickFormatter={formatUTCSeconds}
