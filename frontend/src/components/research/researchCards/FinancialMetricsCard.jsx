@@ -1,3 +1,4 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrencyUSD, formatPercent, formatNumber } from '@/scripts/utils.js'
 
 function formatLargeNumber(n) {
@@ -17,11 +18,13 @@ function formatLargeNumber(n) {
 export default function FinancialMetricsCard({ metrics }) {
     const metricsData = metrics?.[0];
     return (
-        <div className="card h-100">
-            <div className="card-body">
-                <h5 className="card-title">Financial Metrics</h5>
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Financial Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
                 {metricsData ? (
-                    <div className="row row-cols-3 g-2">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {[
                             ['Market Cap', formatLargeNumber(metricsData.market_cap)],
                             ['EPS', formatCurrencyUSD(metricsData.eps)],
@@ -43,16 +46,16 @@ export default function FinancialMetricsCard({ metrics }) {
                             ['10-day Avg Vol', formatLargeNumber(metricsData.ten_day_avg_volume)],
                             ['3-mo Avg Vol', formatLargeNumber(metricsData.three_month_avg_volume)],
                         ].map(([label, value]) => (
-                            <div key={label} className="col border-bottom pb-1">
-                                <div className="text-muted">{label}</div>
-                                <div className="fw-semibold small">{value}</div>
+                            <div key={label} className="border-b border-border pb-1.5">
+                                <div className="text-xs text-muted-foreground">{label}</div>
+                                <div className="text-sm font-medium">{value}</div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-muted small mb-0">Loading…</p>
+                    <p className="text-sm text-muted-foreground">Loading…</p>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

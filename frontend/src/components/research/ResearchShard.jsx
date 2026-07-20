@@ -23,48 +23,32 @@ export default function ResearchShard({ ticker }) {
     } = data || {};
 
     return (
-        <div className="container">
+        <div className="mx-auto max-w-6xl space-y-4 p-4">
             <ResearchHeader quote={quote} financialMetrics={financialMetrics} />
 
-            <hr className="mt-2" />
-
-            <div className="row justify-content-center">
-                <div className="col-md-8 mb-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-2">
                     <PriceChartCard prices={historicalPrices} />
                 </div>
-                <div className="col-md-4 mb-3">
-                    <CompanyProfileCard profile={companyProfile} />
-                </div>
+                <CompanyProfileCard profile={companyProfile} />
             </div>
 
-            <div className="row justify-content-center">
-                <div className="col-md-8 mb-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <div className="lg:col-span-2">
                     <FinancialMetricsCard metrics={financialMetrics} />
                 </div>
-                <div className="col-md-4 mb-3">
-                    <HoldingsCard />
-                </div>
+                <HoldingsCard />
             </div>
 
-            <div className="row justify-content-center">
-                <div className="col-md-4 mb-3">
-                    <AnalystSentimentCard financialMetrics={financialMetrics} quote={quote} />
-                </div>
-                <div className="col-md-4 mb-3">
-                    <InsiderSentimentCard financialMetrics={financialMetrics} />
-                </div>
-                <div className="col-md-4 mb-3">
-                    <StockSplitsCard stockSplits={stockSplits} />
-                </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <AnalystSentimentCard financialMetrics={financialMetrics} quote={quote} />
+                <InsiderSentimentCard financialMetrics={financialMetrics} />
+                <StockSplitsCard stockSplits={stockSplits} />
             </div>
 
-            <div className="row justify-content-center">
-                <div className="col-md-6 mb-3">
-                    <NewsCard news={news} />
-                </div>
-                <div className="col-md-6 mb-3">
-                    <InsiderTradesCard insiderTrades={insiderTrades} />
-                </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <NewsCard news={news} />
+                <InsiderTradesCard insiderTrades={insiderTrades} />
             </div>
         </div>
     )

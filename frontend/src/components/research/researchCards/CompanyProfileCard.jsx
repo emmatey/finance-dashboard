@@ -1,36 +1,39 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatNumber } from '@/scripts/utils.js'
 
 export default function CompanyProfileCard({ profile }) {
     const profileData = profile?.[0];
     return (
-        <div className="card h-100">
-            <div className="card-body">
-                <h5 className="card-title">Company Profile</h5>
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Company Profile</CardTitle>
+            </CardHeader>
+            <CardContent>
                 {profileData ? (
                     <>
-                        <p className="small overflow-auto" style={{ maxHeight: '170px' }}>{profileData.company_desc ?? 'No description available.'}</p>
-                        <table className="table table-sm mb-0">
-                            <tbody>
-                                {[
-                                    ['Sector', profileData.sector],
-                                    ['Industry', profileData.industry],
-                                    ['Employees', profileData.employee_count != null ? formatNumber(profileData.employee_count, 0) : null],
-                                    ['Website', profileData.website
-                                        ? <a href={profileData.website} target="_blank" rel="noreferrer">{profileData.website}</a>
-                                        : null],
-                                ].map(([label, value]) => (
-                                    <tr key={label}>
-                                        <th className="text-muted fw-normal small" style={{ width: '40%' }}>{label}</th>
-                                        <td className="small">{value ?? 'N/A'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <p className="mb-3 max-h-[170px] overflow-auto text-sm text-muted-foreground">
+                            {profileData.company_desc ?? 'No description available.'}
+                        </p>
+                        <div className="space-y-1.5 text-sm">
+                            {[
+                                ['Sector', profileData.sector],
+                                ['Industry', profileData.industry],
+                                ['Employees', profileData.employee_count != null ? formatNumber(profileData.employee_count, 0) : null],
+                                ['Website', profileData.website
+                                    ? <a href={profileData.website} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-4">{profileData.website}</a>
+                                    : null],
+                            ].map(([label, value]) => (
+                                <div key={label} className="flex items-center justify-between gap-2 border-b border-border py-1 last:border-0">
+                                    <span className="text-muted-foreground">{label}</span>
+                                    <span>{value ?? 'N/A'}</span>
+                                </div>
+                            ))}
+                        </div>
                     </>
                 ) : (
-                    <p className="text-muted small mb-0">Loading…</p>
+                    <p className="text-sm text-muted-foreground">Loading…</p>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

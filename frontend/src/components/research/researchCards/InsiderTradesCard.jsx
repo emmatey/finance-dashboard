@@ -1,38 +1,43 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatNumber, formatCurrencyUSD } from '@/scripts/utils.js'
 
 export default function InsiderTradesCard({ insiderTrades }) {
     return (
-        <div className="card h-100">
-            <div className="card-body">
-                <h5 className="card-title">Insider Trades</h5>
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Insider Trades</CardTitle>
+            </CardHeader>
+            <CardContent>
                 {insiderTrades?.length > 0 ? (
-                    <div className="table-responsive overflow-auto" style={{ maxHeight: '400px' }}>
-                        <table className="table table-sm mb-0">
-                            <thead>
-                                <tr>
+                    <ScrollArea className="h-80">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
                                     {['Date', 'Filer', 'Relation', 'Shares', 'Value', 'Transaction'].map(h => (
-                                        <th key={h} className="text-muted fw-normal small">{h}</th>
+                                        <TableHead key={h}>{h}</TableHead>
                                     ))}
-                                </tr>
-                            </thead>
-                            <tbody>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {insiderTrades.map((t, i) => (
-                                    <tr key={i}>
-                                        <td className="small">{t.transaction_date ?? 'N/A'}</td>
-                                        <td className="small">{t.filer_name ?? 'N/A'}</td>
-                                        <td className="small">{t.filer_relation ?? 'N/A'}</td>
-                                        <td className="small">{t.shares != null ? formatNumber(t.shares, 0) : 'N/A'}</td>
-                                        <td className="small">{formatCurrencyUSD(t.transaction_value)}</td>
-                                        <td className="small">{t.transaction_text ?? 'N/A'}</td>
-                                    </tr>
+                                    <TableRow key={i}>
+                                        <TableCell>{t.transaction_date ?? 'N/A'}</TableCell>
+                                        <TableCell>{t.filer_name ?? 'N/A'}</TableCell>
+                                        <TableCell>{t.filer_relation ?? 'N/A'}</TableCell>
+                                        <TableCell>{t.shares != null ? formatNumber(t.shares, 0) : 'N/A'}</TableCell>
+                                        <TableCell>{formatCurrencyUSD(t.transaction_value)}</TableCell>
+                                        <TableCell>{t.transaction_text ?? 'N/A'}</TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
                 ) : (
-                    <p className="text-muted small mb-0">No insider trades available.</p>
+                    <p className="text-sm text-muted-foreground">No insider trades available.</p>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

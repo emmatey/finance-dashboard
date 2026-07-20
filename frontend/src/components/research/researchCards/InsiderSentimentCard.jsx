@@ -1,3 +1,4 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SentimentBar from './SentimentBar.jsx'
 
 function getSentimentLabel(score) {
@@ -15,42 +16,44 @@ function getSentimentLabel(score) {
 
 function getSentimentColorClass(score) {
     /*
-        Maps a numeric insider sentiment score to a Bootstrap text color utility class.
-        Returns 'text-muted' for null or undefined values.
+        Maps a numeric insider sentiment score to a text color class.
+        Returns a neutral color for null or undefined values.
     */
-    if (score == null) return 'text-muted'
-    if (score > 0.15) return 'text-success'
-    if (score < -0.15) return 'text-danger'
-    return 'text-warning'
+    if (score == null) return 'text-muted-foreground'
+    if (score > 0.15) return 'text-gain'
+    if (score < -0.15) return 'text-destructive'
+    return 'text-amber-600 dark:text-amber-400'
 }
 
 export default function InsiderSentimentCard({ financialMetrics }) {
     const metrics = financialMetrics?.[0];
     return (
-        <div className="card h-100">
-            <div className="card-body">
-                <h5 className="card-title">Insider Sentiment</h5>
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Insider Sentiment</CardTitle>
+            </CardHeader>
+            <CardContent>
                 {metrics ? (
                     <>
                         <div className="mb-2">
-                            <span className={`fw-bold fs-4 ${getSentimentColorClass(metrics.insider_sentiment)}`}>
+                            <span className={`text-2xl font-bold ${getSentimentColorClass(metrics.insider_sentiment)}`}>
                                 {getSentimentLabel(metrics.insider_sentiment)}
                             </span>
                             {metrics.insider_sentiment != null && (
-                                <span className="text-muted small ms-2">
+                                <span className="ml-2 text-sm text-muted-foreground">
                                     score: {Number(metrics.insider_sentiment).toFixed(3)}
                                 </span>
                             )}
                         </div>
                         <SentimentBar score={metrics.insider_sentiment} />
-                        <p className="text-muted small mt-2 mb-0">
+                        <p className="mt-2 text-sm text-muted-foreground">
                             Based on open-market insider trades in the past 12 months. Buys are weighted over sells.
                         </p>
                     </>
                 ) : (
-                    <p className="text-muted small mb-0">Loading…</p>
+                    <p className="text-sm text-muted-foreground">Loading…</p>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

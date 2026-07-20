@@ -1,3 +1,4 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrencyUSD } from '@/scripts/utils.js'
 
 function formatAnalystRating(rating) {
@@ -14,14 +15,14 @@ function formatAnalystRating(rating) {
 
 function getAnalystRatingColorClass(rating) {
     /*
-        Maps an analyst rating string to a Bootstrap text color utility class.
-        Buy-side ratings → success, sell-side → danger, everything else → warning.
+        Maps an analyst rating string to a text color class.
+        Buy-side ratings → gain, sell-side → destructive, everything else → neutral.
     */
     if (!rating) return ''
     const r = rating.toLowerCase()
-    if (r.includes('buy')) return 'text-success'
-    if (r.includes('sell') || r.includes('underperform')) return 'text-danger'
-    return 'text-warning'
+    if (r.includes('buy')) return 'text-gain'
+    if (r.includes('sell') || r.includes('underperform')) return 'text-destructive'
+    return 'text-amber-600 dark:text-amber-400'
 }
 
 export default function AnalystSentimentCard({ financialMetrics, quote }) {
@@ -32,50 +33,51 @@ export default function AnalystSentimentCard({ financialMetrics, quote }) {
         : null;
 
     return (
-        <div className="card h-100">
-            <div className="card-body">
-                <h5 className="card-title">Analyst Sentiment</h5>
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Analyst Sentiment</CardTitle>
+            </CardHeader>
+            <CardContent>
                 {metrics ? (
                     <>
                         <div className="mb-3">
-                            <span className={`fw-bold fs-4 ${getAnalystRatingColorClass(metrics.rating)}`}>
+                            <span className={`text-2xl font-bold ${getAnalystRatingColorClass(metrics.rating)}`}>
                                 {formatAnalystRating(metrics.rating)}
                             </span>
                             {metrics.analyst_count != null && (
-                                <span className="text-muted small ms-2">
+                                <span className="ml-2 text-sm text-muted-foreground">
                                     {metrics.analyst_count} analyst{metrics.analyst_count !== 1 ? 's' : ''}
                                 </span>
                             )}
                         </div>
-                        <table className="table table-sm mb-0">
-                            <tbody>
-                                <tr>
-                                    <th className="text-muted fw-normal small">Target Price</th>
-                                    <td className="small">{formatCurrencyUSD(metrics.target_price)}</td>
-                                </tr>
-                                <tr>
-                                    <th className="text-muted fw-normal small">Current Price</th>
-                                    <td className="small">{formatCurrencyUSD(lastPrice)}</td>
-                                </tr>
-                                {analystUpside != null && (
-                                    <tr>
-                                        <th className="text-muted fw-normal small">
-                                            <span title="How much the current price would need to move to reach the analyst consensus target. Positive = analysts expect growth, negative = analysts expect a decline.">
-                                                Implied Upside ⓘ
-                                            </span>
-                                        </th>
-                                        <td className={`small fw-semibold ${analystUpside >= 0 ? 'text-success' : 'text-danger'}`}>
-                                            {analystUpside >= 0 ? '+' : ''}{analystUpside.toFixed(1)}%
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                        <div className="space-y-1.5 text-sm">
+                            <div className="flex items-center justify-between border-b border-border py-1">
+                                <span className="text-muted-foreground">Target Price</span>
+                                <span>{formatCurrencyUSD(metrics.target_price)}</span>
+                            </div>
+                            <div className="flex items-center justify-between border-b border-border py-1">
+                                <span className="text-muted-foreground">Current Price</span>
+                                <span>{formatCurrencyUSD(lastPrice)}</span>
+                            </div>
+                            {analystUpside != null && (
+                                <div className="flex items-center justify-between py-1">
+                                    <span
+                                        className="text-muted-foreground"
+                                        title="How much the current price would need to move to reach the analyst consensus target. Positive = analysts expect growth, negative = analysts expect a decline."
+                                    >
+                                        Implied Upside ⓘ
+                                    </span>
+                                    <span className={`font-semibold ${analystUpside >= 0 ? 'text-gain' : 'text-destructive'}`}>
+                                        {analystUpside >= 0 ? '+' : ''}{analystUpside.toFixed(1)}%
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </>
                 ) : (
-                    <p className="text-muted small mb-0">Loading…</p>
+                    <p className="text-sm text-muted-foreground">Loading…</p>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

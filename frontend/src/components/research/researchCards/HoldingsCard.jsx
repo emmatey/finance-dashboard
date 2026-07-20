@@ -1,14 +1,19 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+
 export default function HoldingsCard() {
     return (
-        <div className="card h-100">
-            <div className="card-body d-flex flex-column">
-                <h5 className="card-title">Your Holdings</h5>
-                <p className="text-muted small mb-0 flex-grow-1">Holdings data coming soon.</p>
-                <div className="d-flex gap-2 mt-3">
-                    <button className="btn btn-primary flex-grow-1">Buy</button>
-                    <button className="btn btn-primary flex-grow-1">Sell</button>
+        <Card className="flex h-full flex-col">
+            <CardHeader>
+                <CardTitle>Your Holdings</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col">
+                <p className="flex-1 text-sm text-muted-foreground">Holdings data coming soon.</p>
+                <div className="mt-3 flex gap-2">
+                    <Button className="flex-1">Buy</Button>
+                    <Button className="flex-1" variant="outline">Sell</Button>
                 </div>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

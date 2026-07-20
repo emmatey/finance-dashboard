@@ -1,29 +1,34 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+
 export default function StockSplitsCard({ stockSplits }) {
     return (
-        <div className="card h-100">
-            <div className="card-body">
-                <h5 className="card-title">Stock Splits</h5>
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Stock Splits</CardTitle>
+            </CardHeader>
+            <CardContent>
                 {stockSplits?.length > 0 ? (
-                    <table className="table table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th className="text-muted fw-normal small">Date</th>
-                                <th className="text-muted fw-normal small">Ratio</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Ratio</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
                             {stockSplits.map((s, i) => (
-                                <tr key={i}>
-                                    <td className="small">{s.split_date ?? 'N/A'}</td>
-                                    <td className="small">{s.split_ratio != null ? `${s.split_ratio}:1` : 'N/A'}</td>
-                                </tr>
+                                <TableRow key={i}>
+                                    <TableCell>{s.split_date ?? 'N/A'}</TableCell>
+                                    <TableCell>{s.split_ratio != null ? `${s.split_ratio}:1` : 'N/A'}</TableCell>
+                                </TableRow>
                             ))}
-                        </tbody>
-                    </table>
+                        </TableBody>
+                    </Table>
                 ) : (
-                    <p className="text-muted small mb-0">No stock splits on record.</p>
+                    <p className="text-sm text-muted-foreground">No stock splits on record.</p>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

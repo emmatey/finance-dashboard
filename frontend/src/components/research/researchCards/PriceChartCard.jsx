@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 const RANGES = { '1yr': 31536000, '1mo': 2592000, '1wk': 604800 }
 
@@ -84,24 +86,29 @@ export default function PriceChartCard({ prices }) {
     }, [sorted, range])
 
     return (
-        <div className="card h-100">
-            <div className="card-body">
+        <Card className="h-full">
+            <CardContent>
                 {!prices?.length ? (
-                    <p className="text-muted small mb-0">No price history available.</p>
+                    <p className="text-sm text-muted-foreground">No price history available.</p>
                 ) : (
                     <>
                         <canvas ref={canvasRef} />
-                        <div className="d-flex justify-content-center gap-2 mt-2">
+                        <ToggleGroup
+                            type="single"
+                            variant="outline"
+                            className="mx-auto mt-2"
+                            value={range}
+                            onValueChange={(value) => value && setRange(value)}
+                        >
                             {Object.keys(RANGES).map(r => (
-                                <button key={r} onClick={() => setRange(r)}
-                                    className={`btn btn-sm ${range === r ? 'btn-primary' : 'btn-outline-secondary'}`}>
+                                <ToggleGroupItem key={r} value={r} aria-label={`Show ${r} range`}>
                                     {r}
-                                </button>
+                                </ToggleGroupItem>
                             ))}
-                        </div>
+                        </ToggleGroup>
                     </>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

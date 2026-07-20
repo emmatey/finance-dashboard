@@ -1,31 +1,26 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import NewsStoryCard from '@/components/home/shards/Newsfeed/NewsStoryCard'
+
 export default function NewsCard({ news }) {
     return (
-        <div className="card h-100">
-            <div className="card-body">
-                <h5 className="card-title">News</h5>
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>News</CardTitle>
+            </CardHeader>
+            <CardContent className="px-3">
                 {news?.length > 0 ? (
-                    <ul className="list-unstyled mb-0 overflow-auto" style={{ maxHeight: '400px' }}>
-                        {news.map((n, i) => (
-                            <li key={n.uuid ?? i} className="d-flex gap-2 align-items-start py-2 border-bottom">
-                                {n.thumbnail && (
-                                    <img src={n.thumbnail} alt="" className="object-fit-cover rounded-1 flex-shrink-0" style={{ width: '64px', height: '42px' }} />
-                                )}
-                                <div>
-                                    <a href={n.link} target="_blank" rel="noreferrer" className="fw-semibold small d-block mb-1">
-                                        {n.title}
-                                    </a>
-                                    <span className="text-muted small">
-                                        {n.publisher}
-                                        {n.providerPublishTime ? ` · ${new Date(n.providerPublishTime * 1000).toLocaleDateString()}` : ''}
-                                    </span>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                    <ScrollArea className="h-80">
+                        <div className="flex flex-col gap-1 pr-3">
+                            {news.map((n, i) => (
+                                <NewsStoryCard key={n.uuid ?? i} story={n} />
+                            ))}
+                        </div>
+                    </ScrollArea>
                 ) : (
-                    <p className="text-muted small mb-0">No news available.</p>
+                    <p className="px-3 text-sm text-muted-foreground">No news available.</p>
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }

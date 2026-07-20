@@ -1,12 +1,13 @@
 import { formatCurrencyUSD } from '@/scripts/utils.js'
 import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
 
 export default function ResearchHeader({ quote, financialMetrics }) {
 
     if (!quote || quote.length === 0) {
         return (
-            <div className="d-flex justify-content-center align-items-center p-5 w-100">
-                <Spinner />
+            <div className="flex w-full items-center justify-center p-10">
+                <Spinner className="size-6" />
             </div>
         );
     }
@@ -21,20 +22,20 @@ export default function ResearchHeader({ quote, financialMetrics }) {
     const metrics = financialMetrics?.[0];
 
     return (
-        <div className="d-flex justify-content-between align-items-end mb-2">
+        <div className="flex items-end justify-between gap-4">
             <div>
-                <div className="lh-sm mb-1">
-                    <span className="fw-bold fs-5">{ticker}</span>
-                    <span className="text-muted ms-2">
+                <div className="mb-1 leading-tight">
+                    <span className="text-lg font-bold">{ticker}</span>
+                    <span className="ml-2 text-muted-foreground">
                         {companyName}
                         {exchange ? ` · ${exchange}` : ''}
                         {quoteType ? ` · ${quoteType}` : ''}
                     </span>
                 </div>
-                <div className="d-flex align-items-baseline gap-3">
-                    <span className="fw-bold fs-3">{lastPrice != null ? formatCurrencyUSD(lastPrice) : '—'}</span>
+                <div className="flex items-baseline gap-3">
+                    <span className="text-3xl font-bold">{lastPrice != null ? formatCurrencyUSD(lastPrice) : '—'}</span>
                     {metrics && (
-                        <span className="text-muted small">
+                        <span className="text-sm text-muted-foreground">
                             Open {formatCurrencyUSD(metrics.market_open)}
                             <span className="mx-2">·</span>
                             Prev Close {formatCurrencyUSD(metrics.prev_close)}
@@ -42,9 +43,9 @@ export default function ResearchHeader({ quote, financialMetrics }) {
                     )}
                 </div>
             </div>
-            <div className="d-flex gap-2">
-                <button className="btn btn-primary">Buy</button>
-                <button className="btn btn-primary">Sell</button>
+            <div className="flex gap-2">
+                <Button>Buy</Button>
+                <Button variant="outline">Sell</Button>
             </div>
         </div>
     );

@@ -1,29 +1,21 @@
 export default function SentimentBar({ score }) {
-    if (score == null) return <p className="text-muted small mb-0">No data available.</p>
+    if (score == null) return <p className="text-sm text-muted-foreground">No data available.</p>
     const position = Math.max(0, Math.min(100, ((score + 1) / 2) * 100))
     return (
         <div className="mt-2">
-            <div style={{
-                position: 'relative',
-                height: '8px',
-                borderRadius: '4px',
-                background: 'linear-gradient(to right, var(--color-loss), var(--color-border) 50%, var(--color-gain))'
-            }}>
-                <div style={{
-                    position: 'absolute',
-                    left: `${position}%`,
-                    top: '-4px',
-                    transform: 'translateX(-50%)',
-                    width: '3px',
-                    height: '16px',
-                    background: '#333',
-                    borderRadius: '2px'
-                }} />
+            <div
+                className="relative h-2 rounded-full"
+                style={{ background: 'linear-gradient(to right, var(--color-destructive), var(--color-border) 50%, var(--color-gain))' }}
+            >
+                <div
+                    className="absolute top-[-4px] h-4 w-[3px] -translate-x-1/2 rounded-sm bg-foreground"
+                    style={{ left: `${position}%` }}
+                />
             </div>
-            <div className="d-flex justify-content-between mt-1 small">
-                <span className="text-muted">Bearish</span>
-                <span className="text-muted">Neutral</span>
-                <span className="text-muted">Bullish</span>
+            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                <span>Bearish</span>
+                <span>Neutral</span>
+                <span>Bullish</span>
             </div>
         </div>
     )
