@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Header from '@/components/Header.jsx'
 import { Card, CardContent } from '@/components/ui/card'
 import ShardNav from './ShardNav'
@@ -7,7 +8,12 @@ import { ShardNavProvider } from '@/context/ShardNavContext.jsx'
 import { ScreenersSelectionProvider } from '@/context/ScreenersSelectionContext.jsx'
 
 export default function HomeBody() {
-    const [activeGroupId, setActiveGroupId] = useState(SHARD_GROUPS[0].id);
+    const [searchParams] = useSearchParams();
+    const requestedGroupId = searchParams.get('group');
+    const initialGroupId = SHARD_GROUPS.some((group) => group.id === requestedGroupId)
+        ? requestedGroupId
+        : SHARD_GROUPS[0].id;
+    const [activeGroupId, setActiveGroupId] = useState(initialGroupId);
     const activeGroup = SHARD_GROUPS.find((group) => group.id === activeGroupId);
 
     const [screenersSelected, setScreenersSelected] = useState([]);

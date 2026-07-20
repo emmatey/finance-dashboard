@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { formatCurrencyUSD } from '@/scripts/utils.js'
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -44,8 +45,9 @@ export default function ResearchHeader({ quote, financialMetrics }) {
                 </div>
             </div>
             <div className="flex gap-2">
-                <Button>Buy</Button>
-                <Button variant="outline">Sell</Button>
+                <Button asChild>
+                    <Link to={`/?group=transact&ticker=${encodeURIComponent(ticker)}`}>Transact</Link>
+                </Button>
             </div>
         </div>
     );

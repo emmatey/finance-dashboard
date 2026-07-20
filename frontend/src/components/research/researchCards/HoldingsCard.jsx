@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -57,8 +58,9 @@ export default function HoldingsCard({ ticker }) {
                     </p>
                 )}
                 <div className="mt-3 flex gap-2">
-                    <Button className="flex-1">Buy</Button>
-                    <Button className="flex-1" variant="outline">Sell</Button>
+                    <Button asChild className="flex-1">
+                        <Link to={`/?group=transact&ticker=${encodeURIComponent(ticker)}`}>Transact</Link>
+                    </Button>
                 </div>
             </CardContent>
         </Card>

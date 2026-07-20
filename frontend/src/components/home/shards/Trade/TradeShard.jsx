@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { adjustPendingOrder } from '@/scripts/utils.js'
 import useTickerInfo from './useTickerInfo.js'
 import TradeInput from './TradeInput.jsx'
@@ -9,7 +10,8 @@ import '@/styles/colors.css'
 
 
 export default function TradeShard() {
-    const [activeQuery, setActiveQuery] = useState("");
+    const [searchParams] = useSearchParams();
+    const [activeQuery, setActiveQuery] = useState(searchParams.get('ticker')?.toUpperCase() ?? "");
     const { tickerInfoJson, loading } = useTickerInfo(activeQuery);
     const [pendingOrder, setPendingOrder] = useState({
         'txTicker': null,
