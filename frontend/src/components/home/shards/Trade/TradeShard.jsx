@@ -5,8 +5,6 @@ import useTickerInfo from './useTickerInfo.js'
 import TradeInput from './TradeInput.jsx'
 import TradeOrderConfirm from './TradeOrderConfirm.jsx'
 import TradePostOrderSummary from './TradePostOrderSummary.jsx'
-import '@/styles/utilities.css'
-import '@/styles/colors.css'
 
 
 export default function TradeShard() {
@@ -55,7 +53,7 @@ export default function TradeShard() {
     }, [tickerInfoJson]);
 
     return (
-        <div className="card">
+        <div className="mx-auto max-w-5xl">
             {showInputScreen && (
                 <TradeInput
                     activeQuery={activeQuery}

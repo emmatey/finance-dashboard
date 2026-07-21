@@ -1,7 +1,8 @@
-import { parseResponse } from '@/scripts/utils';
+import { parseResponse, formatCurrencyUSD } from '@/scripts/utils';
 import { useState } from 'react';
-import '@/styles/utilities.css';
-import '@/styles/colors.css';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 export default function TradeOrderConfirm({
     pendingOrder,
@@ -14,10 +15,6 @@ export default function TradeOrderConfirm({
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { txTicker, txType, txShareQty, txDollarQty } = pendingOrder;
-    const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD"
-    });
 
     async function handleSubmitTradeOrder(event) {
         event.preventDefault();
@@ -54,46 +51,51 @@ export default function TradeOrderConfirm({
     }
 
     return (
-        <form onSubmit={handleSubmitTradeOrder} className='card'>
-            <h2>{isError ? "Transaction Failed" : "Confirm Your Transaction"}</h2>
-            <hr />
+        <Card>
+            <form onSubmit={handleSubmitTradeOrder} className="contents">
+                <CardHeader>
+                    <CardTitle>{isError ? "Transaction Failed" : "Confirm Your Transaction"}</CardTitle>
+                </CardHeader>
+                <Separator />
+                <CardContent>
+                    {isError ? (
+                        <div className="py-4 text-center">
+                            <p className="font-semibold text-destructive">{isError}</p>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Please return to the input screen to adjust your order parameters.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <h3 className="text-lg font-semibold">{txTicker}</h3>
+                                <p className="text-sm text-muted-foreground">Company being traded</p>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold uppercase">{txType}</h3>
+                                <p className="text-sm text-muted-foreground">Transaction type</p>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold">
+                                    {txShareQty} shares for a total value of {formatCurrencyUSD(txDollarQty)}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Price was last updated at {tickerInfoJson?.last_updated} UTC
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
 
-            {isError ? (
-                <section style={{ padding: '20px', textAlign: 'center' }}>
-                    <p style={{ color: 'var(--color-loss)', fontWeight: 'bold' }}>
-                        {isError}
-                    </p>
-                    <p>Please return to the input screen to adjust your order parameters.</p>
-                </section>
-            ) : (
-                <section>
-                    <figure>
-                        <h3> {txTicker} </h3>
-                        <figcaption> Company being traded. </figcaption>
-                    </figure>
-                    <figure>
-                        <h3> {txType.toUpperCase()} </h3>
-                        <figcaption> Transaction Type </figcaption>
-                    </figure>
-                    <figure>
-                        <h3> You are trading {txShareQty} shares for a total value of {formatter.format(txDollarQty)} USD. </h3>
-                        <figcaption> Price was last updated at {tickerInfoJson?.last_updated} UTC. </figcaption>
-                    </figure>
-                </section>
-            )}
-
-            <div className='card'>
-                <button 
-                    type="submit" 
-                    disabled={isSubmitting || isError}
-                >
-                    {isSubmitting ? "Processing..." : "Submit Transaction"}
-                </button>
-                
-                <button type="button" onClick={handleCancelTx}> 
-                    {isError ? "Back to Input" : "Cancel Transaction"} 
-                </button>
-            </div>
-        </form>
+                <CardFooter className="gap-2">
+                    <Button type="submit" disabled={isSubmitting || isError}>
+                        {isSubmitting ? "Processing..." : "Submit Transaction"}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleCancelTx}>
+                        {isError ? "Back to Input" : "Cancel Transaction"}
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
     );
 }

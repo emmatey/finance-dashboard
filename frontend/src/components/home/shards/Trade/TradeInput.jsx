@@ -1,9 +1,9 @@
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import TradeSearch from './TradeInput/TradeSearch.jsx';
 import TradeOrderForm from './TradeInput/TradeOrderForm.jsx';
 import TradeHoldings from './TradeInput/TradeHoldings.jsx';
 import TradeMarketData from './TradeInput/TradeMarketData.jsx';
-import '@/styles/utilities.css';
-import '@/styles/colors.css';
 
 export default function TradeInput({
     activeQuery,
@@ -14,33 +14,38 @@ export default function TradeInput({
     viewController
 }) {
     return (
-        <div style={{ display: 'flex', gap: '16px' }}>
-            <div className='card' style={{ zIndex: 1 }}>
-                <TradeSearch
-                    activeQuery={activeQuery}
-                    setActiveQuery={setActiveQuery}
-                    loading={loading}
-                    tickerInfoJson={tickerInfoJson}
-                />
-                <hr />
-                <TradeMarketData
-                    activeQuery={activeQuery}
-                    loading={loading}
-                    tickerInfoJson={tickerInfoJson}
-                />
-            </div>
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+            <Card className="z-10 lg:col-span-1">
+                <CardContent>
+                    <TradeSearch
+                        activeQuery={activeQuery}
+                        setActiveQuery={setActiveQuery}
+                        loading={loading}
+                        tickerInfoJson={tickerInfoJson}
+                    />
+                    <Separator className="my-4" />
+                    <TradeMarketData
+                        activeQuery={activeQuery}
+                        loading={loading}
+                        tickerInfoJson={tickerInfoJson}
+                    />
+                </CardContent>
+            </Card>
 
-            <div className='card'>
-                <TradeOrderForm
-                    tickerInfoJson={tickerInfoJson}
-                    setPendingOrder={setPendingOrder}
-                    viewController={viewController}
-                />
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Place Order</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <TradeOrderForm
+                        tickerInfoJson={tickerInfoJson}
+                        setPendingOrder={setPendingOrder}
+                        viewController={viewController}
+                    />
+                </CardContent>
+            </Card>
 
-            <div className='card'>
-                <TradeHoldings tickerInfoJson={tickerInfoJson} />
-            </div>
+            <TradeHoldings tickerInfoJson={tickerInfoJson} />
         </div>
     );
 }

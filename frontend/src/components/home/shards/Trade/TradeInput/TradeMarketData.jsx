@@ -1,47 +1,40 @@
 import { Badge } from '@/components/ui/badge';
-import { getMarketStateBadge } from '@/scripts/utils';
-import '@/styles/utilities.css';
-import '@/styles/colors.css';
+import { Spinner } from '@/components/ui/spinner';
+import { formatCurrencyUSD, formatPercent, getMarketStateBadge } from '@/scripts/utils';
+
+function MetricRow({ label, value }) {
+    return (
+        <div className="flex items-center justify-between border-b border-border pb-1">
+            <span className="text-muted-foreground">{label}</span>
+            <strong className="font-medium text-foreground">{value}</strong>
+        </div>
+    );
+}
 
 export default function TradeMarketData({ activeQuery, loading, tickerInfoJson }) {
-    // Utility formatters for clean UI
-    const currencyFormatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 2
-    });
-
     const compactFormatter = new Intl.NumberFormat("en-US", {
         notation: "compact",
         compactDisplay: "short"
     });
 
-    const percentFormatter = new Intl.NumberFormat("en-US", {
-        style: "percent",
-        maximumFractionDigits: 2
-    });
-
     if (loading) {
         return (
-            <div style={{ marginTop: '20px' }}>
-                <p style={{ color: 'var(--color-text-muted)' }}>Loading market data...</p>
+            <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+                <Spinner className="size-4" />
+                Loading market data...
             </div>
         );
     }
 
     if (!activeQuery) {
         return (
-            <div style={{ marginTop: '20px' }}>
-                <p style={{ color: 'var(--color-text-muted)' }}>Search for an asset above.</p>
-            </div>
+            <p className="mt-5 text-sm text-muted-foreground">Search for an asset above.</p>
         );
     }
 
     if (!tickerInfoJson || tickerInfoJson.error) {
         return (
-            <div style={{ marginTop: '20px' }}>
-                <p style={{ color: 'var(--color-text-muted)' }}>No market data found for this ticker.</p>
-            </div>
+            <p className="mt-5 text-sm text-muted-foreground">No market data found for this ticker.</p>
         );
     }
 
@@ -51,108 +44,54 @@ export default function TradeMarketData({ activeQuery, loading, tickerInfoJson }
     const marketStateBadge = getMarketStateBadge(tickerInfoJson.market_state);
 
     return (
-        <div>
-            <h3 style={{ margin: '0 0 4px 0', color: 'var(--color-text-main)' }}>
+        <div className="mt-5 text-sm">
+            <h3 className="mb-1 text-muted-foreground">
                 {tickerInfoJson.name} ({tickerInfoJson.ticker})
             </h3>
 
-            <h2 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'baseline', gap: '8px', color: 'var(--color-text-main)' }}>
-                {currencyFormatter.format(tickerInfoJson.current_price || 0)}
-                <span style={{
-                    fontSize: '1rem',
-                    color: tickerInfoJson.pct_change_since_close >= 0 ? 'var(--color-gain)' : 'var(--color-loss)'
-                }}>
+            <div className="mb-4 flex items-baseline gap-2">
+                <span className="text-2xl font-semibold">
+                    {formatCurrencyUSD(tickerInfoJson.current_price)}
+                </span>
+                <span className={tickerInfoJson.pct_change_since_close >= 0 ? 'text-gain' : 'text-destructive'}>
                     {tickerInfoJson.pct_change_since_close >= 0 ? '▲ +' : '▼ '}
                     {tickerInfoJson.pct_change_since_close}%
                 </span>
                 {marketStateBadge && (
                     <Badge variant={marketStateBadge.variant}>{marketStateBadge.label}</Badge>
                 )}
-            </h2>
+            </div>
 
-            {/* 2-Column Metric Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', fontSize: '0.85rem' }}>
-                
-                {/* Column 1: Trading Activity & Risk */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Prev Close</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>{currencyFormatter.format(tickerInfoJson.prev_close || 0)}</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Open</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>{currencyFormatter.format(tickerInfoJson.market_open || 0)}</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Volume</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>
-                            {tickerInfoJson.todays_volume ? compactFormatter.format(tickerInfoJson.todays_volume) : 'N/A'}
-                        </strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Beta</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>{tickerInfoJson.beta?.toFixed(2) || 'N/A'}</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>52W High</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>{currencyFormatter.format(tickerInfoJson.fifty_two_week_high || 0)}</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>52W Low</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>{currencyFormatter.format(tickerInfoJson.fifty_two_week_low || 0)}</strong>
-                    </div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                <div className="flex flex-col gap-3">
+                    <MetricRow label="Prev Close" value={formatCurrencyUSD(tickerInfoJson.prev_close)} />
+                    <MetricRow label="Open" value={formatCurrencyUSD(tickerInfoJson.market_open)} />
+                    <MetricRow
+                        label="Volume"
+                        value={tickerInfoJson.todays_volume ? compactFormatter.format(tickerInfoJson.todays_volume) : 'N/A'}
+                    />
+                    <MetricRow label="Beta" value={tickerInfoJson.beta?.toFixed(2) || 'N/A'} />
+                    <MetricRow label="52W High" value={formatCurrencyUSD(tickerInfoJson.fifty_two_week_high)} />
+                    <MetricRow label="52W Low" value={formatCurrencyUSD(tickerInfoJson.fifty_two_week_low)} />
                 </div>
 
-                {/* Column 2: Valuation & Consensus */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Mkt Cap</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>
-                            {tickerInfoJson.market_cap ? compactFormatter.format(tickerInfoJson.market_cap) : 'N/A'}
-                        </strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>{peLabel}</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>{peRatio?.toFixed(2) || 'N/A'}</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>EPS</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>{tickerInfoJson.eps?.toFixed(2) || 'N/A'}</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Div Yield</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>
-                            {tickerInfoJson.dividend_yield ? percentFormatter.format(tickerInfoJson.dividend_yield) : 'N/A'}
-                        </strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Target Price</span>
-                        <strong style={{ color: 'var(--color-text-main)' }}>
-                            {tickerInfoJson.target_price ? currencyFormatter.format(tickerInfoJson.target_price) : 'N/A'}
-                        </strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Rating</span>
-                        <strong style={{ 
-                            color: 'var(--color-text-main)', 
-                            textTransform: 'uppercase',
-                            fontWeight: 'bold'
-                        }}>
-                            {tickerInfoJson.rating || 'N/A'}
-                        </strong>
-                    </div>
+                <div className="flex flex-col gap-3">
+                    <MetricRow
+                        label="Mkt Cap"
+                        value={tickerInfoJson.market_cap ? compactFormatter.format(tickerInfoJson.market_cap) : 'N/A'}
+                    />
+                    <MetricRow label={peLabel} value={peRatio?.toFixed(2) || 'N/A'} />
+                    <MetricRow label="EPS" value={tickerInfoJson.eps?.toFixed(2) || 'N/A'} />
+                    <MetricRow
+                        label="Div Yield"
+                        value={tickerInfoJson.dividend_yield ? formatPercent(tickerInfoJson.dividend_yield) : 'N/A'}
+                    />
+                    <MetricRow
+                        label="Target Price"
+                        value={tickerInfoJson.target_price ? formatCurrencyUSD(tickerInfoJson.target_price) : 'N/A'}
+                    />
+                    <MetricRow label="Rating" value={<span className="font-bold uppercase">{tickerInfoJson.rating || 'N/A'}</span>} />
                 </div>
-
             </div>
         </div>
     );

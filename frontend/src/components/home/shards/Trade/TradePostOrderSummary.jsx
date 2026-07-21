@@ -1,18 +1,12 @@
-import { parseResponse } from '@/scripts/utils';
-import '@/styles/utilities.css';
-import '@/styles/colors.css';
-import { useState } from 'react';
+import { formatCurrencyUSD } from '@/scripts/utils';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function TradePostOrderSummary({
     orderSummaryData,
     viewController
 }) {
     const { new_balance, qty, ticker, tx_value, unit_price } = orderSummaryData || {};
-
-    const formatter = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD"
-    });
 
     function handleCloseSummary() {
         if (viewController) {
@@ -23,48 +17,52 @@ export default function TradePostOrderSummary({
 
     if (!orderSummaryData) {
         return (
-            <div className="card">
-                <p>No order details available.</p>
-            </div>
+            <Card>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">No order details available.</p>
+                </CardContent>
+            </Card>
         );
     }
 
     return (
-        <div className='card'>
-            <h2>Transaction Success</h2>
+        <Card className="mx-auto max-w-md">
+            <CardHeader>
+                <CardTitle className="text-gain">Transaction Success</CardTitle>
+            </CardHeader>
 
-            <section>
-                <figure>
-                    <h3>{ticker}</h3>
-                    <figcaption>Asset Traded</figcaption>
-                </figure>
+            <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <h3 className="text-lg font-semibold">{ticker}</h3>
+                        <p className="text-sm text-muted-foreground">Asset Traded</p>
+                    </div>
 
-                <figure>
-                    <h3>{qty} shares</h3>
-                    <figcaption>Quantity Exchanged</figcaption>
-                </figure>
+                    <div>
+                        <h3 className="text-lg font-semibold">{qty} shares</h3>
+                        <p className="text-sm text-muted-foreground">Quantity Exchanged</p>
+                    </div>
 
-                <figure>
-                    <h3>{formatter.format(unit_price)}</h3>
-                    <figcaption>Execution Price (per unit)</figcaption>
-                </figure>
+                    <div>
+                        <h3 className="text-lg font-semibold">{formatCurrencyUSD(unit_price)}</h3>
+                        <p className="text-sm text-muted-foreground">Execution Price (per unit)</p>
+                    </div>
 
-                <figure>
-                    <h3>{formatter.format(tx_value)}</h3>
-                    <figcaption>Total Transaction Value</figcaption>
-                </figure>
+                    <div>
+                        <h3 className="text-lg font-semibold">{formatCurrencyUSD(tx_value)}</h3>
+                        <p className="text-sm text-muted-foreground">Total Transaction Value</p>
+                    </div>
 
-                <figure>
-                    <h3>{formatter.format(new_balance)}</h3>
-                    <figcaption>Your New Remaining Balance</figcaption>
-                </figure>
-            </section>
+                    <div className="col-span-2">
+                        <h3 className="text-lg font-semibold">{formatCurrencyUSD(new_balance)}</h3>
+                        <p className="text-sm text-muted-foreground">Your New Remaining Balance</p>
+                    </div>
+                </div>
+            </CardContent>
 
-            <div className='card'>
-                <button type="button" onClick={handleCloseSummary}>
-                    Done
-                </button>
-            </div>
-        </div>
+            <CardFooter>
+                <Button type="button" onClick={handleCloseSummary}>Done</Button>
+            </CardFooter>
+        </Card>
     );
 }

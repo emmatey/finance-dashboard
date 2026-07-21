@@ -1,8 +1,16 @@
-import { parseResponse, adjustPendingOrder } from '@/scripts/utils';
+import { adjustPendingOrder } from '@/scripts/utils';
 import { useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import '@/styles/utilities.css'
-import '@/styles/colors.css'
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 
 export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewController }) {
@@ -72,14 +80,21 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
     }
 
     return (
-        <form name='tradeTransactForm' onSubmit={handleSubmit}>
-            <select name='txType' value={txType} onChange={(e) => setTxType(e.target.value)}>
-                <option value='buy'>Buy</option>
-                <option value='sell'>Sell</option>
-            </select>
+        <form name='tradeTransactForm' onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <ToggleGroup
+                type="single"
+                variant="outline"
+                spacing={0}
+                value={txType}
+                onValueChange={(value) => value && setTxType(value)}
+                className="w-full"
+            >
+                <ToggleGroupItem value="buy" className="flex-1">Buy</ToggleGroupItem>
+                <ToggleGroupItem value="sell" className="flex-1">Sell</ToggleGroupItem>
+            </ToggleGroup>
 
-            <div>
-                <input
+            <div className="flex items-center gap-2">
+                <Input
                     type='number'
                     name='qtyInput'
                     placeholder={txUnit === 'shares' ? 'Qty of Shares' : 'Amount in USD'}
@@ -87,15 +102,21 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
                     onChange={(e) => setTxQty(e.target.value)}
                     min={txUnit === 'shares' ? '0.1' : '1'}
                     step={txUnit === 'shares' ? '0.1' : '1'}
+                    className="flex-1"
                 />
 
-                <select name='qtyUnit' value={txUnit} onChange={(e) => setTxUnit(e.target.value)}>
-                    <option value='shares'>Shares</option>
-                    <option value='dollars'>Dollars</option>
-                </select>
+                <Select name='qtyUnit' value={txUnit} onValueChange={setTxUnit}>
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value='shares'>Shares</SelectItem>
+                        <SelectItem value='dollars'>Dollars</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
-            <button type='submit' disabled={!tickerInfoJson}>Submit</button>
+            <Button type='submit' disabled={!tickerInfoJson}>Submit</Button>
             <Toaster />
         </form>
     );

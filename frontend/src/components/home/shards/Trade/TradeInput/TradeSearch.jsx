@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { parseResponse, getRandomAccentColor } from '@/scripts/utils.js'
-import '@/styles/utilities.css'
-import '@/styles/colors.css'
+import { parseResponse } from '@/scripts/utils.js'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 
 export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
@@ -40,15 +40,6 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
         }, 300)
     }
 
-    function handleSuggestionMouseOver(event) {
-        event.target.style.background = getRandomAccentColor();
-    }
-
-    function handleSuggestionMouseLeave(event) {
-        const el = event.target;
-        el.style.background = 'var(--color-surface)';
-    }
-
     function handleSuggestionSelect(query) {
         setDataListVisible(false);
         setActiveQuery(query);
@@ -56,39 +47,37 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
     }
 
     return (
-        <>
-            <form name='tradeSearchForm' onSubmit={handleSearchSubmit} >
-                <div>
-                    <div style={{ position: 'relative', display: 'inline-block', zIndex: 2}}>
-                        <input
-                            name='searchInput'
-                            type='text'
-                            value={pendingQuery}
-                            onChange={handleSearchChange}
-                            onClick={pendingQuery ? () => setDataListVisible(true) : () => setDataListVisible(false)}
-                            onBlur={() => setDataListVisible(false)}
-                            autoComplete="off"
-                        />
-                        {dataList.length > 0 && dataListVisible &&
-                            <ul style={{ position: 'absolute', top: '100%', left: 0, width: '100%', padding: 0, margin: 0 }}>
-                                {dataList.map((arr) => (
-                                    <li
-                                        // arr = [name, ticker]
-                                        key={arr[1]}
-                                        className='card'
+        <form name='tradeSearchForm' onSubmit={handleSearchSubmit}>
+            <div className="flex items-center gap-2">
+                <div className="relative z-20 flex-1">
+                    <Input
+                        name='searchInput'
+                        type='text'
+                        value={pendingQuery}
+                        onChange={handleSearchChange}
+                        onClick={pendingQuery ? () => setDataListVisible(true) : () => setDataListVisible(false)}
+                        onBlur={() => setDataListVisible(false)}
+                        autoComplete="off"
+                        placeholder="Search for a ticker or company"
+                    />
+                    {dataList.length > 0 && dataListVisible && (
+                        <ul className="absolute top-full left-0 z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-2xl bg-popover p-1 text-sm shadow-2xl ring-1 ring-foreground/10">
+                            {dataList.map((arr) => (
+                                <li key={arr[1]}>
+                                    <button
+                                        type="button"
+                                        className="w-full rounded-xl px-3 py-2 text-left hover:bg-muted"
                                         onMouseDown={() => handleSuggestionSelect(arr[1])}
-                                        onMouseOver={handleSuggestionMouseOver}
-                                        onMouseLeave={handleSuggestionMouseLeave}
                                     >
                                         {`${arr[1] === "null" ? null : arr[1]} - ${arr[0] === "null" ? null : arr[0]}`}
-                                    </li>
-                                ))}
-                            </ul>
-                        }
-                    </div>
-                    <button type='submit'> Search </button>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
-            </form>
-        </>
+                <Button type='submit'>Search</Button>
+            </div>
+        </form>
     )
 }
