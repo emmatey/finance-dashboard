@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
     Table,
     TableBody,
@@ -41,7 +42,11 @@ export default function ScreenersTable({ data }) {
             <TableBody>
                 {data.map((row) => (
                     <TableRow key={row.ticker}>
-                        <TableCell>{row.ticker}</TableCell>
+                        <TableCell>
+                            <Link to={`/research?ticker=${encodeURIComponent(row.ticker)}`} className="hover:underline">
+                                {row.ticker}
+                            </Link>
+                        </TableCell>
                         <TableCell>{row.company_name}</TableCell>
                         <TableCell>{formatCurrencyUSD(row.current_price)}</TableCell>
                         <TableCell>{formatCurrencyUSD(row.prev_close)}</TableCell>
