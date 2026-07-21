@@ -15,7 +15,7 @@ export default function TradeInput({
 }) {
     return (
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-            <Card className="z-10 lg:col-span-1">
+            <Card className="z-10 overflow-visible lg:col-span-1">
                 <CardContent>
                     <TradeSearch
                         activeQuery={activeQuery}
