@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { parseResponse } from "@/scripts/utils";
 
 
-export default function useUserSummary() {
+export default function useUserSummary(username) {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
@@ -12,7 +12,10 @@ export default function useUserSummary() {
         async function fetchData() {
             try {
                 setLoading(true);
-                const res = await fetch('/api/user/summary');
+                const url = username
+                    ? `/api/user/summary?username=${encodeURIComponent(username)}`
+                    : '/api/user/summary';
+                const res = await fetch(url);
                 const data = await parseResponse(res);
                 setData(data);
             } catch (err) {
@@ -32,7 +35,7 @@ export default function useUserSummary() {
             }
         }
         fetchData();
-    }, []);
+    }, [username]);
 
     return { loading, data, error, responseCode };
 }

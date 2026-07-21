@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 
-export default function useHoldings() {
+export default function useHoldings(username) {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
@@ -11,7 +11,10 @@ export default function useHoldings() {
         async function fetchData() {
             try {
                 setLoading(true);
-                const res = await fetch('/api/user/portfolio');
+                const url = username
+                    ? `/api/user/portfolio?username=${encodeURIComponent(username)}`
+                    : '/api/user/portfolio';
+                const res = await fetch(url);
                 const data = await parseResponse(res);
                 setData(data?.data ?? []);
             } catch (err) {
@@ -31,7 +34,7 @@ export default function useHoldings() {
             }
         }
         fetchData();
-    }, [])
+    }, [username])
 
     return {
         loading: loading,
