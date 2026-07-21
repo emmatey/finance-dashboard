@@ -73,7 +73,7 @@ export default function ScreenersShard() {
                 </Button>
             </div>
             {screenersSelected.length > 0 ? (
-                <Tabs>
+                <Tabs defaultValue={screenersSelected[0]}>
                     <TabsList>
                         {
                             screenersSelected.map((screener) => {
