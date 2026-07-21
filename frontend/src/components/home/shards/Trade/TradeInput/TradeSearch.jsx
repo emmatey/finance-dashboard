@@ -8,10 +8,13 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
     const [pendingQuery, setPendingQuery] = useState("");
     const [dataList, setDataList] = useState([]); // [[company_name, ticker], ...]
     const [dataListVisible, setDataListVisible] = useState(false);
+    const [resolving, setResolving] = useState(false);
     const debounceRef = useRef(null);
 
     async function getDataListItemsFromSearchRoute(query) {
         // Make a GET request to the '/api/search/companies' route in order to populate the datalist.
+        // Stays on the local/offline route - this fires on every keystroke, so it can't afford
+        // a live Yahoo Finance hit each time.
         try {
             const companies = await fetch(`/api/search/companies?q=${encodeURIComponent(query)}&local=true`);
             const res = await parseResponse(companies);
@@ -23,10 +26,35 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
         }
     }
 
-    async function handleSearchSubmit(event) {
-        event.preventDefault();
-        setActiveQuery(pendingQuery);
+    async function resolveTickerOnline(query) {
+        // Search button submits go through the live/online route (no local=true) so a typed
+        // company name (not just a ticker) can resolve to a real ticker, even one not yet
+        // cached locally.
+        try {
+            const res = await fetch(`/api/search/companies?q=${encodeURIComponent(query)}&limit=1`);
+            const data = await parseResponse(res);
+            return data?.data?.[0]?.ticker ?? null;
+        } catch (error) {
+            console.error(error);
+            return null;
+        }
+    }
+
+    async function runOnlineSearch(rawQuery) {
+        const query = rawQuery.trim();
+        if (!query) return;
+
+        setDataListVisible(false);
         setPendingQuery("");
+        setResolving(true);
+        const resolvedTicker = await resolveTickerOnline(query);
+        setResolving(false);
+        setActiveQuery(resolvedTicker ?? query);
+    }
+
+    function handleSearchSubmit(event) {
+        event.preventDefault();
+        runOnlineSearch(pendingQuery);
     }
 
     function handleSearchChange(event) {
@@ -60,7 +88,7 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
                         autoComplete="off"
                         placeholder="Search for a ticker or company"
                     />
-                    {dataList.length > 0 && dataListVisible && (
+                    {dataListVisible && pendingQuery.trim() && (
                         <ul className="absolute top-full left-0 z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-2xl bg-popover p-1 text-sm shadow-2xl ring-1 ring-foreground/10">
                             {dataList.map((arr) => (
                                 <li key={arr[1]}>
@@ -73,10 +101,19 @@ export default function TradeSearch({ activeQuery, setActiveQuery, loading }) {
                                     </button>
                                 </li>
                             ))}
+                            <li className={dataList.length > 0 ? "mt-1 border-t border-border pt-1" : ""}>
+                                <button
+                                    type="button"
+                                    className="w-full rounded-xl px-3 py-2 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    onMouseDown={() => runOnlineSearch(pendingQuery)}
+                                >
+                                    Not seeing what you're looking for? Hit search to run a deep search.
+                                </button>
+                            </li>
                         </ul>
                     )}
                 </div>
-                <Button type='submit'>Search</Button>
+                <Button type='submit' disabled={resolving}>{resolving ? 'Searching...' : 'Search'}</Button>
             </div>
         </form>
     )
