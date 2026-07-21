@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import '@/styles/utilities.css';
 
 export default function SearchListItem({ object, type }) {
     /*
@@ -34,28 +33,15 @@ export default function SearchListItem({ object, type }) {
         throw new TypeError("Invalid 'type' prop in SearchListItem component.")
     };
 
-    function handleMouseOver(event) {
-        const el = event.currentTarget;
-        el.style.background = 'var(--grey-1)';
-        if (type === 'company') el.style.borderColor = 'var(--green-5)';
-        else if (type === 'user')    el.style.borderColor = 'var(--color-accent-warm)';
-        else if (type === 'news')    el.style.borderColor = 'var(--color-primary)';
-    }
-
-    function handleMouseLeave(event) {
-        const el = event.currentTarget;
-        el.style.background = 'var(--color-surface)';
-        el.style.borderColor = 'var(--color-border)';
-    }
-
     return (
-        <li className="card" onMouseDown={onClick} onMouseOver={handleMouseOver} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer', listStyle: 'none' }}>
-            <div>
-                {type === "company" && <img className="thumbnail" src='/images/searchBar/companyIcon.svg'/>}
-                {type === "user" && <img className="thumbnail" src='/images/searchBar/userIcon.svg'/>}
-                {type === "news" && <img className="thumbnail" src='/images/searchBar/newsIcon.svg'/>}
-            </div>
-            <span>{text}</span>
+        <li
+            onMouseDown={onClick}
+            className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-muted"
+        >
+            {type === "company" && <img className="size-7 shrink-0" src='/images/searchBar/companyIcon.svg' alt="" />}
+            {type === "user" && <img className="size-7 shrink-0" src='/images/searchBar/userIcon.svg' alt="" />}
+            {type === "news" && <img className="size-7 shrink-0" src='/images/searchBar/newsIcon.svg' alt="" />}
+            <span className="truncate text-sm">{text}</span>
         </li>
     );
 }

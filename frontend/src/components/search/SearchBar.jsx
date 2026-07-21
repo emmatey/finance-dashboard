@@ -83,26 +83,25 @@ export default function SearchBar() {
     }
 
     return (
-        <div className='flex'>
-            <form name='searchForm' onSubmit={handleSubmit} >
-                <div className="flex items-center gap-2">
-                    <Input
-                        id='searchBar'
-                        type='text'
-                        className="flex-1"
-                        onKeyUp={handleKeyUp}
-                        onBlur={() => setDataListVisible(false)}
-                        onFocus={() => setDataListVisible(true)}
-                        autoComplete="off"
-                    />
-                    <Button disabled={!query} type='submit'>Search</Button>
-                </div>
+        <form name='searchForm' onSubmit={handleSubmit}>
+            <div className="relative z-20 flex items-center gap-2">
+                <Input
+                    id='searchBar'
+                    type='text'
+                    className="flex-1"
+                    onKeyUp={handleKeyUp}
+                    onBlur={() => setDataListVisible(false)}
+                    onFocus={() => setDataListVisible(true)}
+                    autoComplete="off"
+                    placeholder="Search companies, users, news"
+                />
+                <Button disabled={!query} type='submit'>Search</Button>
                 {
                     dataListVisible
                     &&
                     (companyResults.length > 0 || newsResults.length > 0 || userResults.length > 0)
                     &&
-                    (<ul>
+                    (<ul className="absolute top-full left-0 z-20 mt-1 max-h-96 w-full overflow-y-auto rounded-2xl bg-popover p-1 text-sm shadow-2xl ring-1 ring-foreground/10">
                         {companyResults.length > 0 && (
                             <div>
                                 <SearchListHeader text={"Companies"} />
@@ -125,7 +124,7 @@ export default function SearchBar() {
                         )}
                     </ul>)
                 }
-            </form>
-        </div>
+            </div>
+        </form>
     );
-} 
+}

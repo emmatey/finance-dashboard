@@ -3,7 +3,7 @@ import { parseResponse } from '@/scripts/utils.js'
 import SearchListItem from './SearchListItem'
 import SearchListHeader from './SearchListHeader'
 import { Spinner } from '@/components/ui/spinner'
-import '@/styles/utilities.css'
+import { Card, CardContent } from '@/components/ui/card'
 
 export default function SearchBody({ query }) {
     const [results, setResults] = useState(null);
@@ -24,7 +24,7 @@ export default function SearchBody({ query }) {
         searchOnline(query).then(setResults);
     }, [query]);
 
-    if (!query) return <p>No query provided.</p>;
+    if (!query) return <p className="p-4 text-sm text-muted-foreground">No query provided.</p>;
     if (!results) {
         return (
             <div className="flex items-center justify-center py-8">
@@ -33,34 +33,46 @@ export default function SearchBody({ query }) {
         );
     }
 
+    const hasResults = (results.companies ?? []).length > 0
+        || (results.users ?? []).length > 0
+        || (results.news ?? []).length > 0;
+
     return (
-        <div className='card'>
-            <ul>
-                {(results.companies ?? []).length > 0 && (
-                    <div>
-                        <SearchListHeader text={"Companies"} />
-                        {results.companies.map((object) => (
-                            <SearchListItem key={object.ticker} object={object} type='company' />
-                        ))}
-                    </div>
-                )}
-                {(results.users ?? []).length > 0 && (
-                    <div>
-                        <SearchListHeader text={"Users"} />
-                        {results.users.map((object) => (
-                            <SearchListItem key={object.user_id} object={object} type='user' />
-                        ))}
-                    </div>
-                )}
-                {(results.news ?? []).length > 0 && (
-                    <div>
-                        <SearchListHeader text={"News"} />
-                        {results.news.map((object) => (
-                            <SearchListItem key={object.uuid} object={object} type='news' />
-                        ))}
-                    </div>
-                )}
-            </ul>
+        <div className="mx-auto max-w-2xl p-4">
+            <Card>
+                <CardContent>
+                    {hasResults ? (
+                        <ul>
+                            {(results.companies ?? []).length > 0 && (
+                                <div>
+                                    <SearchListHeader text={"Companies"} />
+                                    {results.companies.map((object) => (
+                                        <SearchListItem key={object.ticker} object={object} type='company' />
+                                    ))}
+                                </div>
+                            )}
+                            {(results.users ?? []).length > 0 && (
+                                <div>
+                                    <SearchListHeader text={"Users"} />
+                                    {results.users.map((object) => (
+                                        <SearchListItem key={object.user_id} object={object} type='user' />
+                                    ))}
+                                </div>
+                            )}
+                            {(results.news ?? []).length > 0 && (
+                                <div>
+                                    <SearchListHeader text={"News"} />
+                                    {results.news.map((object) => (
+                                        <SearchListItem key={object.uuid} object={object} type='news' />
+                                    ))}
+                                </div>
+                            )}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">No results for "{query}".</p>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
