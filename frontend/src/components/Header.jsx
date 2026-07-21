@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext.jsx'
 import { getRandomAccentColor } from '@/scripts/utils.js'
+import { Button } from '@/components/ui/button'
 
 import SearchBar from '@/components/search/SearchBar.jsx'
 
@@ -18,32 +19,35 @@ export default function Header() {
 
     function handleMouseLeave(event) {
         const span = event.currentTarget.querySelector('span');
-        span.style.color = '#000000';
+        span.style.color = '';
     }
 
     return (
-        <header>
-            <div className='flex'>
-                <div onClick={() => navigate('/')} onMouseOver={handleMouseOver} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }}>
-                    <span>Finance Dashboard</span>
-                </div>
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-border bg-background px-6 py-3">
+            <div
+                className="shrink-0 cursor-pointer font-heading text-lg font-semibold"
+                onClick={() => navigate('/')}
+                onMouseOver={handleMouseOver}
+                onMouseLeave={handleMouseLeave}
+            >
+                <span>Finance Dashboard</span>
+            </div>
 
+            <div className="max-w-md flex-1">
                 <SearchBar />
+            </div>
 
-                <div>
-                    {user
-                        ?
-                        (
-                            <div>
-                                <button aria-label='logout' onClick={logout}> Log Out </button>
-                                <button aria-label="User"> {user} </button>
-                            </div>
-                        )
-                        :
-                        (
-                            <button type='button' onClick={() => navigate('/auth?mode=login')}> Log In </button>
-                        )}
-                </div>
+            <div className="flex shrink-0 items-center gap-2">
+                {user
+                    ? (
+                        <>
+                            <Button variant="ghost" aria-label="User">{user}</Button>
+                            <Button variant="outline" aria-label="logout" onClick={logout}>Log Out</Button>
+                        </>
+                    )
+                    : (
+                        <Button type="button" onClick={() => navigate('/auth?mode=login')}>Log In</Button>
+                    )}
             </div>
         </header>
     )

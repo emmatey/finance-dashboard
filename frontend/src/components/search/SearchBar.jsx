@@ -85,10 +85,11 @@ export default function SearchBar() {
     return (
         <div className='flex'>
             <form name='searchForm' onSubmit={handleSubmit} >
-                <div>
+                <div className="flex items-center gap-2">
                     <Input
                         id='searchBar'
                         type='text'
+                        className="flex-1"
                         onKeyUp={handleKeyUp}
                         onBlur={() => setDataListVisible(false)}
                         onFocus={() => setDataListVisible(true)}
