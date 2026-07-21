@@ -19,7 +19,7 @@ export default function UserSummaryShard() {
 
     if (loading) {
         return (
-            <Card className="max-w-lg">
+            <Card>
                 <CardContent className="flex items-center justify-center py-8">
                     <Spinner className="size-6" />
                 </CardContent>
@@ -30,7 +30,7 @@ export default function UserSummaryShard() {
     if (!summary) return null;
 
     return (
-        <Card className="max-w-lg">
+        <Card>
             <AccountValueHeader summary={summary} history={history} hoveredPoint={hoveredPoint} activeLine={activeLine} />
             <CardContent>
                 <BalanceHistoryChart

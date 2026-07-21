@@ -4,6 +4,7 @@ import MoversCard from "./MoversCard";
 import { unsortedTestData, sortedTestData } from './testData.js'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { useShardNav } from "@/context/ShardNavContext.jsx";
 import { useMemo } from "react";
 
@@ -67,13 +68,15 @@ export default function MoversShard() {
                         }
                     </CardContent>
                     <CardFooter>
-                        <button
+                        <Button
                             type="button"
+                            variant="link"
+                            size="sm"
+                            className="h-auto p-0"
                             onClick={() => setActiveGroupId('portfolio')}
-                            className="cursor-pointer text-sm text-blue-600 underline underline-offset-4 dark:text-blue-400"
                         >
                             All positions
-                        </button>
+                        </Button>
                     </CardFooter>
                 </>
             )}
