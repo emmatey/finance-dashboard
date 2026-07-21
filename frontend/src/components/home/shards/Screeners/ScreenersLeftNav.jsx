@@ -71,7 +71,7 @@ export default function ScreenersLeftNav() {
     }
 
     return (
-        <Card className="h-full w-56 shrink-0 gap-0 py-3">
+        <Card className="h-full w-full gap-0 py-3">
             <CardContent className="flex items-center justify-between px-3">
                 <span className="text-sm font-semibold">Screeners</span>
                 <Button
