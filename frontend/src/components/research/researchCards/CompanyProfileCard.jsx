@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
 import { formatNumber } from '@/scripts/utils.js'
 
 export default function CompanyProfileCard({ profile }) {
@@ -31,7 +32,9 @@ export default function CompanyProfileCard({ profile }) {
                         </div>
                     </>
                 ) : (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
+                    <div className="flex items-center justify-center py-8">
+                        <Spinner className="size-5" />
+                    </div>
                 )}
             </CardContent>
         </Card>

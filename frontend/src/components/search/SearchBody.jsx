@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { parseResponse } from '@/scripts/utils.js'
 import SearchListItem from './SearchListItem'
 import SearchListHeader from './SearchListHeader'
+import { Spinner } from '@/components/ui/spinner'
 import '@/styles/utilities.css'
 
 export default function SearchBody({ query }) {
@@ -24,7 +25,13 @@ export default function SearchBody({ query }) {
     }, [query]);
 
     if (!query) return <p>No query provided.</p>;
-    if (!results) return <p>Loading...</p>;
+    if (!results) {
+        return (
+            <div className="flex items-center justify-center py-8">
+                <Spinner className="size-6" />
+            </div>
+        );
+    }
 
     return (
         <div className='card'>

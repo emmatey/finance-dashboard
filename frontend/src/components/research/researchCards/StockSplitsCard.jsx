@@ -1,14 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import TableSkeleton from '@/components/TableSkeleton'
 
-export default function StockSplitsCard({ stockSplits }) {
+export default function StockSplitsCard({ stockSplits, loading }) {
     return (
         <Card className="h-full">
             <CardHeader>
                 <CardTitle>Stock Splits</CardTitle>
             </CardHeader>
             <CardContent>
-                {stockSplits?.length > 0 ? (
+                {loading ? (
+                    <TableSkeleton columns={2} rows={4} />
+                ) : stockSplits?.length > 0 ? (
                     <Table>
                         <TableHeader>
                             <TableRow>

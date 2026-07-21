@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card"
+import { Spinner } from "@/components/ui/spinner"
 import useUserSummary from './useUserSummary'
 import useBalanceHistory from './BalanceHistory/useBalanceHistory'
 import AccountValueHeader from './AccountValueHeader'
@@ -16,7 +17,15 @@ export default function UserSummaryShard() {
     const error = summaryError || historyError;
     const responseCode = error ? (summaryError ? summaryResponseCode : historyResponseCode) : null;
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) {
+        return (
+            <Card className="max-w-lg">
+                <CardContent className="flex items-center justify-center py-8">
+                    <Spinner className="size-6" />
+                </CardContent>
+            </Card>
+        );
+    }
     if (error) return <p className="text-sm text-destructive">{responseCode}{error}</p>;
     if (!summary) return null;
 

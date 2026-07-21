@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
+import TableSkeleton from '@/components/TableSkeleton'
 import { formatNumber, formatCurrencyUSD } from '@/scripts/utils.js'
 
 function getTransactionType(text) {
@@ -23,14 +24,16 @@ function getTransactionTypeClass(type) {
     return ''
 }
 
-export default function InsiderTradesCard({ insiderTrades }) {
+export default function InsiderTradesCard({ insiderTrades, loading }) {
     return (
         <Card className="h-full">
             <CardHeader>
                 <CardTitle>Insider Trades</CardTitle>
             </CardHeader>
             <CardContent>
-                {insiderTrades?.length > 0 ? (
+                {loading ? (
+                    <TableSkeleton columns={7} />
+                ) : insiderTrades?.length > 0 ? (
                     <ScrollArea className="h-80">
                         <Table>
                             <TableHeader>

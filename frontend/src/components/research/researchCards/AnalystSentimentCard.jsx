@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
 import { formatCurrencyUSD } from '@/scripts/utils.js'
 
 function formatAnalystRating(rating) {
@@ -75,7 +76,9 @@ export default function AnalystSentimentCard({ financialMetrics, quote }) {
                         </div>
                     </>
                 ) : (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
+                    <div className="flex items-center justify-center py-8">
+                        <Spinner className="size-5" />
+                    </div>
                 )}
             </CardContent>
         </Card>

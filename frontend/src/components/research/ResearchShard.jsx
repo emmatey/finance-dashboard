@@ -12,6 +12,7 @@ import useResearchData from "./useResearchData"
 
 export default function ResearchShard({ ticker }) {
     const { data } = useResearchData(ticker);
+    const loading = !data;
     const {
         symbols: quote,
         company_profile: companyProfile,
@@ -43,12 +44,12 @@ export default function ResearchShard({ ticker }) {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <AnalystSentimentCard financialMetrics={financialMetrics} quote={quote} />
                 <InsiderSentimentCard financialMetrics={financialMetrics} />
-                <StockSplitsCard stockSplits={stockSplits} />
+                <StockSplitsCard stockSplits={stockSplits} loading={loading} />
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <NewsCard news={news} />
-                <InsiderTradesCard insiderTrades={insiderTrades} />
+                <InsiderTradesCard insiderTrades={insiderTrades} loading={loading} />
             </div>
         </div>
     )

@@ -19,6 +19,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination"
+import { Spinner } from "@/components/ui/spinner"
 function calculatePageMemberIndices(data, pageSize, pageNumber) {
     if (!data) return;
     const lastPage = Math.ceil(data.length / pageSize) - 1;
@@ -51,7 +52,15 @@ export default function NewsfeedShard() {
         setCurrentPage(0);
         }, [data]);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) {
+        return (
+            <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                    <Spinner className="size-6" />
+                </CardContent>
+            </Card>
+        );
+    }
     if (error) return <p>{`${error} ${responseCode}`}</p>;
     const [lowBound, highBound, lastPage] = data ? calculatePageMemberIndices(data, resultsPerPage, currentPage) : [0, 0, 0];
     let dataSubset = data ? data.slice(lowBound, highBound) : [];

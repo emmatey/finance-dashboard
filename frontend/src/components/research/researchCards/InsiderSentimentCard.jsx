@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
 import SentimentBar from './SentimentBar.jsx'
 
 function getSentimentLabel(score) {
@@ -51,7 +52,9 @@ export default function InsiderSentimentCard({ financialMetrics }) {
                         </p>
                     </>
                 ) : (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
+                    <div className="flex items-center justify-center py-8">
+                        <Spinner className="size-5" />
+                    </div>
                 )}
             </CardContent>
         </Card>
