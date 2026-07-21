@@ -444,7 +444,7 @@ class StockScreenerManager(CommonQueries):
             ON s.id = fm.symbol_id
             WHERE unixepoch(s.last_updated) > ?
             """
-            age_threshold = int(time.time()) - int(60 * 30)
+            age_threshold = int(time.time()) - TableLifetimes.YQ_SCREENER_UPDATE_FREQUENCY.value
             rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
 
             # Calculate relative volume and separate by price direction
@@ -546,7 +546,7 @@ class StockScreenerManager(CommonQueries):
             ON s.id = fm.symbol_id
             WHERE unixepoch(s.last_updated) > ?
             """
-            age_threshold = int(time.time()) - int(60 * 30)
+            age_threshold = int(time.time()) - TableLifetimes.YQ_SCREENER_UPDATE_FREQUENCY.value
             rows = self.select_query(query=sql, placeholders=tuple([age_threshold]))
 
             compressed: list[dict] = []
@@ -682,3 +682,26 @@ class StockScreenerManager(CommonQueries):
         except Exception:
             logger.exception("insider_trading_surge_screeners failed")
             return False
+
+    def refresh_custom_screeners(self) -> bool:
+        """
+        Recomputes every derived/custom screener in one pass.
+
+        Called both as a side effect of Daemon.update_screener_subset finding
+        the whole catalog fresh (the moment the full universe's data is as
+        complete as it'll be), and on-demand when a user hits Refresh on the
+        screeners page (see /api/screeners/refresh_custom).
+
+        Deliberately not age-tracked via set_screener_ages/screener_fresh_report -
+        see CUSTOM_SCREENERS docs - so there's no separate freshness gate to
+        keep in sync with the callers above.
+
+        Returns:
+            True if every derived screener computed successfully, False if any failed.
+        """
+        results = [
+            self.volume_spike_screeners(),
+            self.volume_compression_screener(),
+            self.insider_trading_surge_screeners(),
+        ]
+        return all(results)

@@ -2,8 +2,9 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
+import helpers
 from APIDataIO import APIDataIO
-from StockScreenerManager import SCREENER_CATEGORIES
+from StockScreenerManager import SCREENER_CATEGORIES, StockScreenerManager
 
 logger = logging.getLogger(__name__)
 
@@ -122,3 +123,47 @@ def screeners_fetch():
             grouped[screener_name].append(row)
 
     return jsonify({"success": True, "data": grouped}), 200
+
+
+@screeners_bp.route("/screeners/refresh_custom", methods=["POST"])
+@helpers.login_required
+def refresh_custom_screeners():
+    """
+    Recomputes the derived/custom screeners (volume spikes, volume
+    compression, insider trading surges) from whatever's currently in
+    financial_metrics/insider_trades right now.
+
+    Normally these are recomputed as a side effect of the daemon's screener
+    sweep finishing a full pass (see Daemon.update_screener_subset); this
+    lets the frontend's Refresh button trigger the same recompute on demand.
+
+    Returns:
+        200 - {"success": True}
+        500 - one or more of the derived screeners failed to compute
+    """
+    try:
+        ok = StockScreenerManager().refresh_custom_screeners()
+    except Exception as e:
+        logger.exception(e)
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Server error refreshing custom screeners. (/screeners/refresh_custom)",
+                }
+            ),
+            500,
+        )
+
+    if not ok:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "One or more custom screeners failed to refresh. See finance.log for details.",
+                }
+            ),
+            500,
+        )
+
+    return jsonify({"success": True}), 200

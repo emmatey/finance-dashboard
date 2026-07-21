@@ -1,15 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { useScreenersSelection } from "@/context/ScreenersSelectionContext"
 import useScreenerData from "./useScreenerData";
+import useAvailableScreeners from "./useAvailableScreeners";
 import TableSkeleton from "@/components/TableSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ScreenersTable from "./ScreenersTable";
 import { useState, useEffect } from "react";
 import { RotateCwIcon, XIcon } from "lucide-react";
+import { parseResponse } from "@/scripts/utils";
+import { cn } from "@/lib/utils";
 
 export default function ScreenersShard() {
     const { screenersSelected, setScreenersSelected } = useScreenersSelection();
     const [screenerCache, setScreenerCache] = useState({});
+    const [refreshing, setRefreshing] = useState(false);
+    const { screenersAvailable } = useAvailableScreeners();
     let toSearch = screenersSelected.filter((screener) => (!Object.keys(screenerCache).includes(screener)));
     const { dataLoading, errorMsg, screenerData } = useScreenerData(toSearch);
 
@@ -21,8 +26,25 @@ export default function ScreenersShard() {
         setScreenerCache(cache);
     }, [screenerData]);
 
-    function refreshScreeners() {
-        setScreenerCache({});
+    async function refreshScreeners() {
+        const customScreenerNames = screenersAvailable?.custom ?? [];
+        const hasCustomSelected = screenersSelected.some((s) => customScreenerNames.includes(s));
+
+        if (!hasCustomSelected) {
+            setScreenerCache({});
+            return;
+        }
+
+        setRefreshing(true);
+        try {
+            const res = await fetch('/api/screeners/refresh_custom', { method: 'POST' });
+            await parseResponse(res);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setRefreshing(false);
+            setScreenerCache({});
+        }
     }
 
     function unSelectAllScreeners() {
@@ -36,8 +58,8 @@ export default function ScreenersShard() {
     return (
         <>
             <div className="mb-3 flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={refreshScreeners}>
-                    <RotateCwIcon className="size-3.5" />
+                <Button variant="outline" size="sm" onClick={refreshScreeners} disabled={refreshing}>
+                    <RotateCwIcon className={cn("size-3.5", refreshing && "animate-spin")} />
                     Refresh
                 </Button>
                 <Button

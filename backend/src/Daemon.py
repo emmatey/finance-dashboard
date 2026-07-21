@@ -6,7 +6,7 @@ from CommonQueries import CommonQueries
 from enum import Enum
 from logging_utils import fmt_data
 from MarketOverviewCoordinator import (REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP)
-from StockScreenerManager import StockScreenerManager
+from StockScreenerManager import StockScreenerManager, TableLifetimes
 from YahooQueryService import YahooQueryService
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,6 @@ class UpdateFrequency(Enum):
     """
 
     last_price_update = 5 * 60
-    last_custom_screeners_update = 60 * 60
     last_snapshot_update = 24 * 60 * 60
     last_screeners_up_to_date = 5 * 60
 
@@ -44,17 +43,10 @@ class Daemon(CommonQueries):
         success/failure itself.
         """
         fresh_report = self.fresh_report()
-        ssm = StockScreenerManager()
 
         # {UpdateFrequency member name: [function(), ...]}
         action_map = {
             'last_price_update': [self.price_updater],
-            'last_custom_screeners_update': [
-                ssm.volume_spike_screeners,
-                ssm.volume_compression_screener,
-                ssm.insider_trading_surge_screeners,
-                self.mark_custom_screeners_updated,
-            ],
             'last_snapshot_update': [self.balance_snapshot_all_users],
             'last_screeners_up_to_date': [self.update_screener_subset],
         }
@@ -115,17 +107,26 @@ class Daemon(CommonQueries):
         a pass finds nothing stale it stamps that column, so run() skips calling
         this again until it's due - otherwise every request would repeat a full
         catalog scan that finds nothing to do.
+
+        That same "nothing stale left" moment is also the one point where the
+        whole symbol universe is guaranteed as fresh as it'll get, so the
+        derived/custom screeners (volume spikes, volume compression, insider
+        surges) are recomputed right there too - see refresh_custom_screeners.
+        Previously these ran on their own hourly gate, independent of (and, per
+        dict/enum ordering, usually before) this sweep, so they were computing
+        against whatever thin, arbitrary slice of the catalog happened to have
+        been touched recently rather than a fresh pass over everything.
         """
 
         sql = f"""
-        SELECT 
+        SELECT
             screener_name,
             (SELECT COUNT(*) FROM screener_ages WHERE unixepoch(last_updated) < ?) as stale_count
         FROM screener_ages
         WHERE unixepoch(last_updated) < ?
         LIMIT {limit}
         """
-        age_threshold = int(time.time()) - UpdateFrequency.last_custom_screeners_update.value
+        age_threshold = int(time.time()) - TableLifetimes.YQ_SCREENER_UPDATE_FREQUENCY.value
         rows = self.select_query(query=sql, placeholders=tuple([age_threshold, age_threshold]))
         screener_names = [row["screener_name"] for row in rows]
         if screener_names:
@@ -137,25 +138,12 @@ class Daemon(CommonQueries):
             # scan; screener_data_update_orchestrator will no-op on the fresh ones.
             logger.info("No stale rows in screener_ages subset query, falling back to full catalog scan.")
             StockScreenerManager().screener_data_update_orchestrator()
+            StockScreenerManager().refresh_custom_screeners()
             self.modify_query(
                 "UPDATE global_events SET last_screeners_up_to_date = CURRENT_TIMESTAMP WHERE id = 1",
                 (),
             )
             logger.info("Marked last_screeners_up_to_date complete.")
-
-    def mark_custom_screeners_updated(self) -> None:
-        """
-        Records that the custom screener refresh (volume_spike_screeners) ran.
-
-        volume_spike_screeners lives on StockScreenerManager, not Daemon, so it
-        has no access to global_events bookkeeping - this is appended after it
-        in run()'s action_map instead.
-        """
-        self.modify_query(
-            "UPDATE global_events SET last_custom_screeners_update = CURRENT_TIMESTAMP WHERE id = 1",
-            (),
-        )
-        logger.info("Marked last_custom_screeners_update complete.")
 
     def balance_snapshot_all_users(self) -> bool:
         """
