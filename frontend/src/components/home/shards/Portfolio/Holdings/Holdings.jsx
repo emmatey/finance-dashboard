@@ -14,8 +14,8 @@ import useHoldings from "./useHoldings";
 import TableSkeleton from "../../../../TableSkeleton";
 
 
-export default function Holdings() {
-    const { loading, data, error } = useHoldings();
+export default function Holdings({ username } = {}) {
+    const { loading, data, error } = useHoldings(username);
 
     const portfolioValue = useMemo(
         () => (data ?? []).reduce((acc, cur) => acc + cur.current_value, 0),
