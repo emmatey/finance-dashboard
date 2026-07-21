@@ -36,9 +36,8 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
             return false
         };
     }
-    // BUG FORGOT TO HANDLE THE DOLLARS STATE THIS ONLY HANDLES SHARES BUT I HAVE TO STOP
-    function checkCanSell() {
-        if (Number(qtyOwned) >= Number(txQty)) {
+    function checkCanSell(txShareQty) {
+        if (Number(qtyOwned) >= Number(txShareQty)) {
             return true;
         } else {
             return false
@@ -57,7 +56,7 @@ export default function TradeOrderForm({ tickerInfoJson, setPendingOrder, viewCo
         const [txDollarQty, txShareQty] = adjustPendingOrder(txUnit, Number(txQty), currentPrice)
 
         if (txType === 'sell') {
-            if (!checkCanSell()) {
+            if (!checkCanSell(txShareQty)) {
                 toast.error("Unable to make transaction! You own less shares than you're attempting to sell!");
                 return;
             };
