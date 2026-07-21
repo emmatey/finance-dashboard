@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
     Table,
     TableBody,
@@ -36,7 +37,11 @@ export default function ScoreboardTable({ data }) {
                     {data.map((row) => (
                         <TableRow key={row.username}>
                             <TableCell>{row.rank}</TableCell>
-                            <TableCell>{row.username}</TableCell>
+                            <TableCell>
+                                <Link to={`/user/${row.username}`} className="hover:underline">
+                                    {row.username}
+                                </Link>
+                            </TableCell>
                             <TableCell>{formatCurrencyUSD(row.portfolio_value)}</TableCell>
                             <TableCell>{formatCurrencyUSD(row.cash_balance)}</TableCell>
                             <TableCell>{formatCurrencyUSD(row.grand_total)}</TableCell>
