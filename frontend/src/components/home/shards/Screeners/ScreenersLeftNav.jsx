@@ -38,7 +38,7 @@ export default function ScreenersLeftNav() {
                 {
                     Object.entries(screenersAvailable).map(([key, value]) => {
                         return (
-                            <Collapsible key={key} defaultOpen>
+                            <Collapsible key={key}>
                                 <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
                                     <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                                     <FolderIcon className="size-3.5 shrink-0 text-muted-foreground" />
