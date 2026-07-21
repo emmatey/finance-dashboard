@@ -7,6 +7,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { formatCurrencyUSD } from "@/scripts/utils";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -55,7 +56,15 @@ export default function TransactionHistory() {
                                             {String(tx.transaction_type).toLocaleUpperCase()}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>{tx.ticker}</TableCell>
+                                    <TableCell>
+                                        {tx.ticker !== 'CASH' ? (
+                                            <Link to={`/research?ticker=${encodeURIComponent(tx.ticker)}`} className="hover:underline">
+                                                {tx.ticker}
+                                            </Link>
+                                        ) : (
+                                            tx.ticker
+                                        )}
+                                    </TableCell>
                                     <TableCell>{Math.abs(tx.qty)}</TableCell>
                                     <TableCell>{formatCurrencyUSD(tx.unit_price)}</TableCell>
                                     <TableCell>{tx.datetime}</TableCell>

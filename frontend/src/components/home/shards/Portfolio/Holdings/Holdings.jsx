@@ -7,6 +7,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { formatPercent, formatCurrencyUSD, getMarketStateBadge } from "@/scripts/utils";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,9 +55,16 @@ export default function Holdings({ username } = {}) {
                                 return (
                                 <TableRow key={row.symbol}>
                                     <TableCell>
-                                        <h3>{row.symbol} {marketStateBadge && (
-                                            <Badge variant={marketStateBadge.variant}>{marketStateBadge.label}</Badge>
-                                        )}</h3> <small>{row.name}</small>
+                                        <h3>
+                                            <Link to={`/research?ticker=${encodeURIComponent(row.symbol)}`} className="hover:underline">
+                                                {row.symbol}
+                                            </Link>
+                                            {' '}
+                                            {marketStateBadge && (
+                                                <Badge variant={marketStateBadge.variant}>{marketStateBadge.label}</Badge>
+                                            )}
+                                        </h3>
+                                        <small>{row.name}</small>
                                     </TableCell>
                                     <TableCell>{formatCurrencyUSD(row.unit_price)}</TableCell>
                                     <TableCell>

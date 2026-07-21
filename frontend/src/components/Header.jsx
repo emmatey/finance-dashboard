@@ -41,7 +41,7 @@ export default function Header() {
                 {user
                     ? (
                         <>
-                            <Button variant="ghost" aria-label="User">{user}</Button>
+                            <Button variant="ghost" aria-label="User" onClick={() => navigate(`/user/${user}`)}>{user}</Button>
                             <Button variant="outline" aria-label="logout" onClick={logout}>Log Out</Button>
                         </>
                     )
