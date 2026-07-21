@@ -1,6 +1,5 @@
 import Header from '@/components/Header.jsx'
 import UserShard from '@/components/user/UserShard'
-import Footer from '@/components/Footer.jsx'
 import { useParams } from 'react-router-dom'
 
 
@@ -10,7 +9,6 @@ export default function User() {
         <>
             <Header />
             <UserShard username={username}/>
-            <Footer />
         </>
     )
 }

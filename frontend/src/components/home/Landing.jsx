@@ -1,5 +1,4 @@
 import Header from '@/components/Header.jsx'
-import Footer from '@/components/Footer.jsx'
 
 export default function Landing() {
     return (
@@ -11,7 +10,6 @@ export default function Landing() {
                 <small>This is landing.jsx</small>
             </div>
         </div>
-        <Footer />
         </>
     )
 }
