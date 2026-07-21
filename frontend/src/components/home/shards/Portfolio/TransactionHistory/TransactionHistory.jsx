@@ -25,7 +25,7 @@ export default function TransactionHistory() {
     );
 
     return (
-        <div>
+        <div className="flex h-full min-h-0 flex-col">
             {loading && (
                 <TableSkeleton columns={6} />
             )}
@@ -35,7 +35,7 @@ export default function TransactionHistory() {
             )}
 
             {!loading && !error && (
-                <ScrollArea className="h-80">
+                <ScrollArea className="min-h-0 flex-1">
                     <Table>
                         <TableHeader>
                             <TableRow>
