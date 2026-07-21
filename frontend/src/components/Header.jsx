@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext.jsx'
+import { useShardNav } from '@/context/ShardNavContext.jsx'
 import { getRandomAccentColor } from '@/scripts/utils.js'
 import { Button } from '@/components/ui/button'
 
@@ -11,6 +12,13 @@ import '@/styles/utilities.css'
 export default function Header() {
     const navigate = useNavigate()
     const { user, logout } = useAuth();
+    // null on pages rendered outside HomeBody's ShardNavProvider (Research, User, Search, ...)
+    const shardNav = useShardNav();
+
+    function goHome() {
+        shardNav?.setActiveGroupId('home');
+        navigate('/');
+    }
 
     function handleMouseOver(event) {
         const span = event.currentTarget.querySelector('span');
@@ -26,7 +34,7 @@ export default function Header() {
         <header className="sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-border bg-background px-6 py-3">
             <div
                 className="shrink-0 cursor-pointer font-heading text-lg font-semibold"
-                onClick={() => navigate('/')}
+                onClick={goHome}
                 onMouseOver={handleMouseOver}
                 onMouseLeave={handleMouseLeave}
             >
