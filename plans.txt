@@ -235,3 +235,31 @@ I'm thinking I should examine the way the screener data is currently captured an
                 a. A central register of screener data. Organized as a key value pairs map. This is the shape it comes from the db in anyways.
                 b. A method to expose refreshing all the data
                 c. A method to add to the central register, update-inserting.
+
+7/22:
+    Today's: Goal:
+        Implement concurrency via threadding to allow "daemon" to run at the same time that requests are answered.
+        Currently the app calls Daemon.run() at the teardown of every request context. This simulates having a background
+        process crudely, but has the issue of causing routine requests for things like navigating to a new page, which should
+        be quick, to hang, even on the local develpment server.
+        
+        For the duration of devlopment up to this point I've been operating under the assumption that concurrency was 
+        off the table because free hositng generally only allows one process. But of course, within one process we can
+        have many threads, and it's very normal to use multi-threadding to handle i/o tasks like fetching data from YQ, which
+        is the common thing that causes the app to hang currently.
+
+        The concerns with this are that I designed the entire application around the assumption that the data which the daemon handles
+        will always be up to date when it is called upon, this is because prior to now, everything has been linear and syncronous.
+
+        My current instinct is that the main sticking point will be the price data, but before I begin I will read further into the
+        concurrent futures library, and I will remind myself exactally what data is currently being updated by this Daemon.py class.
+
+        Goals for concurrent futures docs reading:
+            - Learn more about the locking mechanism and find out how to handle the situaiton where user B makes a request 
+            because the 'freshness' table said so, even though user A has already made the same request but just hasn't yet 
+            updated the table due to the work being in progres.
+            - Learn more about the implemantion details and the limitations of the library in general.
+            - Find at least one alternative library that can do the same thing.
+
+        Data that Daemon.py currently updates:
+            -
