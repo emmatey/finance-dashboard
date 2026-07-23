@@ -16,7 +16,6 @@ trade_bp = Blueprint("trade", __name__, url_prefix="/api")
 
 
 @trade_bp.route("/trade", methods=["GET", "POST"])
-@helpers.login_required
 def trade():
     """
     Trade endpoint. Handles both preview (GET) and execution (POST) of buy/sell transactions.

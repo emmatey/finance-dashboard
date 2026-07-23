@@ -2,7 +2,6 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
-import helpers
 from APIDataIO import APIDataIO
 from StockScreenerManager import SCREENER_CATEGORIES, StockScreenerManager
 
@@ -126,7 +125,6 @@ def screeners_fetch():
 
 
 @screeners_bp.route("/screeners/refresh_custom", methods=["POST"])
-@helpers.login_required
 def refresh_custom_screeners():
     """
     Recomputes the derived/custom screeners (volume spikes, volume

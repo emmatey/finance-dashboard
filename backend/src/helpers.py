@@ -2,7 +2,6 @@ import flask
 import logging
 from CommonQueries import CommonQueries
 from flask.sessions import SessionMixin
-from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -15,24 +14,6 @@ class NoUserProvidedError(Exception):
 class TickerNotFoundError(Exception):
     """Raised when a ticker symbol cannot be found on Yahoo Finance."""
     pass
-
-def login_required(f):
-    """
-    Decorate routes to require login.
-
-    https://flask.palletsprojects.com/en/latest/patterns/viewdecorators/
-    """
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if flask.session.get("user_id") is None:
-            return flask.jsonify({
-                "success": False,
-                "message": "Login required."
-            }), 401
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 def get_user_id_from_query_param_or_session(r: flask.Request, s: SessionMixin, cc: CommonQueries) -> int:
     """

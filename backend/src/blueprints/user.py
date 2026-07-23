@@ -137,7 +137,6 @@ def portfolio_view():
         return jsonify({"success": True, "data": portfolio_view}), 200
 
 @user_bp.route("/transactions", methods=["GET"])
-@helpers.login_required
 def transaction_history():
     """
     Gets the transaction history for the provided user.
@@ -215,7 +214,6 @@ def transaction_history():
     return jsonify({"success": True, "data": formatted_response}), 200
 
 @user_bp.route("/balance_snapshots", methods=["GET"])
-@helpers.login_required
 def balance_snapshots():
     """
     Returns the 'balance snapshot' history for the provided user.
