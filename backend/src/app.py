@@ -109,13 +109,6 @@ def handle_unexpected_error(e):
 
 @app.teardown_appcontext
 def teardown(exception):
-    if not app.config.get("TESTING", False):
-        try:
-            dae = Daemon()
-            dae.run()
-        except Exception:
-            logger.exception("Daemon.run() failed during teardown")
-
     db = g.pop('db', None)
     if db is not None:
         db.close()
