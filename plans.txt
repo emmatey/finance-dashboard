@@ -260,6 +260,27 @@ I'm thinking I should examine the way the screener data is currently captured an
             updated the table due to the work being in progres.
             - Learn more about the implemantion details and the limitations of the library in general.
             - Find at least one alternative library that can do the same thing.
+                - On alternatives i read about threadding library but it seems concurrent futures is just an
+                easier to use interface for that, so I can skip it. As for asyncIO I feel like since some of the daemon tasks
+                also require calcuation I'll follow this nice sounding sentence I found on the internet.
+                "threading is for working in parallel, and async is for waiting in parallel" and choose to not use asyncIO
 
         Data that Daemon.py currently updates:
-            -
+            - Price updates (io)
+            - global snapshots (io + calculation)
+            - update screeners (io)
+        
+        I initially tried to just make a process pool executor instance every request but found 
+        i don't need to do this. It seems currently that this isn't causing the daemon to run investigating why.
+
+        according to an llm the issue with my current approach is that if I use the teardown to trigger a long running task than it will be 
+        cut off when the context is destroyed. and if the context is preserved by force this will also just hang the app. It suggested i tried
+        some sort of task scheduler.
+
+        hmm maybe i should look at the simple threading library also. I just don't know of any way i could trigger my Daemon.py class to run other than the 
+        teardown currently but obviously i need another option.
+
+        I'm going to try just running an infinite loop outside any routes, i forgot you can do stuff like this globally in flask. I will allocate one thread to
+        run daemon.run every 30 seconds.
+
+        Okay im taking a break. i think im going to use "https://docs.python.org/3/library/threading.html#threading.Thread.daemon" when i come back
