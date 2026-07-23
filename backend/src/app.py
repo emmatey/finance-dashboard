@@ -11,6 +11,7 @@ from werkzeug.exceptions import HTTPException
 # Local Application Modules
 from Daemon import Daemon
 from blueprints.auth import auth_bp
+from blueprints.internal import internal_bp
 from blueprints.market_overview import market_overview_bp
 from blueprints.research import research_bp
 from blueprints.scoreboard import scoreboard_bp
@@ -64,6 +65,7 @@ app.config["DATABASE"] = "finance.db"
 
 # Register resource blueprints
 app.register_blueprint(auth_bp)
+app.register_blueprint(internal_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(trade_bp)
 app.register_blueprint(research_bp)
@@ -71,6 +73,7 @@ app.register_blueprint(screeners_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(market_overview_bp)
 app.register_blueprint(scoreboard_bp)
+
 
 
 @app.before_request

@@ -38,6 +38,8 @@ res = s.post(
 )
 print(res.json())
 
+#res = s.get(f"{BASE_URL}/api/screeners/fetch?category=institutional_activity")
+#print(res.json())
 
-res = s.get(f"{BASE_URL}/api/screeners/fetch?category=institutional_activity")
+res = s.get(f"{BASE_URL}/")
 print(res.json())

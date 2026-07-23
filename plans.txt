@@ -289,3 +289,7 @@ I'm thinking I should examine the way the screener data is currently captured an
     Today I will attempt to use the threadding library with a "daemon" thread to run my Daemon.py on a loop in app.py. I'm doing this instead of
     threadpool manager because it should be less overhead, and I don't need to worry about cleaning up the threadpooler on shutdown. there
     may however be downsides I'm not aware of, but I guess I'll see when i get there.
+
+    I've reminded myself that my dbmanager class already stores a db connection within the g object of an app context. These are typically scoped per 
+    request, but can be made manually. The only question I have now is that I don't know where to establish this loop and context.
+    
