@@ -20,6 +20,7 @@ class UpdateFrequency(Enum):
     last_price_update = 5 * 60
     last_snapshot_update = 24 * 60 * 60
     last_screeners_up_to_date = 5 * 60
+    last_symbol_cleanup = 24 * 60 * 60
 
 class Daemon(CommonQueries):
     """
@@ -49,6 +50,7 @@ class Daemon(CommonQueries):
             'last_price_update': [self.price_updater],
             'last_snapshot_update': [self.balance_snapshot_all_users],
             'last_screeners_up_to_date': [self.update_screener_subset],
+            'last_symbol_cleanup': [self.clean_unused_symbols],
         }
 
         metadata = {
@@ -310,4 +312,45 @@ class Daemon(CommonQueries):
 
         except Exception:
             logger.exception("price_updater failed")
+            return False
+
+    def clean_unused_symbols(self) -> bool:
+        """
+        Deletes symbols nobody has ever transacted and that aren't a member of
+        any currently-tracked screener.
+
+        symbols.id is referenced by financial_metrics, company_profile,
+        historical_prices, insider_trades, stock_splits, screener_results,
+        fresh_report, and news_symbols, all with ON DELETE CASCADE, so
+        deleting the symbol row cleans those up automatically.
+
+        transactions.symbol_id is deliberately NOT cascading - a symbol
+        anyone has ever bought or sold can never be deleted this way. The
+        WHERE NOT IN clause already excludes those, and the FK constraint
+        is the backstop if that filter is ever wrong.
+
+        Returns:
+            True on success, False on failure.
+        """
+        try:
+            sql = """
+            DELETE FROM symbols
+            WHERE id NOT IN (
+                SELECT DISTINCT symbol_id FROM transactions WHERE symbol_id IS NOT NULL
+            )
+            AND id NOT IN (
+                SELECT DISTINCT symbol_id FROM screener_results
+            )
+            """
+            deleted = self.modify_query(sql, ())
+
+            self.modify_query(
+                "UPDATE global_events SET last_symbol_cleanup = CURRENT_TIMESTAMP WHERE id = 1",
+                (),
+            )
+            logger.info(f"Symbol cleanup removed {deleted} unused symbols.")
+            return True
+
+        except Exception:
+            logger.exception("clean_unused_symbols failed")
             return False

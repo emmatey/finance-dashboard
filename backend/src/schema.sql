@@ -23,7 +23,7 @@ CREATE TABLE 'fresh_report' (
     table_name TEXT NOT NULL,
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (symbol_id, table_name),
-    FOREIGN KEY (symbol_id) REFERENCES symbols(id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols(id) ON DELETE CASCADE
 );
 
 CREATE TABLE 'global_events' (
@@ -32,6 +32,7 @@ CREATE TABLE 'global_events' (
     last_snapshot_update DATETIME,
     last_custom_screeners_update DATETIME,
     last_screeners_up_to_date DATETIME,
+    last_symbol_cleanup DATETIME,
     yq_api_status TEXT DEFAULT 'UP',
     yq_api_down_at DATETIME,
     yq_api_retries INTEGER,
@@ -86,7 +87,7 @@ CREATE TABLE 'stock_splits' (
     split_ratio NUMERIC NOT NULL,
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (symbol_id) REFERENCES symbols (id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols (id) ON DELETE CASCADE
 );
     CREATE UNIQUE INDEX idx_stock_splits_symbol ON stock_splits (symbol_id, split_date);
 
@@ -98,7 +99,7 @@ CREATE TABLE 'historical_prices' (
     trade_volume INTEGER,
     last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (symbol_id) REFERENCES symbols (id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols (id) ON DELETE CASCADE
 );
     CREATE UNIQUE INDEX 'price_history_name_timestamp_idx' ON historical_prices (symbol_id, price_timestamp);
 
@@ -132,9 +133,9 @@ CREATE TABLE 'financial_metrics' (
     debt_to_equity NUMERIC,
     todays_volume NUMERIC,
     ten_day_avg_volume NUMERIC,
-    three_month_avg_volume NUMERIC,    
+    three_month_avg_volume NUMERIC,
 
-    FOREIGN KEY (symbol_id) REFERENCES symbols (id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols (id) ON DELETE CASCADE
 );
     CREATE UNIQUE INDEX idx_metrics_symbol ON financial_metrics (symbol_id);
 
@@ -158,7 +159,7 @@ CREATE TABLE 'news_symbols' (
 
     PRIMARY KEY (news_id, symbol_id),
     FOREIGN KEY (news_id) REFERENCES news (id) ON DELETE CASCADE,
-    FOREIGN KEY (symbol_id) REFERENCES symbols (id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols (id) ON DELETE CASCADE
 );
 
 CREATE TABLE 'company_profile' (
@@ -171,7 +172,7 @@ CREATE TABLE 'company_profile' (
     website TEXT,
     employee_count INTEGER,
 
-    FOREIGN KEY (symbol_id) REFERENCES symbols (id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols (id) ON DELETE CASCADE
 );
     CREATE UNIQUE INDEX idx_profile_symbol ON company_profile (symbol_id);
 
@@ -180,7 +181,7 @@ CREATE TABLE screener_results (
     screener_name TEXT NOT NULL,  -- 'day_gainers', 'most_active', etc.
     symbol_id INTEGER NOT NULL,
     rank INTEGER,  -- position in screener (1 = top)
-    FOREIGN KEY (symbol_id) REFERENCES symbols(id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols(id) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX idx_screener_symbol
 ON screener_results(screener_name, symbol_id);
@@ -201,7 +202,7 @@ CREATE TABLE 'insider_trades' (
     filer_name TEXT,
     filer_relation TEXT,
 
-    FOREIGN KEY (symbol_id) REFERENCES symbols (id)
+    FOREIGN KEY (symbol_id) REFERENCES symbols (id) ON DELETE CASCADE
 );
     CREATE UNIQUE INDEX idx_insider_trades_symbol_date_filer
     ON insider_trades (symbol_id, transaction_date, filer_name, shares);

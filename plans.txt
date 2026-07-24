@@ -292,4 +292,12 @@ I'm thinking I should examine the way the screener data is currently captured an
 
     I've reminded myself that my dbmanager class already stores a db connection within the g object of an app context. These are typically scoped per 
     request, but can be made manually. The only question I have now is that I don't know where to establish this loop and context.
-    
+
+    I've decided to pivot entirely. Instead of running a thread on a loop within app.py, im deciding instead to create a route which exists to awaken the daemon and 
+    run its tasks. This is advantageous because i can have parallel instnances of the web server serving requests without parallel loops and threads which isn't what I want
+    insted I will just hit this endpoint every x seconds from script that runs somewhere else.
+
+    Today I also removed my login required decorator from the helpers.py script. I did this because it didn't check if any given user was logged in, only if any user was logged 
+    in. This made it pretty pointles for security, and I wasn't sure of the benifit anyways. I believe this was a remnant of the cs50 days where this decorator was used as a 
+    demonstration. Now that there's a class of internal routes a proper administration system is probably in order with different user classes. If I ever do this, I'll reintroduce 
+    the login restriction for the routes then, but for now I just removed them.

@@ -33,4 +33,4 @@ def run_daemon():
         return jsonify({
             "success": False,
             "message": "Daemon failed, see finance.log for detials."
-        })
+        }), 500
