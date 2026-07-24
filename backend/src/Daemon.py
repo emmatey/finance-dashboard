@@ -26,10 +26,9 @@ class Daemon(CommonQueries):
     """
     Background task runner for periodic price and balance snapshot updates.
 
-    Runs inside Flask's @app.after_request teardown hook rather than as a
-    separate background process. This is intentional: free-tier web hosts don't
-    support long-running background processes, so teardown is used to trigger
-    updates without requiring one.
+    Instantiated and run inside the POST /internal/daemon route (see
+    blueprints/internal.py), one call per request. An external timer-based
+    script (poll_daemon.py) calls that endpoint on an interval to drive it.
 
     Uses the global_events table to check whether updates are due before running.
     """
