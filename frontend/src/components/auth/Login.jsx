@@ -2,6 +2,10 @@ import { useState } from "react"
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../../context/AuthContext";
 import { parseResponse } from "../../scripts/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 async function logIn(username, password) {
     const safeUsername = String(username).trim();
@@ -57,23 +61,50 @@ export default function Login({ onSetMode }) {
     }
 
     return (
-        <>
-        <div>
-            <form onSubmit={(e)=>{e.preventDefault(); handleLogIn()}}>
-                <h2>Log in!</h2>
-                <label htmlFor="username"> Username </label>
-                <input type="text" id="username" onChange={(e) => {setUsername(e.target.value); setWrong(false); setServerError(false);}}/>
-                {/* onSetMode is used to "navigate" see /pages/auth.jsx*/}
-                {wrong ? <small>Unknown username or password. <button type="button" onClick={() => onSetMode('change')}>Reset password?</button></small> : null}
+        <div className="flex justify-center px-6 py-16">
+            <Card className="w-full max-w-sm">
+                <CardHeader>
+                    <CardTitle>Log in</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form className="flex flex-col gap-4" onSubmit={(e)=>{e.preventDefault(); handleLogIn()}}>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="username">Username</Label>
+                            <Input
+                                type="text"
+                                id="username"
+                                onChange={(e) => {setUsername(e.target.value); setWrong(false); setServerError(false);}}
+                            />
+                        </div>
 
-                <label htmlFor="password"> Password </label>
-                <input type="password" id="password" onChange={(e) => {setPassword(e.target.value); setWrong(false); setServerError(false);}}/>
-                {wrong ? <small><button type="button" onClick={() => onSetMode('register')}>Register</button> for a new account?</small> : null}
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                type="password"
+                                id="password"
+                                onChange={(e) => {setPassword(e.target.value); setWrong(false); setServerError(false);}}
+                            />
+                        </div>
 
-                {serverError ? <small>Unable to reach server. Please try again.</small> : null}
-                <button type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Log In'}</button>
-            </form>
+                        {/* onSetMode is used to "navigate" see /pages/auth.jsx*/}
+                        {wrong ? (
+                            <p className="text-sm text-destructive">
+                                Unknown username or password.{' '}
+                                <button type="button" className="underline underline-offset-4" onClick={() => onSetMode('change')}>Reset password?</button>
+                                {' '}or{' '}
+                                <button type="button" className="underline underline-offset-4" onClick={() => onSetMode('register')}>register</button>
+                                {' '}for a new account?
+                            </p>
+                        ) : null}
+
+                        {serverError ? (
+                            <p className="text-sm text-destructive">Unable to reach server. Please try again.</p>
+                        ) : null}
+
+                        <Button type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Log In'}</Button>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
-        </>
     )
 }

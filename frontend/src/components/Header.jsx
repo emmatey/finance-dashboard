@@ -30,6 +30,11 @@ export default function Header() {
         span.style.color = '';
     }
 
+    function handleLogout() {
+        logout();
+        navigate('/auth?mode=login');
+    }
+
     return (
         <header className="sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-border bg-background px-6 py-3">
             <div
@@ -50,7 +55,7 @@ export default function Header() {
                     ? (
                         <>
                             <Button variant="ghost" aria-label="User" onClick={() => navigate(`/user/${user}`)}>{user}</Button>
-                            <Button variant="outline" aria-label="logout" onClick={logout}>Log Out</Button>
+                            <Button variant="outline" aria-label="logout" onClick={handleLogout}>Log Out</Button>
                         </>
                     )
                     : (
