@@ -78,7 +78,17 @@ export default function Login({ onSetMode }) {
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="password">Password</Label>
+                                {/* onSetMode is used to "navigate" see /pages/auth.jsx*/}
+                                <button
+                                    type="button"
+                                    className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                                    onClick={() => onSetMode('change')}
+                                >
+                                    Forgot password?
+                                </button>
+                            </div>
                             <Input
                                 type="password"
                                 id="password"
@@ -86,13 +96,10 @@ export default function Login({ onSetMode }) {
                             />
                         </div>
 
-                        {/* onSetMode is used to "navigate" see /pages/auth.jsx*/}
                         {wrong ? (
                             <p className="text-sm text-destructive">
                                 Unknown username or password.{' '}
-                                <button type="button" className="underline underline-offset-4" onClick={() => onSetMode('change')}>Reset password?</button>
-                                {' '}or{' '}
-                                <button type="button" className="underline underline-offset-4" onClick={() => onSetMode('register')}>register</button>
+                                <button type="button" className="underline underline-offset-4" onClick={() => onSetMode('register')}>Register</button>
                                 {' '}for a new account?
                             </p>
                         ) : null}
