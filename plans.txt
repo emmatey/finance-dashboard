@@ -333,5 +333,7 @@ I'm thinking I should examine the way the screener data is currently captured an
         A:
 
         Q: How can I establish that a news item is from top_headlines, and how can I determine its age?
-        A:
- 
+        A: In the newssymbols junction table I will set the symbol id to 0
+
+        Q: How will I handle news API being down?
+        A: I will simply search for "status" key of response and log and continue if status not ok.

@@ -13,6 +13,7 @@ from YahooQueryService import YahooQueryService
 from Daemon import Daemon
 from MarketOverviewCoordinator import MarketOverviewCoordinator
 from SearchManager import SearchManager
+from NewsAPIManager import NewsAPIManager
 import pandas as pd
 import datetime
 import numpy as np
@@ -67,10 +68,10 @@ def home():
     sm = SearchManager()
     cc = CommonQueries()
     ssm = StockScreenerManager()
+    new = NewsAPIManager()
 
 
-    res = dae.update_screener_subset()
-    
+    new.fetch_and_cache_headlines()
     
     filler_page = """
         <body style="background-color: black; color: green;">

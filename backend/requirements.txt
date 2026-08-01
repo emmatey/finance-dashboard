@@ -2,7 +2,5 @@ Flask
 Flask-Session
 newsapi-python
 python-dotenv
-pytz
 requests
 yahooquery
-
