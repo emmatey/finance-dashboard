@@ -1,7 +1,6 @@
 import argparse
 import sys
 import time
-from datetime import datetime
 
 import requests
 
@@ -11,7 +10,7 @@ def poll(base_url, interval):
     print(f"Polling {url} every {interval}s. Ctrl+C to stop.\n")
 
     while True:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         try:
             response = requests.post(url)
             print(f"[{timestamp}] {response.status_code} {response.json()}")

@@ -71,7 +71,11 @@ def home():
     new = NewsAPIManager()
 
 
-    new.fetch_and_cache_headlines()
+    ret = new.fetch_and_cache_headlines()
+    if ret is not None:
+        print(ret)
+    else:
+        print("no return val")
     
     filler_page = """
         <body style="background-color: black; color: green;">

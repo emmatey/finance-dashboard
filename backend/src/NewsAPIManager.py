@@ -25,39 +25,61 @@ class NewsAPIManager(CommonQueries):
         Call newsAPI, parse response, record to DB.
         """
         def _check_ttl():
+            """
+            If True, fresh.
+            """
             fresh = False
 
             ttl_sql = """
-            SELECT last_global_headlines_fetch
+            SELECT unixepoch(last_global_headlines_fetch) AS last_global_headlines_fetch
             FROM global_events
             WHERE id = 1
             """
-            res = self.select_query(ttl_sql, ())
+            rows = self.select_query(ttl_sql, ())
+            res = None
+
+            if isinstance(rows, list):
+                res = rows[0]
+            else:
+                raise TypeError
+            
             if isinstance(res, dict):
-                date_time = res.get("last_global_headlines_fetch")
-                if not date_time:
+                cache_age = res.get("last_global_headlines_fetch")
+                if not cache_age:
                     return fresh
                 else:
-                    current_time_utc_seconds = time.time()
-                    last_updated_utc_seconds = 
-                
+                    current_time_utc_seconds = int(time.time())
+                    if (cache_age + cache_ttl) > current_time_utc_seconds:
+                        fresh = True
             else:
-                logger.error("global_events table query, not returning a dict as usual, check live db schema.")
-                return fresh
+                raise TypeError
 
             return fresh
         
         def _write_fetch_time():
-            pass
+            """
+            Must write in utc time.
+            """
+            stamp_sql = """
+            UPDATE global_events
+            SET last_global_headlines_fetch = ?
+            WHERE id = 1
+            """
+            now = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())
+            try:
+                self.modify_query(stamp_sql, (now, ))
+                return True
+            except:
+                return False
 
         def _handle_return_status():
             pass
 
-        def _prepate_to_write():
+        def _prepare_to_write():
             pass
 
         def _write_to_db():
             pass
 
-        _check_ttl()
+        _write_fetch_time()
 
