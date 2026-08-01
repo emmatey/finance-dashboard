@@ -140,7 +140,6 @@ CREATE TABLE 'financial_metrics' (
     CREATE UNIQUE INDEX idx_metrics_symbol ON financial_metrics (symbol_id);
 
 CREATE TABLE 'news' (
-    -- camelCase to match API
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     uuid TEXT NOT NULL,
     timeInserted DATETIME DEFAULT CURRENT_TIMESTAMP,

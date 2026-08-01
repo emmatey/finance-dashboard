@@ -285,7 +285,7 @@ I'm thinking I should examine the way the screener data is currently captured an
 
         Okay im taking a break. i think im going to use "https://docs.python.org/3/library/threading.html#threading.Thread.daemon" when i come back
 
-7/32:
+7/23:
     Today I will attempt to use the threadding library with a "daemon" thread to run my Daemon.py on a loop in app.py. I'm doing this instead of
     threadpool manager because it should be less overhead, and I don't need to worry about cleaning up the threadpooler on shutdown. there
     may however be downsides I'm not aware of, but I guess I'll see when i get there.
@@ -301,3 +301,37 @@ I'm thinking I should examine the way the screener data is currently captured an
     in. This made it pretty pointles for security, and I wasn't sure of the benifit anyways. I believe this was a remnant of the cs50 days where this decorator was used as a 
     demonstration. Now that there's a class of internal routes a proper administration system is probably in order with different user classes. If I ever do this, I'll reintroduce 
     the login restriction for the routes then, but for now I just removed them.
+
+8/1:
+    Its been 7 whole days since I've done anything related to any software projects. This is the longest stretch I've had off in over a year, it feels strange. 
+    Today I will be returning with the goal of integrating the newsAPI into this project.
+    newsapi seems able to do two things
+        1. Search news articles
+        2. Return top headlines.
+    This api will be useful for serving the homepage in combination with the existing system which just selects from the db for the most recent
+    stories and shows those on the homepage. 
+
+    Since I don't want to upset that mechanism, I think I'll just be trying to dump these new stories from the top_headlines endpoint into the db
+    and let the existing system pick them out and mix them with whatever yahooquery is sending out too.
+
+    I also want to integrate the search feature into the searchbar so that users can see more than just news from yahoo.com as is the current state of things.
+
+    The main issue I have is, how will I be able to tie the stories from newsAPI to specific symbols in the DB as the "newssymbols" table currently does.
+    I'm tihnking that unless they have the metadata available I won't be able to do this. Which I guess is fine because search will still work, and headlines will
+    still appear on the homepage. I'll just be missing out on the research page showing stories related to any given ticker.
+    I also want to mark top_headlines in a different way so they can be purged and refreshed on a n-ly basis.
+
+    Goals:
+        1. Integrate search endpoint into search
+            - Will I store these stores anywhere, or no?
+                - If a user searches a company, maybe yes? It will be hard to distinguish.
+        2. Integrate top_headlines with the frontpage
+            - How will I mark these to be purged / cache lifeime.
+    
+    Questions:
+        Q: Does the api currently provide any info similar to "related tickers"?
+        A:
+
+        Q: How can I establish that a news item is from top_headlines, and how can I determine its age?
+        A:
+ 
