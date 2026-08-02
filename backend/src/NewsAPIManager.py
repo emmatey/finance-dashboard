@@ -6,6 +6,7 @@ import uuid
 from CommonQueries import CommonQueries
 from dotenv import load_dotenv
 from newsapi import NewsApiClient
+from newsapi.newsapi_exception import NewsAPIException
 
 
 logger = logging.getLogger(__name__)
@@ -171,3 +172,29 @@ class NewsAPIManager(CommonQueries):
         _write_fetch_time()
 
         return True
+
+    def search_articles(self, query: str, limit: int = 10):
+        """
+        Call newsAPI's /everything endpoint for the given query, parse response, record to DB.
+
+        Returns the prepared article list, or False on API/response failure.
+        """
+        safe_query = str(query).strip()
+        if not safe_query:
+            return False
+
+        try:
+            res = self.api.get_everything(q=safe_query, page_size=limit)
+        except NewsAPIException as e:
+            logger.error(f"newsAPI search failed for '{safe_query}': {e.get_message()}")
+            return False
+
+        if not self._response_type_enforce(res):
+            return False
+        if not self._handle_return_status(res):
+            return False
+
+        prepared_data = self._prepare_to_write(res)
+        self._write_to_db(prepared_data)
+
+        return prepared_data
