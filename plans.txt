@@ -330,10 +330,38 @@ I'm thinking I should examine the way the screener data is currently captured an
     
     Questions:
         Q: Does the api currently provide any info similar to "related tickers"?
-        A:
+        A: NO
 
         Q: How can I establish that a news item is from top_headlines, and how can I determine its age?
         A: In the newssymbols junction table I will set the symbol id to 0
 
         Q: How will I handle news API being down?
         A: I will simply search for "status" key of response and log and continue if status not ok.
+
+8/2:
+    Today im in seattle central library on 4th and seneca so I can pretend I have a job, i mean get out of the house.
+    I've finished up implementing the method which handles requesting for and inserting today's top news stories as well as cleaning the
+    database of all news stories over a week old.
+
+    Today I'm focused on figuring out how to handle the search funciton. Currently my search bar just checks what exists in the database and pulls
+    from that. But i want to integrate the newsAPI endpoint into this search bar too so there's a wider range of results.
+
+    Currently the system has an offline news search and an online news search. The offline endpoint is used for the debouncing on the search bar
+    and just uses sql queries to the db to find news stories that way, but the online search actually hits the api. Probably the simplest thing
+    to do would be to just replace the current requests to yahooquery with requests to newsAPI, maybe YQ first and newsAPI second? my issue though
+    is that there's not a ton of api budget for newsAPI and its important that I have requests available to call the get_headlines endpoint.
+
+    This points to two things, caching the results of a user's news search and skipping requests to the API if there's already relevant results.
+    My issue though is that it might be hard to tell in what case its best to request newsAPI again, and when its best to just serve what's in the db.
+
+    This definately adds some complexity and it might not actually be worth doing at the moment considering that I have no users.
+
+    I'm thinking maybe the best plan is the modify the search online for news method to call the newsAPImanager method that calls the newsAPI search route
+    until there's an error and then falls back to yahooquery search and then falls back to SQL on the db. I can then add yet another mechanism to the daemon
+    whch maybe will just poll the headlines to make sure those get grabbed every couple hours.
+
+    So tasks are 
+        1. Add a method to newsAPIManager that can call to the api with a specific query.
+        2. Add a method to daemon that requests the existing news api manager method to fetch all business headlines fires once an hour or so.
+            maybe once a day.
+        3. Edit the search manager's news function > online function to waterfall from newsAPI > yahooquery > offline method.
