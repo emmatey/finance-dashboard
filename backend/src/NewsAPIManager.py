@@ -72,12 +72,14 @@ class NewsAPIManager(CommonQueries):
             except:
                 return False
 
-        def _response_type_enforce(response):
+        def _response_type_enforce(response) -> bool:
             if not isinstance(response, dict):
                 logger.error(f"Invalid API response format.")
                 return False
+
+            return True
             
-        def _handle_return_status(response: dict):
+        def _handle_return_status(response: dict) -> bool:
             """
             Check the "status" field of the APIs return value to see if there's an error.
             """         
@@ -88,7 +90,7 @@ class NewsAPIManager(CommonQueries):
                 logger.error(f"Response status from news API is {status}")
                 return False
           
-        def _prepare_to_write(response: dict):
+        def _prepare_to_write(response: dict) -> list:
             total_results = int(response.get("totalResults", 0))
             if total_results == 0:
                 logger.info("Empty api response from newsAPI, but valid return code...")
@@ -101,20 +103,74 @@ class NewsAPIManager(CommonQueries):
 
                 def _convert_timestamp():
                     datetime_string = article.get("publishedAt")
-                    dt = datetime.datetime.fromisoformat(datetime_string)
+                    if not datetime_string:
+                        return None
+                    try:
+                        dt = datetime.datetime.fromisoformat(datetime_string)
+                    except ValueError:
+                        logger.warning(f"Could not parse publishedAt: {datetime_string}")
+                        return None
                     epoch_float = dt.timestamp()
-                    epoch_int = int(epoch_float)  
+                    epoch_int = int(epoch_float)
                     return epoch_int
 
                 articles.append({
-                    "uuid": uuid.uuid4(),
+                    "is_headline": True,
+                    # Not used for dedup on this path (link is, via ON CONFLICT below) - just satisfies the NOT NULL/UNIQUE constraint, since NewsAPI doesn't hand back a stable article id like yahooquery does.
+                    "uuid": str(uuid.uuid4()),
                     "timeInserted": time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()),
                     "title": article.get("title", "N/A"),
                     "thumbnail": article.get("urlToImage"),
                     "link": article.get("url"),
-                    "publisher": article.get("source", {}).get("name", "Unknown"),
+                    "publisher": (article.get("source") or {}).get("name", "Unknown"),
                     "providerPublishTime": _convert_timestamp()
                 })
 
-        def _write_to_db():
-            pass
+            return articles
+
+        def _write_to_db(prepared_data: list) -> int:
+            """
+            Bulk insert headline articles, skipping any that already exist by link.
+            """
+            if not prepared_data:
+                return 0
+
+            insert_sql = """
+            INSERT INTO news
+                (is_headline, uuid, timeInserted, title, thumbnail, link, publisher, providerPublishTime)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(link) DO NOTHING
+            """
+
+            rows = [
+                (
+                    item["is_headline"],
+                    item["uuid"],
+                    item["timeInserted"],
+                    item["title"],
+                    item["thumbnail"],
+                    item["link"],
+                    item["publisher"],
+                    item["providerPublishTime"],
+                )
+                for item in prepared_data
+            ]
+
+            return self.bulk_query(insert_sql, rows, label="news (headlines)")
+
+        cache_fresh = _check_ttl()
+        if cache_fresh:
+            return True
+
+        res = self.api.get_top_headlines(category=category)
+        if not _response_type_enforce(res):
+            return False
+        if not _handle_return_status(res):
+            return False
+
+        prepared_data = _prepare_to_write(res)
+        _write_to_db(prepared_data)
+        _write_fetch_time()
+
+        return True
+

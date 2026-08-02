@@ -142,6 +142,7 @@ CREATE TABLE 'financial_metrics' (
 
 CREATE TABLE 'news' (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    is_headline BOOLEAN DEFAULT FALSE,
     uuid TEXT NOT NULL,
     timeInserted DATETIME DEFAULT CURRENT_TIMESTAMP,
     title TEXT,
@@ -151,6 +152,7 @@ CREATE TABLE 'news' (
     providerPublishTime INTEGER
 );
 CREATE UNIQUE INDEX idx_news_uuid ON news (uuid);
+CREATE UNIQUE INDEX idx_news_link ON news (link);
 CREATE INDEX idx_news_publish_time ON news (providerPublishTime DESC);
 
 CREATE TABLE 'news_symbols' (
