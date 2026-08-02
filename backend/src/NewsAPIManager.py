@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import time
+import uuid
 from CommonQueries import CommonQueries
 from dotenv import load_dotenv
 from newsapi import NewsApiClient
@@ -12,12 +13,11 @@ logger = logging.getLogger(__name__)
 class NewsAPIManager(CommonQueries):
     """
     Handles requests to newsAPI. Used to populate the homepage newsfeed alongside news stories
-    gatherd in '/research'.
+    gathered in '/research'.
     """
     def __init__(self) -> None:
         load_dotenv()
         api_key = os.getenv("NEWS_API_KEY")
-
         self.api = NewsApiClient(api_key=api_key)
     
     def fetch_and_cache_headlines(self, category="business", cache_ttl=(60*60*1)):
@@ -72,14 +72,49 @@ class NewsAPIManager(CommonQueries):
             except:
                 return False
 
-        def _handle_return_status():
-            pass
+        def _response_type_enforce(response):
+            if not isinstance(response, dict):
+                logger.error(f"Invalid API response format.")
+                return False
+            
+        def _handle_return_status(response: dict):
+            """
+            Check the "status" field of the APIs return value to see if there's an error.
+            """         
+            status = str(response.get("status")).lower()
+            if status == "ok":
+                return True
+            else:
+                logger.error(f"Response status from news API is {status}")
+                return False
+          
+        def _prepare_to_write(response: dict):
+            total_results = int(response.get("totalResults", 0))
+            if total_results == 0:
+                logger.info("Empty api response from newsAPI, but valid return code...")
+                return []   
 
-        def _prepare_to_write():
-            pass
+            articles = []
+            for article in response.get("articles", []):
+                if not isinstance(article, dict):
+                    continue
+
+                def _convert_timestamp():
+                    datetime_string = article.get("publishedAt")
+                    dt = datetime.datetime.fromisoformat(datetime_string)
+                    epoch_float = dt.timestamp()
+                    epoch_int = int(epoch_float)  
+                    return epoch_int
+
+                articles.append({
+                    "uuid": uuid.uuid4(),
+                    "timeInserted": time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()),
+                    "title": article.get("title", "N/A"),
+                    "thumbnail": article.get("urlToImage"),
+                    "link": article.get("url"),
+                    "publisher": article.get("source", {}).get("name", "Unknown"),
+                    "providerPublishTime": _convert_timestamp()
+                })
 
         def _write_to_db():
             pass
-
-        _write_fetch_time()
-
