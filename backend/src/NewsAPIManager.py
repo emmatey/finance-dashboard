@@ -115,7 +115,6 @@ class NewsAPIManager(CommonQueries):
                     return epoch_int
 
                 articles.append({
-                    "is_headline": True,
                     # Not used for dedup on this path (link is, via ON CONFLICT below) - just satisfies the NOT NULL/UNIQUE constraint, since NewsAPI doesn't hand back a stable article id like yahooquery does.
                     "uuid": str(uuid.uuid4()),
                     "timeInserted": time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()),
@@ -137,14 +136,13 @@ class NewsAPIManager(CommonQueries):
 
             insert_sql = """
             INSERT INTO news
-                (is_headline, uuid, timeInserted, title, thumbnail, link, publisher, providerPublishTime)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (uuid, timeInserted, title, thumbnail, link, publisher, providerPublishTime)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(link) DO NOTHING
             """
 
             rows = [
                 (
-                    item["is_headline"],
                     item["uuid"],
                     item["timeInserted"],
                     item["title"],

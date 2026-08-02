@@ -143,7 +143,6 @@ CREATE TABLE 'financial_metrics' (
 
 CREATE TABLE 'news' (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    is_headline BOOLEAN DEFAULT FALSE,
     uuid TEXT NOT NULL,
     timeInserted DATETIME DEFAULT CURRENT_TIMESTAMP,
     title TEXT,
