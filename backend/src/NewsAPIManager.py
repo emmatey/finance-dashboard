@@ -118,7 +118,7 @@ class NewsAPIManager(CommonQueries):
             fresh = False
 
             ttl_sql = """
-            SELECT unixepoch(last_global_headlines_fetch) AS last_global_headlines_fetch
+            SELECT unixepoch(last_news_api_headlines_fetch) AS last_news_api_headlines_fetch
             FROM global_events
             WHERE id = 1
             """
@@ -131,7 +131,7 @@ class NewsAPIManager(CommonQueries):
                 raise TypeError
 
             if isinstance(res, dict):
-                cache_age = res.get("last_global_headlines_fetch")
+                cache_age = res.get("last_news_api_headlines_fetch")
                 if not cache_age:
                     return fresh
                 else:
@@ -149,7 +149,7 @@ class NewsAPIManager(CommonQueries):
             """
             stamp_sql = """
             UPDATE global_events
-            SET last_global_headlines_fetch = ?
+            SET last_news_api_headlines_fetch = ?
             WHERE id = 1
             """
             now = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())

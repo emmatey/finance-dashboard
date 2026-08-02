@@ -6,6 +6,7 @@ from CommonQueries import CommonQueries
 from enum import Enum
 from logging_utils import fmt_data
 from MarketOverviewCoordinator import (REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP)
+from NewsAPIManager import NewsAPIManager
 from StockScreenerManager import StockScreenerManager, TableLifetimes
 from YahooQueryService import YahooQueryService
 
@@ -22,6 +23,7 @@ class UpdateFrequency(Enum):
     last_screeners_up_to_date = 5 * 60
     last_symbol_cleanup = 24 * 60 * 60
     last_news_cleanup = 24 * 60 * 60
+    last_news_api_headlines_fetch = 3 * 60 * 60
 
 class Daemon(CommonQueries):
     """
@@ -52,6 +54,7 @@ class Daemon(CommonQueries):
             'last_screeners_up_to_date': [self.update_screener_subset],
             'last_symbol_cleanup': [self.clean_unused_symbols],
             'last_news_cleanup': [self.clean_old_news],
+            'last_news_api_headlines_fetch': [self.fetch_headlines_news_api],
         }
 
         metadata = {
@@ -354,6 +357,38 @@ class Daemon(CommonQueries):
 
         except Exception:
             logger.exception("clean_unused_symbols failed")
+            return False
+
+    def fetch_headlines_news_api(self, category: str = "business") -> bool:
+        """
+        Pull today's top headlines from newsAPI for the given category and
+        cache them in the news table.
+
+        Other categories newsAPI's /top-headlines endpoint accepts: general,
+        entertainment, health, science, sports, technology.
+
+        Delegates freshness checking and stamping of
+        last_news_api_headlines_fetch to NewsAPIManager.fetch_and_cache_headlines
+        itself, since it already gates/stamps that same column - this wrapper
+        just adapts it to the daemon's action_map calling convention.
+
+        Returns:
+            True on success, False on failure.
+        """
+        try:
+            news_api = NewsAPIManager()
+            result = news_api.fetch_and_cache_headlines(
+                category=category,
+                cache_ttl=UpdateFrequency.last_news_api_headlines_fetch.value,
+            )
+            if result:
+                logger.info(f"newsAPI headlines fetch complete for category '{category}'.")
+            else:
+                logger.warning(f"newsAPI headlines fetch failed for category '{category}'.")
+            return result
+
+        except Exception:
+            logger.exception("fetch_headlines_news_api failed")
             return False
 
     def clean_old_news(self, retention_seconds: int = 7 * 24 * 60 * 60) -> bool:

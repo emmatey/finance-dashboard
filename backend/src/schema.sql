@@ -33,7 +33,7 @@ CREATE TABLE 'global_events' (
     last_custom_screeners_update DATETIME,
     last_screeners_up_to_date DATETIME,
     last_symbol_cleanup DATETIME,
-    last_global_headlines_fetch DATETIME,
+    last_news_api_headlines_fetch DATETIME,
     last_news_cleanup DATETIME,
     yq_api_status TEXT DEFAULT 'UP',
     yq_api_down_at DATETIME,
