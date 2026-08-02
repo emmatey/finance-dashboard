@@ -21,6 +21,7 @@ class UpdateFrequency(Enum):
     last_snapshot_update = 24 * 60 * 60
     last_screeners_up_to_date = 5 * 60
     last_symbol_cleanup = 24 * 60 * 60
+    last_news_cleanup = 24 * 60 * 60
 
 class Daemon(CommonQueries):
     """
@@ -50,6 +51,7 @@ class Daemon(CommonQueries):
             'last_snapshot_update': [self.balance_snapshot_all_users],
             'last_screeners_up_to_date': [self.update_screener_subset],
             'last_symbol_cleanup': [self.clean_unused_symbols],
+            'last_news_cleanup': [self.clean_old_news],
         }
 
         metadata = {
@@ -352,4 +354,33 @@ class Daemon(CommonQueries):
 
         except Exception:
             logger.exception("clean_unused_symbols failed")
+            return False
+
+    def clean_old_news(self, retention_seconds: int = 7 * 24 * 60 * 60) -> bool:
+        """
+        Deletes news articles older than retention_seconds.
+
+        news_symbols rows for deleted articles are removed automatically via
+        ON DELETE CASCADE on news_symbols.news_id.
+
+        Returns:
+            True on success, False on failure.
+        """
+        try:
+            cutoff = int(time.time()) - retention_seconds
+            sql = """
+            DELETE FROM news
+            WHERE providerPublishTime < ? OR providerPublishTime IS NULL
+            """
+            deleted = self.modify_query(sql, (cutoff,))
+
+            self.modify_query(
+                "UPDATE global_events SET last_news_cleanup = CURRENT_TIMESTAMP WHERE id = 1",
+                (),
+            )
+            logger.info(f"News cleanup removed {deleted} old articles.")
+            return True
+
+        except Exception:
+            logger.exception("clean_old_news failed")
             return False
