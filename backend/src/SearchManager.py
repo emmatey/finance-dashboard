@@ -1,5 +1,6 @@
 from APIDataIO import APIDataIO
 from CommonQueries import CommonQueries
+from NewsAPIManager import NewsAPIManager
 from ReportManager import ReportManager
 from YahooQueryService import YahooQueryService
 import logging
@@ -213,26 +214,39 @@ class SearchManager(CommonQueries):
         """
         Search for news stories related to the query.
 
-        If yq_search_payload is provided, extracts news from it directly
-        instead of making a new API call. This allows the /search route to reuse
-        a single yq.search() response for both companies and news.
+        Tries newsAPI first for the widest source coverage. If that fails, falls
+        back to Yahoo Finance search — reusing yq_search_payload if the caller
+        already fetched one (e.g. the combined /search route), otherwise making
+        a fresh yq.search() call.
 
         Args:
             query: Search term matched against article titles and related tickers
             limit: Maximum number of stories to return (default: 10)
-            yq_search_payload: Optional raw yq.search() response to extract from.
-                               If not provided, a new API call will be made.
+            yq_search_payload: Optional raw yq.search() response to extract from
+                               on fallback. If not provided, a new API call will
+                               be made if newsAPI fails.
 
         Returns:
             List of dicts with keys: search_type, uuid, title, publisher, link,
             providerPublishTime, thumbnail, relatedTickers.
-            Returns empty list if no stories found or API is down.
+            Returns empty list if no stories found or both APIs are down.
         """
+        safe_query = str(query).strip()
+
+        news_api = NewsAPIManager()
+        news = news_api.search_articles(safe_query, limit=limit)
+        if news:
+            for n in news:
+                n["search_type"] = "news"
+                n["relatedTickers"] = []
+            return news
+
+        logger.warning(f"newsAPI search failed for '{query}' - falling back to Yahoo")
+
         yqs = YahooQueryService()
         io = APIDataIO()
 
         if yq_search_payload is None:
-            safe_query = str(query).strip()
             yq_search_payload = yqs.yq_search(safe_query, quotes_count=0, news_count=limit)
 
         if not yq_search_payload:
@@ -283,7 +297,7 @@ class SearchManager(CommonQueries):
                                      Instantiated internally if not provided.
 
         Returns:
-            List of dicts with keys: search_type, username, snap_datetime,
+            List of dicts with keys: search_type, username, user_id, snap_datetime,
             cash_balance, portfolio_value, grand_total, rank.
             Returns empty list if no users found.
         """

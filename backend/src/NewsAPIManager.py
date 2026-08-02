@@ -66,7 +66,7 @@ class NewsAPIManager(CommonQueries):
             articles.append({
                 # Not used for dedup on this path (link is, via ON CONFLICT below) - just satisfies the NOT NULL/UNIQUE constraint, since NewsAPI doesn't hand back a stable article id like yahooquery does.
                 "uuid": str(uuid.uuid4()),
-                "timeInserted": time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()),
+
                 "title": article.get("title", "N/A"),
                 "thumbnail": article.get("urlToImage"),
                 "link": article.get("url"),
@@ -85,15 +85,17 @@ class NewsAPIManager(CommonQueries):
 
         insert_sql = """
         INSERT INTO news
-            (uuid, timeInserted, title, thumbnail, link, publisher, providerPublishTime)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(link) DO NOTHING
+            (uuid, title, thumbnail, link, publisher, providerPublishTime)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(link)
+        DO UPDATE SET
+        timeInserted=CURRENT_TIMESTAMP, title=excluded.title, thumbnail=excluded.thumbnail,
+        publisher=excluded.publisher, providerPublishTime=excluded.providerPublishTime
         """
 
         rows = [
             (
                 item["uuid"],
-                item["timeInserted"],
                 item["title"],
                 item["thumbnail"],
                 item["link"],
