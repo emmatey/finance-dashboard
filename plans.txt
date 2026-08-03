@@ -378,9 +378,18 @@ I'm thinking I should examine the way the screener data is currently captured an
     why not do it properly and add email auth?
 
     Q: What options do I have to implement an email authentication service? How complex would this be?
-    A:
+    A: Itsdangerous library, which is already part of the flask ecosystem
 
     I think this is really my only question becaues if I decide not to do this, I wont need to add any field associating emails with people's accounts,
     and the auth/change route will be as simple as a couple db queries. 
 
+    My overall plan will be to use Itsdangerous as this is already a part of flask in the same way that jinja is.
+    My initial goal will be to get reset links in the terminal, and then link to some free mail API. Time to read.
+
+    The two key concepts to keep in mind here seem to be the "signature" and the "salt". The signature is a secret key stored with the enviroment
+    vairables that is used to hash "tokens". Tokens are composed of an account identifier, a timestamp, and the secret key. 
+
+    Salt is used to diferentiate the context in which these tokens are valid for authentication. For example pw changing vs account deletion ect.
+    I'm still trying to figure out how the server should go about interpreting these tokens, but it seems the standard is to just have them 
+    as path paramaters and send the urls to users who can then make get requests with them to endpoints that will interpret the tokens. 
     

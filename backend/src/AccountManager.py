@@ -1,17 +1,38 @@
 import logging
+import os
 
 from CommonQueries import CommonQueries
+from dotenv import load_dotenv
+from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 logger = logging.getLogger(__name__)
+load_dotenv()
+secret_key = os.getenv("VERIFICATION_TOKEN_SECRET_KEY")
 
 
 class AccountManager(CommonQueries):
     """
-    This class handles login, registration, and account deletion.
-    - User rank among active players.
+    This class handles login, registration, and password changing.
     """
+    @staticmethod
+    def generate_verification_token(context_salt: str, username: str) -> bool:
+        """
+        Generates a time sensitive, url safe, token to verify various actions.
+        """
+        if not isinstance(secret_key, str):
+            logger.error(f"Secret key for token hashing not present of of wrong type. Must be str is {type(secret_key)}.")
+            return False
+        serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
+        print(serializer.dumps(username))
+        
 
+    @staticmethod
+    def validate_verification_token(context_salt: str) -> bool:
+        """
+        Checks if a verification token passed is valid, allowing further actions if so.
+        """
+        pass
     def login(self, username, password, session) -> bool:
         # Query database for username
         rows = self.select_query(
@@ -52,3 +73,8 @@ class AccountManager(CommonQueries):
             )
         logger.info(f"User '{username}' registered")
         return result
+
+
+if __name__ == "__main__":
+    am = AccountManager()
+    am.generate_verification_token("reset_pw", username="emma")

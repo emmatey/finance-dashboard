@@ -1,6 +1,7 @@
 Flask
 Flask-Session
+requests
+itsdangerous
 newsapi-python
 python-dotenv
-requests
 yahooquery
