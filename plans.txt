@@ -365,3 +365,22 @@ I'm thinking I should examine the way the screener data is currently captured an
         2. Add a method to daemon that requests the existing news api manager method to fetch all business headlines fires once an hour or so.
             maybe once a day.
         3. Edit the search manager's news function > online function to waterfall from newsAPI > yahooquery > offline method.
+
+8/3:
+    Back at the Seattle central library today. After sucessfully completing my implementaiton of the newsAPI into the project, I'm fast approaching
+    the end of the line for "version 1.0" (aka the only version). Just had a nice lunch with my friend at supreme dumplings.
+    Today's goal is to implement the functinality of changing a password. This should be an interesting problem because I currently don't really have
+    any sort of method of creating a "recovery question" or sending confirmation emails. I do think it would be quite impressive to do one or both of those
+    things, but I'm not sure how. As of now, I think all this system would support without extention beyond the immidate feature is just changing password for
+    people who can already authenticate their account (i.e. people who know their username and password.). The method of deployment for this project will be on A
+    free tier web hosting service that has en emphemeral database that sets back to a pre-determined demo type state on spin up. For this reason it
+    seems like this feature in and of itself may be a bit pointless but I feel like I want to add the option just for the sake of completeness. But if I'm doing that
+    why not do it properly and add email auth?
+
+    Q: What options do I have to implement an email authentication service? How complex would this be?
+    A:
+
+    I think this is really my only question becaues if I decide not to do this, I wont need to add any field associating emails with people's accounts,
+    and the auth/change route will be as simple as a couple db queries. 
+
+    
