@@ -23,6 +23,7 @@ class AccountManager(CommonQueries):
         if not isinstance(secret_key, str):
             logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
             raise TypeError("Secret key for token hashing not present or of wrong type.")
+        
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
         return serializer.dumps(email)
 
@@ -35,6 +36,7 @@ class AccountManager(CommonQueries):
         if not isinstance(secret_key, str):
             logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
             raise TypeError("Secret key for token hashing not present or of wrong type.")
+        
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
         try:
             email = serializer.loads(token, max_age=max_age)
@@ -44,6 +46,7 @@ class AccountManager(CommonQueries):
         except BadData:
             logger.warning(f"Verification token was malformed (salt='{context_salt}').")
             raise
+
         return email
 
     @staticmethod
@@ -88,26 +91,37 @@ class AccountManager(CommonQueries):
         else:
             return False
 
-    def register(self, username: str, password: str) -> int:
-        """
-        Returns "rows modified" count.
-        If there's a conflict, i.e. username already exists,
-        return 0,
-        else return 1
-        """
-        # Make sure name isn't already used.
-        check_name = self.select_query(
-            "SELECT username FROM users WHERE username = ?", (username, )
-                                )
-        if check_name:
-            logger.info(f"Registration rejected: username '{username}' already in use")
-            return 0
+    def change_password(self, password: str, username: str) -> bool:
+        user_id = self.get_user_id_from_username(username=username)
+        if not user_id:
+            logger.error(f"Username {username} not found!")
+            return False
 
+        hash = generate_password_hash(password=password)
+        password_sql = """
+        UPDATE users
+        SET hash = ?
+        WHERE id = ?
+        """
+        try:
+            self.modify_query(password_sql, (hash, user_id))
+        except Exception:
+            raise
+
+        return True
+
+    def register(self, username: str, password: str, email: str) -> int:
+        """
+        Assumes email has been validated, and username and pw meet the requirements.
+        """
         hash = generate_password_hash(password)
-        # update DB with username and pw hash.
+
         result = self.modify_query(
-            "INSERT INTO users (username, hash) VALUES (?, ?)", (username, hash)
-            )
+            """
+            INSERT INTO users (username, email, hash)
+            VALUES (?, ?)
+            """, (username, email, hash))
+        
         logger.info(f"User '{username}' registered")
         return result
 

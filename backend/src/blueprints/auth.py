@@ -11,10 +11,19 @@ logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
+@auth_bp.route("/validate_email", methods=["GET"])
+def validate_email():
+    """
+    
+    """
+    pass
+
+@auth_bp.route("/change_pw", methods=["POST"])
+
 @auth_bp.route("/register", methods=["POST"])
 def register():
     """
-    Registers a new user.
+    Registers a new user. Assumes email has been verified.
 
     Request body (JSON):
         username (str): Alphanumeric, no spaces, min 1 char.
