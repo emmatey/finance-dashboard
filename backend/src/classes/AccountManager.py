@@ -45,7 +45,37 @@ class AccountManager(CommonQueries):
             logger.warning(f"Verification token was malformed (salt='{context_salt}').")
             raise
         return username
-    
+
+    @staticmethod
+    def check_username_valid(username: str) -> tuple[bool, str | None]:
+        # Check if username meets website requirements.
+        # Username must be ascii and without spaces.
+        if not all(char.isascii() and char.isalnum() and char != " " for char in username):
+            return False, "Username must be alphanumeric (A-Z, 0-9) with no spaces."
+        if len(username) < 1:
+            return False, "Username must be at least 1 char long."
+        return True, None
+
+    @staticmethod
+    def check_pw_valid(pw: str) -> tuple[bool, str | None]:
+        # Check if pw meets website requirements
+        # Password must have one capital, one uppercase, one lowercase, and one non-letter, and be 5 chars long.
+        if len(pw) < 5:
+            return False, "Password must be at least 5 chars long."
+        if not all((char.isascii() for char in pw)):
+            # Checks for non-ascii
+            return False, "Password must contain only ASCII chars."
+        if not any((char.isupper() for char in pw)):
+            # Checks for uppercase
+            return False, "Password must contain at least one uppercase letter."
+        if not any((char.islower() for char in pw)):
+            # Checks for lowercase
+            return False, "Password must contain at least one lowercase letter."
+        if all((char.isalpha() for char in pw)):
+            # Checks for non-letters
+            return False, "Password must contain at least one non-letter character."
+        return True, None
+
     def login(self, username, password, session) -> bool:
         # Query database for username
         rows = self.select_query(

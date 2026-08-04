@@ -36,50 +36,12 @@ def register():
     username = str(request_body.get('username', '')).strip()
     password= str(request_body.get('password', ''))
 
-    # Check if username meets website requirements.
-    # Username must be ascii and without spaces.
-    if not all(char.isascii() and char.isalnum() and char != " " for char in username):
-        return jsonify({
-            "success": False,
-            "message": "Username must be alphanumeric (A-Z, 0-9) with no spaces."
-            }), 400
-    if len(username) < 1:
-        return jsonify({
-            "success": False,
-            "message": "Username must be at least 1 char long."
-            }), 400
-
-    # Check if pw meets website requirements
-    # Password must have one capital, one uppercase, one lowercase, and one non-letter, and be 5 chars long.
-    if len(password) < 5:
-        return jsonify({
-            "success": False,
-            "message": "Password must be at least 5 chars long."
-            }), 400
-    if not all((char.isascii() for char in password)):
-        # Checks for non-ascii
-        return jsonify({
-            "success": False,
-            "message": "Password must contain only ASCII chars."
-            }), 400
-    if not any((char.isupper() for char in password)):
-        # Checks for uppercase
-        return jsonify({
-            "success": False,
-            "message": "Password must contain at least one uppercase letter."
-            }), 400
-    if not any((char.islower() for char in password)):
-        # Checks for lowercase
-        return jsonify({
-            "success": False,
-            "message": "Password must contain at least one lowercase letter."
-            }), 400
-    if all((char.isalpha() for char in password)):
-        # Checks for non-letters
-        return jsonify({
-            "success": False,
-            "message": "Password must contain at least one non-letter character."
-            }), 400
+    username_valid, username_message = am.check_username_valid(username)
+    if not username_valid:
+        return jsonify({"success": False, "message": username_message}), 400
+    password_valid, password_message = am.check_pw_valid(password)
+    if not password_valid:
+        return jsonify({"success": False, "message": password_message}), 400
 
     # Add user to db
     ret = am.register(username=username, password=password)
