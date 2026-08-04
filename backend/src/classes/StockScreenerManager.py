@@ -1,10 +1,10 @@
 import logging
 import time
-from APIDataIO import APIDataIO as io
-from CommonQueries import CommonQueries
+from classes.APIDataIO import APIDataIO as io
+from classes.CommonQueries import CommonQueries
 from enum import Enum
-from logging_utils import fmt_data
-from YahooQueryService import YahooQueryService as yqs
+from scripts.logging_utils import fmt_data
+from classes.YahooQueryService import YahooQueryService as yqs
 
 logger = logging.getLogger(__name__)
 

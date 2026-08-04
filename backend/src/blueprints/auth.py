@@ -2,9 +2,9 @@ import logging
 
 from flask import Blueprint, jsonify, request, session
 
-from AccountManager import AccountManager
-from CommonQueries import CommonQueries
-from TransactionManager import TransactionManager
+from classes.AccountManager import AccountManager
+from classes.CommonQueries import CommonQueries
+from classes.TransactionManager import TransactionManager
 
 logger = logging.getLogger(__name__)
 

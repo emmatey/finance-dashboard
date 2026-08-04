@@ -3,12 +3,12 @@ from decimal import Decimal, InvalidOperation
 
 from flask import Blueprint, jsonify, request, session
 
-import helpers
-from APIDataIO import APIDataIO
-from CommonQueries import CommonQueries
-from ResearchDataCoordinator import ResearchDataCoordinator
-from TransactionManager import TransactionManager
-from YahooQueryService import YahooQueryService
+from scripts import helpers
+from classes.APIDataIO import APIDataIO
+from classes.CommonQueries import CommonQueries
+from classes.ResearchDataCoordinator import ResearchDataCoordinator
+from classes.TransactionManager import TransactionManager
+from classes.YahooQueryService import YahooQueryService
 
 logger = logging.getLogger(__name__)
 

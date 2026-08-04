@@ -2,7 +2,7 @@ import logging
 
 from flask import Blueprint, jsonify
 
-from ReportManager import ReportManager
+from classes.ReportManager import ReportManager
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 import flask
 import logging
-from CommonQueries import CommonQueries
+from classes.CommonQueries import CommonQueries
 from flask.sessions import SessionMixin
 
 logger = logging.getLogger(__name__)

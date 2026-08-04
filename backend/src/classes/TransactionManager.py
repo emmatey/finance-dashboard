@@ -1,4 +1,4 @@
-from CommonQueries import CommonQueries
+from classes.CommonQueries import CommonQueries
 import logging
 
 

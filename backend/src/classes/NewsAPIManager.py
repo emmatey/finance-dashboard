@@ -3,7 +3,7 @@ import logging
 import os
 import time
 import uuid
-from CommonQueries import CommonQueries
+from classes.CommonQueries import CommonQueries
 from dotenv import load_dotenv
 from newsapi import NewsApiClient
 from newsapi.newsapi_exception import NewsAPIException

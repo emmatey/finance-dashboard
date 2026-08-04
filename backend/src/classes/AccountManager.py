@@ -1,7 +1,7 @@
 import logging
 import os
 
-from CommonQueries import CommonQueries
+from classes.CommonQueries import CommonQueries
 from dotenv import load_dotenv
 from itsdangerous import BadData, BadSignature, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash

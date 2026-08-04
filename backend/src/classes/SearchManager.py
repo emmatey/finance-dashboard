@@ -1,8 +1,8 @@
-from APIDataIO import APIDataIO
-from CommonQueries import CommonQueries
-from NewsAPIManager import NewsAPIManager
-from ReportManager import ReportManager
-from YahooQueryService import YahooQueryService
+from classes.APIDataIO import APIDataIO
+from classes.CommonQueries import CommonQueries
+from classes.NewsAPIManager import NewsAPIManager
+from classes.ReportManager import ReportManager
+from classes.YahooQueryService import YahooQueryService
 import logging
 
 logger = logging.getLogger(__name__)

@@ -2,11 +2,11 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
-import helpers
-from APIDataIO import APIDataIO
-from CommonQueries import CommonQueries
-from ResearchDataCoordinator import ResearchDataCoordinator
-from YahooQueryService import YahooQueryService
+from scripts import helpers
+from classes.APIDataIO import APIDataIO
+from classes.CommonQueries import CommonQueries
+from classes.ResearchDataCoordinator import ResearchDataCoordinator
+from classes.YahooQueryService import YahooQueryService
 
 logger = logging.getLogger(__name__)
 

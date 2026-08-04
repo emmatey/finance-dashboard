@@ -6,7 +6,7 @@ from flask import g, current_app
 from functools import wraps
 from pathlib import Path
 
-from logging_utils import fmt_data
+from scripts.logging_utils import fmt_data
 
 
 logger = logging.getLogger(__name__)

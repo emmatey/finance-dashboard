@@ -2,8 +2,8 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
-from APIDataIO import APIDataIO
-from StockScreenerManager import SCREENER_CATEGORIES, StockScreenerManager
+from classes.APIDataIO import APIDataIO
+from classes.StockScreenerManager import SCREENER_CATEGORIES, StockScreenerManager
 
 logger = logging.getLogger(__name__)
 

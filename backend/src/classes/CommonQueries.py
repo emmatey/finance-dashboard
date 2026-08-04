@@ -1,5 +1,5 @@
 from collections import defaultdict
-from DbManager import DbManager
+from classes.DbManager import DbManager
 import logging
 import math
 

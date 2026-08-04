@@ -1,8 +1,8 @@
 import logging
 
-from CommonQueries import CommonQueries
+from classes.CommonQueries import CommonQueries
 from enum import Enum
-from helpers import TickerNotFoundError
+from scripts.helpers import TickerNotFoundError
 from time import time, strftime, gmtime
 
 

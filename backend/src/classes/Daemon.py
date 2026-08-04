@@ -1,14 +1,14 @@
 import logging
 import time
 
-from APIDataIO import APIDataIO
-from CommonQueries import CommonQueries
+from classes.APIDataIO import APIDataIO
+from classes.CommonQueries import CommonQueries
 from enum import Enum
-from logging_utils import fmt_data
-from MarketOverviewCoordinator import (REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP)
-from NewsAPIManager import NewsAPIManager
-from StockScreenerManager import StockScreenerManager, TableLifetimes
-from YahooQueryService import YahooQueryService
+from scripts.logging_utils import fmt_data
+from classes.MarketOverviewCoordinator import (REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP)
+from classes.NewsAPIManager import NewsAPIManager
+from classes.StockScreenerManager import StockScreenerManager, TableLifetimes
+from classes.YahooQueryService import YahooQueryService
 
 logger = logging.getLogger(__name__)
 

@@ -3,12 +3,12 @@ import logging
 import pandas as pd
 import yahooquery as yq
 from collections import defaultdict
-from DbManager import DbManager
-from helpers import TickerNotFoundError
-from logging_utils import fmt_data
-from ResearchDataCoordinator import ResearchDataCoordinator
+from classes.DbManager import DbManager
+from scripts.helpers import TickerNotFoundError
+from scripts.logging_utils import fmt_data
+from classes.ResearchDataCoordinator import ResearchDataCoordinator
 from typing import List, Tuple, Dict, Union, Any, Optional
-from YahooAPIClient import yq_exception_handler
+from classes.YahooAPIClient import yq_exception_handler
 
 logger = logging.getLogger(__name__)
 

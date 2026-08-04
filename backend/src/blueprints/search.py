@@ -2,8 +2,8 @@ import logging
 
 from flask import Blueprint, jsonify, request
 
-from SearchManager import SearchManager
-from YahooQueryService import YahooQueryService
+from classes.SearchManager import SearchManager
+from classes.YahooQueryService import YahooQueryService
 
 logger = logging.getLogger(__name__)
 

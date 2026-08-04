@@ -2,9 +2,9 @@ import logging
 
 from flask import Blueprint, jsonify, request, session
 
-import helpers
-from CommonQueries import CommonQueries
-from ReportManager import ReportManager
+from scripts import helpers
+from classes.CommonQueries import CommonQueries
+from classes.ReportManager import ReportManager
 
 logger = logging.getLogger(__name__)
 

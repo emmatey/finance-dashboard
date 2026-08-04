@@ -2,8 +2,8 @@ import logging
 
 from flask import Blueprint, jsonify
 
-from APIDataIO import APIDataIO
-from MarketOverviewCoordinator import (
+from classes.APIDataIO import APIDataIO
+from classes.MarketOverviewCoordinator import (
     MarketOverviewCoordinator,
     REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP,
 )

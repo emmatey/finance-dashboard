@@ -1,9 +1,9 @@
 import datetime
 import logging
-from CommonQueries import CommonQueries
-from helpers import TickerNotFoundError
+from classes.CommonQueries import CommonQueries
+from scripts.helpers import TickerNotFoundError
 from collections import deque, defaultdict
-from ResearchDataCoordinator import ResearchDataCoordinator
+from classes.ResearchDataCoordinator import ResearchDataCoordinator
 from typing import Dict, List, Union, Any
 
 

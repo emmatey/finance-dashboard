@@ -9,7 +9,7 @@ from flask_session import Session
 from werkzeug.exceptions import HTTPException
 
 # Local Application Modules
-from Daemon import Daemon
+from classes.Daemon import Daemon
 from blueprints.auth import auth_bp
 from blueprints.internal import internal_bp
 from blueprints.market_overview import market_overview_bp

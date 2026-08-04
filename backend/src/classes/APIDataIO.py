@@ -1,7 +1,7 @@
 import logging
 
-from DbManager import DbManager
-from ResearchDataCoordinator import ResearchDataCoordinator
+from classes.DbManager import DbManager
+from classes.ResearchDataCoordinator import ResearchDataCoordinator
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 

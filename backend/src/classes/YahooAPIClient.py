@@ -1,6 +1,6 @@
-from DbManager import DbManager
+from classes.DbManager import DbManager
 from functools import wraps
-from logging_utils import fmt_data
+from scripts.logging_utils import fmt_data
 from requests.exceptions import ConnectionError, Timeout, HTTPError
 from curl_cffi.requests.exceptions import Timeout as CurlTimeout, ConnectionError as CurlConnectionError, HTTPError as CurlHTTPError
 from time import sleep, time

@@ -1,7 +1,7 @@
 import logging
 
 from flask import Blueprint, jsonify
-from Daemon import Daemon
+from classes.Daemon import Daemon
 
 logger = logging.getLogger(__name__)
 
