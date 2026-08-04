@@ -3,7 +3,7 @@ import os
 
 from CommonQueries import CommonQueries
 from dotenv import load_dotenv
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import BadData, BadSignature, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 logger = logging.getLogger(__name__)
@@ -16,23 +16,36 @@ class AccountManager(CommonQueries):
     This class handles login, registration, and password changing.
     """
     @staticmethod
-    def generate_verification_token(context_salt: str, username: str) -> bool:
+    def generate_verification_token(context_salt: str, username: str) -> str:
         """
         Generates a time sensitive, url safe, token to verify various actions.
         """
         if not isinstance(secret_key, str):
-            logger.error(f"Secret key for token hashing not present of of wrong type. Must be str is {type(secret_key)}.")
-            return False
+            logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
+            raise TypeError("Secret key for token hashing not present or of wrong type.")
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
-        print(serializer.dumps(username))
-        
+        return serializer.dumps(username)
 
     @staticmethod
-    def validate_verification_token(context_salt: str) -> bool:
+    def validate_verification_token(context_salt: str, token: str, max_age: int = 3600) -> str:
         """
-        Checks if a verification token passed is valid, allowing further actions if so.
+        Checks if a verification token passed is valid, returning the
+        username it was issued for if so.
         """
-        pass
+        if not isinstance(secret_key, str):
+            logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
+            raise TypeError("Secret key for token hashing not present or of wrong type.")
+        serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
+        try:
+            username = serializer.loads(token, max_age=max_age)
+        except BadSignature:
+            logger.warning(f"Verification token failed signature check (salt='{context_salt}').")
+            raise
+        except BadData:
+            logger.warning(f"Verification token was malformed (salt='{context_salt}').")
+            raise
+        return username
+    
     def login(self, username, password, session) -> bool:
         # Query database for username
         rows = self.select_query(
@@ -77,4 +90,4 @@ class AccountManager(CommonQueries):
 
 if __name__ == "__main__":
     am = AccountManager()
-    am.generate_verification_token("reset_pw", username="emma")
+    print(am.generate_verification_token("reset_pw", username="emma"))
