@@ -12,14 +12,14 @@ This is because it needs to process a user's entire transaction history and then
 Any other route that is querying from a large set of datapoints is doing so in the sql engine on an indexed table so this portfolio calculation is unique. 
 
 7/9/26
-I initially considered making a different route that would serve my 'top/bottom' movers widget, but that seems like overkill and instead of doing 75+% of the computation and serving a subset of the portfolio data on a /top_bottom_movers route i'm going to just cache the calculaton instead.
+I initially considered making a different route that would serve my 'top/bottom' movers widget, but that seems like overkill and instead of doing 75+% of the computation and serving a subset of the portfolio data on a /top_bottom_movers route i'm going to just cache the calculation instead.
 
 In python, once a module is imported it lives in memory for the lifetime of the process and is accessed via sys.modules.
 Anything in the module scope or the class var scope is accessible through this globally within a given process.
 
 This means I can use a class var to hold the 'user_holdings' state once computed and expose class methods to access and mutate it where needed throughout the app. logout(delete) transact(recalculate) fetch_holdings(read). 
 
-This is "event-based cache invalidation". and will not be refreshed on a timer. Although, im realizing now that I cant just cache the finished user portfolio data because it will be invalidated by every price lookup. Instead i'll draw the cache boundry at stock_id: [qty, cost_basis, total_cost] and have the server re-compute the columns derived from current price live every time, but this will be much less expensive. 
+This is "event-based cache invalidation". and will not be refreshed on a timer. Although, im realizing now that I cant just cache the finished user portfolio data because it will be invalidated by every price lookup. Instead i'll draw the cache boundary at stock_id: [qty, cost_basis, total_cost] and have the server re-compute the columns derived from current price live every time, but this will be much less expensive. 
 
 An alternative is to expand my "balance_snapshots" system to hold the qty owned data required to calculate top and bottom movers. 
 
@@ -30,7 +30,7 @@ THE PLAN!
     Goal: Get the 'screeners' to each render in their own frames. that goes card(scrollable table)
     
     Currently the screeners are rendering correctly. IF i remember correctly there's not much I 
-can do to effect the screeners im getting from the api. This feels like a good opportunity
+can do to affect the screeners im getting from the api. This feels like a good opportunity
 to make this backend better by just allowing a direct throughline from the screeners data source
 and the api. Currently i arbitrarily cut off the data flow and pick a subset. And make my own
 For now though, assuming im working with the fixed set of screeners.
@@ -59,7 +59,7 @@ I'm thinking I should examine the way the screener data is currently captured an
         3. Extracts a custom "relative volume" screener.
             Q: From where?
             A: Filtered screeners, which is a list of companies which showed up in
-            any of the screeners. The screeners come from the yq source as A
+            any of the screeners. The screeners come from the yq source as a
             dict with "screener name" as the key, and a dict of data about a company
             This dict isn't specific to the screener just associated via this 
             dict.
@@ -138,7 +138,7 @@ I'm thinking I should examine the way the screener data is currently captured an
         Okay nevermind, so the new plan is ...
             1. Add a table that has screener_name: ages
                 a. Include the custom screeners with this. 
-                My issue now is, that if i let too many screeners get stale waiting fo someone to look at them
+                My issue now is, that if i let too many screeners get stale waiting for someone to look at them
                 my custom screeners become less accurate. But if I have satan.py look at this screeners table and
                 keep things up to date, im just moving the hangup from calling them all when i open screeners page.
                 to a random request. And im not sure if that's any better behavior. I guess it would make the pause 
@@ -151,7 +151,7 @@ I'm thinking I should examine the way the screener data is currently captured an
                 see if the stocks were looking at to construct our subset screeners are up to date.
                 If we go for a background update against the screener age table that follows our codebase convention
                 and has the effect that we can rely on the data.
-                OKAY! so we DONT need the screener metadata table after all?? Or wait, shit we do.
+                OKAY! so we DON'T need the screener metadata table after all?? Or wait, shit we do.
                 because we need to use it to select the screeners from the db.
 
 
@@ -168,7 +168,7 @@ I'm thinking I should examine the way the screener data is currently captured an
                             If a custom screener is selected we should redirect to a method that Extracts
                             the relevant data from the db internally instead of from the screeners incoming.
 
-                        If the data is fresh, just get it from the internal db and dont call yq.
+                        If the data is fresh, just get it from the internal db and don't call yq.
 
 
     After Class:
@@ -238,31 +238,31 @@ I'm thinking I should examine the way the screener data is currently captured an
 
 7/22:
     Today's: Goal:
-        Implement concurrency via threadding to allow "daemon" to run at the same time that requests are answered.
+        Implement concurrency via threading to allow "daemon" to run at the same time that requests are answered.
         Currently the app calls Daemon.run() at the teardown of every request context. This simulates having a background
         process crudely, but has the issue of causing routine requests for things like navigating to a new page, which should
-        be quick, to hang, even on the local develpment server.
+        be quick, to hang, even on the local development server.
         
-        For the duration of devlopment up to this point I've been operating under the assumption that concurrency was 
-        off the table because free hositng generally only allows one process. But of course, within one process we can
-        have many threads, and it's very normal to use multi-threadding to handle i/o tasks like fetching data from YQ, which
+        For the duration of development up to this point I've been operating under the assumption that concurrency was 
+        off the table because free hosting generally only allows one process. But of course, within one process we can
+        have many threads, and it's very normal to use multi-threading to handle i/o tasks like fetching data from YQ, which
         is the common thing that causes the app to hang currently.
 
         The concerns with this are that I designed the entire application around the assumption that the data which the daemon handles
-        will always be up to date when it is called upon, this is because prior to now, everything has been linear and syncronous.
+        will always be up to date when it is called upon, this is because prior to now, everything has been linear and synchronous.
 
         My current instinct is that the main sticking point will be the price data, but before I begin I will read further into the
-        concurrent futures library, and I will remind myself exactally what data is currently being updated by this Daemon.py class.
+        concurrent futures library, and I will remind myself exactly what data is currently being updated by this Daemon.py class.
 
         Goals for concurrent futures docs reading:
-            - Learn more about the locking mechanism and find out how to handle the situaiton where user B makes a request 
+            - Learn more about the locking mechanism and find out how to handle the situation where user B makes a request 
             because the 'freshness' table said so, even though user A has already made the same request but just hasn't yet 
-            updated the table due to the work being in progres.
-            - Learn more about the implemantion details and the limitations of the library in general.
+            updated the table due to the work being in progress.
+            - Learn more about the implementation details and the limitations of the library in general.
             - Find at least one alternative library that can do the same thing.
-                - On alternatives i read about threadding library but it seems concurrent futures is just an
+                - On alternatives i read about threading library but it seems concurrent futures is just an
                 easier to use interface for that, so I can skip it. As for asyncIO I feel like since some of the daemon tasks
-                also require calcuation I'll follow this nice sounding sentence I found on the internet.
+                also require calculation I'll follow this nice sounding sentence I found on the internet.
                 "threading is for working in parallel, and async is for waiting in parallel" and choose to not use asyncIO
 
         Data that Daemon.py currently updates:
@@ -286,7 +286,7 @@ I'm thinking I should examine the way the screener data is currently captured an
         Okay im taking a break. i think im going to use "https://docs.python.org/3/library/threading.html#threading.Thread.daemon" when i come back
 
 7/23:
-    Today I will attempt to use the threadding library with a "daemon" thread to run my Daemon.py on a loop in app.py. I'm doing this instead of
+    Today I will attempt to use the threading library with a "daemon" thread to run my Daemon.py on a loop in app.py. I'm doing this instead of
     threadpool manager because it should be less overhead, and I don't need to worry about cleaning up the threadpooler on shutdown. there
     may however be downsides I'm not aware of, but I guess I'll see when i get there.
 
@@ -294,11 +294,11 @@ I'm thinking I should examine the way the screener data is currently captured an
     request, but can be made manually. The only question I have now is that I don't know where to establish this loop and context.
 
     I've decided to pivot entirely. Instead of running a thread on a loop within app.py, im deciding instead to create a route which exists to awaken the daemon and 
-    run its tasks. This is advantageous because i can have parallel instnances of the web server serving requests without parallel loops and threads which isn't what I want
-    insted I will just hit this endpoint every x seconds from script that runs somewhere else.
+    run its tasks. This is advantageous because i can have parallel instances of the web server serving requests without parallel loops and threads which isn't what I want
+    instead I will just hit this endpoint every x seconds from script that runs somewhere else.
 
     Today I also removed my login required decorator from the helpers.py script. I did this because it didn't check if any given user was logged in, only if any user was logged 
-    in. This made it pretty pointles for security, and I wasn't sure of the benifit anyways. I believe this was a remnant of the cs50 days where this decorator was used as a 
+    in. This made it pretty pointless for security, and I wasn't sure of the benefit anyways. I believe this was a remnant of the cs50 days where this decorator was used as a 
     demonstration. Now that there's a class of internal routes a proper administration system is probably in order with different user classes. If I ever do this, I'll reintroduce 
     the login restriction for the routes then, but for now I just removed them.
 
@@ -314,10 +314,10 @@ I'm thinking I should examine the way the screener data is currently captured an
     Since I don't want to upset that mechanism, I think I'll just be trying to dump these new stories from the top_headlines endpoint into the db
     and let the existing system pick them out and mix them with whatever yahooquery is sending out too.
 
-    I also want to integrate the search feature into the searchbar so that users can see more than just news from yahoo.com as is the current state of things.
+    I also want to integrate the search feature into the search bar so that users can see more than just news from yahoo.com as is the current state of things.
 
     The main issue I have is, how will I be able to tie the stories from newsAPI to specific symbols in the DB as the "newssymbols" table currently does.
-    I'm tihnking that unless they have the metadata available I won't be able to do this. Which I guess is fine because search will still work, and headlines will
+    I'm thinking that unless they have the metadata available I won't be able to do this. Which I guess is fine because search will still work, and headlines will
     still appear on the homepage. I'll just be missing out on the research page showing stories related to any given ticker.
     I also want to mark top_headlines in a different way so they can be purged and refreshed on a n-ly basis.
 
@@ -326,7 +326,7 @@ I'm thinking I should examine the way the screener data is currently captured an
             - Will I store these stores anywhere, or no?
                 - If a user searches a company, maybe yes? It will be hard to distinguish.
         2. Integrate top_headlines with the frontpage
-            - How will I mark these to be purged / cache lifeime.
+            - How will I mark these to be purged / cache lifetime.
     
     Questions:
         Q: Does the api currently provide any info similar to "related tickers"?
@@ -343,7 +343,7 @@ I'm thinking I should examine the way the screener data is currently captured an
     I've finished up implementing the method which handles requesting for and inserting today's top news stories as well as cleaning the
     database of all news stories over a week old.
 
-    Today I'm focused on figuring out how to handle the search funciton. Currently my search bar just checks what exists in the database and pulls
+    Today I'm focused on figuring out how to handle the search function. Currently my search bar just checks what exists in the database and pulls
     from that. But i want to integrate the newsAPI endpoint into this search bar too so there's a wider range of results.
 
     Currently the system has an offline news search and an online news search. The offline endpoint is used for the debouncing on the search bar
@@ -354,11 +354,11 @@ I'm thinking I should examine the way the screener data is currently captured an
     This points to two things, caching the results of a user's news search and skipping requests to the API if there's already relevant results.
     My issue though is that it might be hard to tell in what case its best to request newsAPI again, and when its best to just serve what's in the db.
 
-    This definately adds some complexity and it might not actually be worth doing at the moment considering that I have no users.
+    This definitely adds some complexity and it might not actually be worth doing at the moment considering that I have no users.
 
     I'm thinking maybe the best plan is the modify the search online for news method to call the newsAPImanager method that calls the newsAPI search route
     until there's an error and then falls back to yahooquery search and then falls back to SQL on the db. I can then add yet another mechanism to the daemon
-    whch maybe will just poll the headlines to make sure those get grabbed every couple hours.
+    which maybe will just poll the headlines to make sure those get grabbed every couple hours.
 
     So tasks are 
         1. Add a method to newsAPIManager that can call to the api with a specific query.
@@ -367,29 +367,29 @@ I'm thinking I should examine the way the screener data is currently captured an
         3. Edit the search manager's news function > online function to waterfall from newsAPI > yahooquery > offline method.
 
 8/3:
-    Back at the Seattle central library today. After sucessfully completing my implementaiton of the newsAPI into the project, I'm fast approaching
+    Back at the Seattle central library today. After successfully completing my implementation of the newsAPI into the project, I'm fast approaching
     the end of the line for "version 1.0" (aka the only version). Just had a nice lunch with my friend at supreme dumplings.
-    Today's goal is to implement the functinality of changing a password. This should be an interesting problem because I currently don't really have
+    Today's goal is to implement the functionality of changing a password. This should be an interesting problem because I currently don't really have
     any sort of method of creating a "recovery question" or sending confirmation emails. I do think it would be quite impressive to do one or both of those
-    things, but I'm not sure how. As of now, I think all this system would support without extention beyond the immidate feature is just changing password for
+    things, but I'm not sure how. As of now, I think all this system would support without extension beyond the immediate feature is just changing password for
     people who can already authenticate their account (i.e. people who know their username and password.). The method of deployment for this project will be on A
-    free tier web hosting service that has en emphemeral database that sets back to a pre-determined demo type state on spin up. For this reason it
+    free tier web hosting service that has an ephemeral database that sets back to a pre-determined demo type state on spin up. For this reason it
     seems like this feature in and of itself may be a bit pointless but I feel like I want to add the option just for the sake of completeness. But if I'm doing that
     why not do it properly and add email auth?
 
     Q: What options do I have to implement an email authentication service? How complex would this be?
     A: Itsdangerous library, which is already part of the flask ecosystem
 
-    I think this is really my only question becaues if I decide not to do this, I wont need to add any field associating emails with people's accounts,
+    I think this is really my only question because if I decide not to do this, I wont need to add any field associating emails with people's accounts,
     and the auth/change route will be as simple as a couple db queries. 
 
     My overall plan will be to use Itsdangerous as this is already a part of flask in the same way that jinja is.
     My initial goal will be to get reset links in the terminal, and then link to some free mail API. Time to read.
 
-    The two key concepts to keep in mind here seem to be the "signature" and the "salt". The signature is a secret key stored with the enviroment
-    vairables that is used to hash "tokens". Tokens are composed of an account identifier, a timestamp, and the secret key. 
+    The two key concepts to keep in mind here seem to be the "signature" and the "salt". The signature is a secret key stored with the environment
+    variables that is used to hash "tokens". Tokens are composed of an account identifier, a timestamp, and the secret key. 
 
-    Salt is used to diferentiate the context in which these tokens are valid for authentication. For example pw changing vs account deletion ect.
+    Salt is used to differentiate the context in which these tokens are valid for authentication. For example pw changing vs account deletion ect.
     I'm still trying to figure out how the server should go about interpreting these tokens, but it seems the standard is to just have them 
-    as path paramaters and send the urls to users who can then make get requests with them to endpoints that will interpret the tokens. 
+    as path parameters and send the urls to users who can then make get requests with them to endpoints that will interpret the tokens. 
     
