@@ -16,7 +16,7 @@ class AccountManager(CommonQueries):
     This class handles login, registration, and password changing.
     """
     @staticmethod
-    def generate_verification_token(context_salt: str, username: str) -> str:
+    def generate_verification_token(context_salt: str, email: str) -> str:
         """
         Generates a time sensitive, url safe, token to verify various actions.
         """
@@ -24,27 +24,27 @@ class AccountManager(CommonQueries):
             logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
             raise TypeError("Secret key for token hashing not present or of wrong type.")
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
-        return serializer.dumps(username)
+        return serializer.dumps(email)
 
     @staticmethod
-    def validate_verification_token(context_salt: str, token: str, max_age: int = 3600) -> str:
+    def validate_verification_token(context_salt: str, token: str, max_age: int = 10*60) -> str:
         """
         Checks if a verification token passed is valid, returning the
-        username it was issued for if so.
+        email it was issued for if so.
         """
         if not isinstance(secret_key, str):
             logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
             raise TypeError("Secret key for token hashing not present or of wrong type.")
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
         try:
-            username = serializer.loads(token, max_age=max_age)
+            email = serializer.loads(token, max_age=max_age)
         except BadSignature:
             logger.warning(f"Verification token failed signature check (salt='{context_salt}').")
             raise
         except BadData:
             logger.warning(f"Verification token was malformed (salt='{context_salt}').")
             raise
-        return username
+        return email
 
     @staticmethod
     def check_username_valid(username: str) -> tuple[bool, str | None]:
@@ -76,23 +76,17 @@ class AccountManager(CommonQueries):
             return False, "Password must contain at least one non-letter character."
         return True, None
 
-    def login(self, username, password, session) -> bool:
-        # Query database for username
-        rows = self.select_query(
-            "SELECT * FROM users WHERE username = ?", (username, )
-            )
-
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(
-            rows[0]["hash"], password
-        ):
-            logger.warning(f"Failed login attempt for username '{username}'")
+    def check_email_in_use(self, email: str) -> bool:
+        email_sql = """
+        SELECT * 
+        FROM users
+        WHERE email = ?
+        """
+        rows = self.select_query(email_sql, (email, ))
+        if len(rows) >= 1:
+            return True
+        else:
             return False
-
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-        logger.info(f"User '{username}' logged in (user_id={rows[0]['id']})")
-        return True
 
     def register(self, username: str, password: str) -> int:
         """
@@ -117,7 +111,25 @@ class AccountManager(CommonQueries):
         logger.info(f"User '{username}' registered")
         return result
 
+    def login(self, username, password, session) -> bool:
+        # Query database for username
+        rows = self.select_query(
+            "SELECT * FROM users WHERE username = ?", (username, )
+            )
+
+        # Ensure username exists and password is correct
+        if len(rows) != 1 or not check_password_hash(
+            rows[0]["hash"], password
+        ):
+            logger.warning(f"Failed login attempt for username '{username}'")
+            return False
+
+        # Remember which user has logged in
+        session["user_id"] = rows[0]["id"]
+        logger.info(f"User '{username}' logged in (user_id={rows[0]['id']})")
+        return True
+
 
 if __name__ == "__main__":
     am = AccountManager()
-    print(am.generate_verification_token("reset_pw", username="emma"))
+    

@@ -395,7 +395,7 @@ I'm thinking I should examine the way the screener data is currently captured an
     
 8/4:
     Okay, so today I have a clearer idea of how the authentication process will go and I have a series of methods I need to implement by the end of the day.
-        1. Check if an email exists, return bool.
+        1. Check if an email exists, return bool. - DONE
         2. Create a signed token that contains email.
         3. Check if the token is valid.
         4. Update password
