@@ -8,10 +8,7 @@ logger = logging.getLogger(__name__)
 class CommonQueries(DbManager):
     """
     Common database queries used across multiple managers.
-    
-    These are simple SELECT/UPDATE queries with no business logic.
-    Complex queries with joins, CTEs, or business logic belong in
-    their specific manager classes.
+    This class mostly exists to fix circular import issues.
     """
     
     def get_balance(self, user_id: int) -> float | None:

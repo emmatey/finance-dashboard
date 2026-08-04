@@ -393,3 +393,11 @@ I'm thinking I should examine the way the screener data is currently captured an
     I'm still trying to figure out how the server should go about interpreting these tokens, but it seems the standard is to just have them 
     as path parameters and send the urls to users who can then make get requests with them to endpoints that will interpret the tokens. 
     
+8/4:
+    Okay, so today I have a clearer idea of how the authentication process will go and I have a series of methods I need to implement by the end of the day.
+        1. Check if an email exists, return bool.
+        2. Create a signed token that contains email.
+        3. Check if the token is valid.
+        4. Update password
+        5. Add an email field to account creation. 
+        6. Extract method which checks if a password is valid.
