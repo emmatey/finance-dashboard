@@ -106,13 +106,9 @@ class AccountManager(CommonQueries):
         else:
             return False
 
-    def change_password(self, password: str, username: str) -> bool:
-        user_id = self.get_user_id_from_username(username=username)
-        if not user_id:
-            logger.error(f"Username {username} not found!")
-            return False
-
+    def change_password(self, password: str, user_id: int) -> bool:
         hash = generate_password_hash(password=password)
+        
         password_sql = """
         UPDATE users
         SET hash = ?

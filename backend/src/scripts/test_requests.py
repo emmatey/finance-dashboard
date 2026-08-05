@@ -34,7 +34,7 @@ def register_user(username, password):
 
 s = requests.Session()
 #res = s.post(
-#    f"{BASE_URL}/api/auth/login", json={"username": "emma", "password": "123Pass"}
+#    f"{BASE_URL}/api/session/login", json={"username": "emma", "password": "123Pass"}
 #)
 #print(res.json())
 

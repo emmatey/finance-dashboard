@@ -17,6 +17,7 @@ from blueprints.research import research_bp
 from blueprints.scoreboard import scoreboard_bp
 from blueprints.screeners import screeners_bp
 from blueprints.search import search_bp
+from blueprints.session import session_bp
 from blueprints.trade import trade_bp
 from blueprints.user import user_bp
 
@@ -65,6 +66,7 @@ app.config["DATABASE"] = "finance.db"
 
 # Register resource blueprints
 app.register_blueprint(auth_bp)
+app.register_blueprint(session_bp)
 app.register_blueprint(internal_bp)
 app.register_blueprint(user_bp)
 app.register_blueprint(trade_bp)

@@ -12,7 +12,7 @@ async function logIn(username, password) {
     const safePassword = String(password).trim();
 
     try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch('/api/session/login', {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

@@ -6,7 +6,7 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(undefined)  // undefined = still loading, null = not logged in
 
     useEffect(() => {
-        fetch('/api/auth/me')
+        fetch('/api/session/me')
             .then(res => res.json())
             .then(data => setUser(data?.username ?? null))
             .catch((error) => {
@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
     }, [])
 
     const logout = () => {
-        fetch('/api/auth/logout', { method: 'POST' })
+        fetch('/api/session/logout', { method: 'POST' })
             .finally(() => setUser(null))
     }
 
