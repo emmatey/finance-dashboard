@@ -2,6 +2,7 @@ CREATE TABLE 'users' (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     username TEXT NOT NULL,
     email TEXT NOT NULL,
+    email_verified BOOLEAN NOT NULL DEFAULT False,
     hash TEXT NOT NULL,
     cash NUMERIC NOT NULL DEFAULT 100000.00
     );

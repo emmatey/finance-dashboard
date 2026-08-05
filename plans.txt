@@ -431,3 +431,32 @@ I'm thinking I should examine the way the screener data is currently captured an
                 - Send token as part of a URL in an email to user.
                 - Receive GET request containing token which redirects user home and removes email from their user table, sets email verified to false.
                 - Change "email" state on user table row.
+
+8/5:
+    User clicks "I forgot password" 
+        >
+    Navigate to waiting page on frontend
+        > 
+    Internal request to route which generates token, and sends email
+        > 
+    Link is clicked
+        > 
+    Navigates to verification page which checks the token, and shows a form if valid
+        >
+    User Clicks Update email
+        > 
+    Internal request to update email route'
+        > 
+    Navigates to home on frontend
+
+    User Clicks "Verify email"
+        >
+    Navigates to confirmation page on frontend
+        > 
+    Internal request to route which generates token and sends email
+        >
+    User clicks link in email
+        >
+    Navigates to confirmation page
+        >
+    Updates email verified bool to 1

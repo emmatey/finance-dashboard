@@ -62,7 +62,27 @@ class CommonQueries(DbManager):
             return result[0]['id']
         else:
             return 0
-    
+
+    def get_user_id_from_email(self, email: str) -> int:
+        """
+        Get user_id from email
+
+        Returns:
+            user_id on success.\n
+            0 on failure.
+        """
+        sql = """
+        SELECT id
+        FROM users
+        WHERE email = ?
+        """
+        result = self.select_query(sql, (email.strip(),))
+
+        if result:
+            return result[0]['id']
+        else:
+            return 0
+
     def get_symbol_id(self, ticker: str) -> int | None:
         """
         Get symbol database ID from ticker

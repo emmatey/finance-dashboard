@@ -10,7 +10,25 @@ logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
+@auth_bp.route("/token/forgot_pw", methods=["GET"])
+def generate_and_send_forgot_pw_token():
+    am = AccountManager()
 
+    email = request.args.get("email")
+    if not email:
+        return jsonify({
+            "success": False,
+            "message": "Must provide ?email=<str> query parameter."
+        }), 400
+
+    user_id = am.get_user_id_from_email(email=email)
+    if not user_id:
+        return jsonify({
+            "success": False,
+            "message": f"No user found for email {email}."
+        }), 400
+
+    signed_token = am.generate_verification_token()
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
