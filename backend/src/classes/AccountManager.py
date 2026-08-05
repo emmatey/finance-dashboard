@@ -35,10 +35,9 @@ class AccountManager(CommonQueries):
     @staticmethod
     def validate_verification_token(
         context_salt: str, token: str, max_age: int = 10 * 60
-    ) -> str:
+    ) -> dict:
         """
-        Checks if a verification token passed is valid, returning the
-        email it was issued for if so.
+        Checks if a verification token passed is valid
         """
         if not isinstance(secret_key, str):
             logger.error(
@@ -50,7 +49,7 @@ class AccountManager(CommonQueries):
 
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
         try:
-            email = serializer.loads(token, max_age=max_age)
+            decrypted_token = serializer.loads(token, max_age=max_age)
         except BadSignature:
             logger.warning(
                 f"Verification token failed signature check (salt='{context_salt}')."
@@ -60,7 +59,7 @@ class AccountManager(CommonQueries):
             logger.warning(f"Verification token was malformed (salt='{context_salt}').")
             raise
 
-        return email
+        return decrypted_token
 
     @staticmethod
     def check_username_valid(username: str) -> tuple[bool, str | None]:
@@ -108,7 +107,7 @@ class AccountManager(CommonQueries):
 
     def change_password(self, password: str, user_id: int) -> bool:
         hash = generate_password_hash(password=password)
-        
+
         password_sql = """
         UPDATE users
         SET hash = ?
@@ -121,7 +120,7 @@ class AccountManager(CommonQueries):
 
         return True
 
-    def register(self, username: str, password: str, email: str) -> int:
+    def register(self, username: str, password: str, email: str | None = None) -> int:
         """
         Assumes email has been validated, and username and pw meet the requirements.
         """
@@ -130,7 +129,7 @@ class AccountManager(CommonQueries):
         result = self.modify_query(
             """
             INSERT INTO users (username, email, hash)
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
             """,
             (username, email, hash),
         )
