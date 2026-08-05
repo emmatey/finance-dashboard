@@ -49,7 +49,7 @@ logger.addHandler(sh)
 # Third-party libraries are chatty at DEBUG/INFO (one line per HTTP connection,
 # one per request) and would drown out the app's own narrative. Keep them to
 # warnings and above regardless of LOG_LEVEL.
-for _noisy_logger in ("urllib3", "urllib3.connectionpool", "requests", "werkzeug"):
+for _noisy_logger in ("urllib3", "urllib3.connectionpool", "requests"):
     logging.getLogger(_noisy_logger).setLevel(logging.WARNING)
 
 # Configure application

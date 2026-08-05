@@ -1,6 +1,7 @@
 import logging
 
 from flask import Blueprint, jsonify, request, session
+from itsdangerous import BadData, BadSignature, SignatureExpired
 
 from classes.AccountManager import AccountManager
 from classes.CommonQueries import CommonQueries
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
-@auth_bp.route("/token/forgot_pw", methods=["GET"])
+@auth_bp.route("/token/generate/forgot_pw", methods=["GET"])
 def generate_and_send_forgot_pw_token():
     am = AccountManager()
 
@@ -28,7 +29,54 @@ def generate_and_send_forgot_pw_token():
             "message": f"No user found for email {email}."
         }), 400
 
-    signed_token = am.generate_verification_token()
+    try:
+        signed_token = am.generate_verification_token(context_salt="forgot_pw", email=email)
+    except TypeError:
+        logger.exception("Failed to generate verification token due to server misconfiguration.")
+        return jsonify({
+            "success": False,
+            "message": "Unable to process request at this time."
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "data": signed_token
+    }), 200
+
+@auth_bp.route("/token/verify/forgot_pw", methods=["GET"])
+def verify_signed_token_forgot_pw():
+    am = AccountManager()
+
+    token = request.args.get("token")
+    if not token:
+        return jsonify({
+            "success": False,
+            "message": "Must provide ?token=<str> query parameter."
+        }), 400
+
+    try:
+        decrypted_token = am.validate_verification_token(context_salt="forgot_pw", token=token)
+    except SignatureExpired:
+        return jsonify({
+            "success": False,
+            "message": "Token has expired."
+        }), 400
+    except (BadSignature, BadData):
+        return jsonify({
+            "success": False,
+            "message": "Invalid token."
+        }), 400
+    except TypeError:
+        logger.exception("Failed to validate verification token due to server misconfiguration.")
+        return jsonify({
+            "success": False,
+            "message": "Unable to process request at this time."
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "data": decrypted_token
+    }), 200
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
