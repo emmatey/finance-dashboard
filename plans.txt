@@ -394,10 +394,40 @@ I'm thinking I should examine the way the screener data is currently captured an
     as path parameters and send the urls to users who can then make get requests with them to endpoints that will interpret the tokens. 
     
 8/4:
-    Okay, so today I have a clearer idea of how the authentication process will go and I have a series of methods I need to implement by the end of the day.
-        1. Check if an email exists, return bool. - DONE
-        2. Create a signed token that contains email. - DONE
-        3. Check if the token is valid. - DONE
-        4. Update password - DONE
-        5. Add an email field to account creation. 
-        6. Extract method which checks if a password is valid. - DONE
+    User Stories:
+        "I can register for an account, optionally providing an email address."
+            Backend Actions Required:
+                - Check if username is valid
+                - Check if username is in use
+                - Check if password is valid
+                - Check if email is in use
+                - Write new user to DB
+
+        "I can change my password if I know my current username and password."
+            Backend Actions Required:
+                - Check if username and password are both correct.
+                - Change password in database remembering to hash the password.
+
+        "I can change my password if I have access to my email address"
+            Backend Actions Required:
+                - Create signed token containing username. Using change_pw as salt.
+                - Send token as part of a URL in an email to user.
+                - Verify signed token is valid.
+                - Receive GET request containing token which directs to "enter new password" form.
+                - Change password in database remembering to hash the password.
+
+        "I can verify my email address."
+            Backend Actions Required:
+                - Create signed token using verify_email as salt.
+                - Verify signed token is valid.
+                - Send token as part of a URL in an email to user.
+                - Receive GET request containing token which redirects home.
+                - Change "verified" state on user table
+
+        "I can change the email address associated with my account."
+            Backend Actions Required:
+                - Create signed token using change_email as salt.
+                - Verify signed token is valid.
+                - Send token as part of a URL in an email to user.
+                - Receive GET request containing token which redirects user home and removes email from their user table, sets email verified to false.
+                - Change "email" state on user table row.
