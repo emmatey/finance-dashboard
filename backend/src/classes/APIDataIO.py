@@ -912,7 +912,7 @@ class APIDataIO(DbManager):
         Note:
             - Requires fresh data from set_screener_results() and set_financial_metrics()
         """
-        from StockScreenerManager import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
+        from classes.StockScreenerManager import YQ_SCREENER_NAMES, CUSTOM_SCREENERS
         valid_screeners = YQ_SCREENER_NAMES + CUSTOM_SCREENERS
         if screener_names is None:
             screener_names = valid_screeners
