@@ -68,6 +68,19 @@ def register():
 
 @auth_bp.route("/token/generate/forgot_pw", methods=["GET"])
 def generate_and_send_forgot_pw_token():
+    """
+    Generates a signed, time-limited password-reset token for a user.
+
+    Query parameters:
+        email (str): Email address of the account to generate a token for.
+
+    Returns:
+        200: Token generated. {"success": True, "data": str}
+        400: Missing email query parameter or no user found for email.
+             {"success": False, "message": str}
+        500: Server misconfiguration prevented token generation.
+             {"success": False, "message": str}
+    """
     am = AccountManager()
 
     email = request.args.get("email")
@@ -110,7 +123,20 @@ def generate_and_send_forgot_pw_token():
 @auth_bp.route("/token/verify/pw_change_request", methods=["GET"])
 def verify_signed_token_pw_change_request():
     """
-    This route is used to verify at token, and then redirect the user to a form to enter their new pw.
+    Verifies a password-reset token without consuming it.
+
+    Used to check that a token is valid before redirecting the user to a
+    form where they can enter their new password.
+
+    Query parameters:
+        token (str): Signed verification token from the forgot-password email.
+
+    Returns:
+        200: Token is valid. {"success": True, "data": dict} (decrypted token payload)
+        400: Missing token, expired token, or invalid token.
+             {"success": False, "message": str}
+        500: Server misconfiguration prevented token validation.
+             {"success": False, "message": str}
     """
     am = AccountManager()
 
@@ -151,7 +177,24 @@ def verify_signed_token_pw_change_request():
 @auth_bp.route("/token/verify/pw_change_submit", methods=["POST"])
 def verify_signed_token_pw_change_submit():
     """
-    This route is used to verify at token again, and then submit a password change.
+    Verifies a password-reset token and, if valid, applies a new password.
+
+    Query parameters:
+        token (str): Signed verification token from the forgot-password email.
+
+    Request body (JSON):
+        new_password (str): See check_pw_valid for password requirements.
+
+    Returns:
+        200: Password changed successfully. {"success": True}
+        400: Missing/malformed request, missing/invalid token query param,
+             expired or invalid token, token missing a valid user_id,
+             missing/invalid new_password, or password validation failure.
+             {"success": False, "message": str}
+        415: Request Content-Type was not application/json.
+             {"success": False, "message": str}
+        500: Server misconfiguration prevented token validation, or password
+             change failed unexpectedly. {"success": False, "message": str}
     """
     # Validate Request
     token = request.args.get("token")
@@ -169,11 +212,11 @@ def verify_signed_token_pw_change_submit():
     try:
         request_body = dict(request.get_json())
     except UnsupportedMediaType:
-        return jsonify({"success":False,"error": "Content-Type must be application/json"}), 415
+        return jsonify({"success": False, "message": "Content-Type must be application/json"}), 415
     except BadRequest:
-        return jsonify({"success":False,"error": "Malformed JSON"}), 400
+        return jsonify({"success": False, "message": "Malformed JSON"}), 400
     except TypeError:
-        return jsonify({"success": False, "error": "Malformed Request Body"}), 400
+        return jsonify({"success": False, "message": "Malformed Request Body"}), 400
 
     # Validate Token
     am = AccountManager()
