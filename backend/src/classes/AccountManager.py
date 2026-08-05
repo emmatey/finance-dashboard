@@ -15,33 +15,46 @@ class AccountManager(CommonQueries):
     """
     This class handles login, registration, and password changing.
     """
+
     @staticmethod
-    def generate_verification_token(context_salt: str, email: str) -> str:
+    def generate_verification_token(context_salt: str, email: str, user_id: int) -> str:
         """
         Generates a time sensitive, url safe, token to verify various actions.
         """
         if not isinstance(secret_key, str):
-            logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
-            raise TypeError("Secret key for token hashing not present or of wrong type.")
-        
+            logger.error(
+                f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}."
+            )
+            raise TypeError(
+                "Secret key for token hashing not present or of wrong type."
+            )
+
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
-        return serializer.dumps(email)
+        return serializer.dumps({"user_id": user_id, "email": email})
 
     @staticmethod
-    def validate_verification_token(context_salt: str, token: str, max_age: int = 10*60) -> str:
+    def validate_verification_token(
+        context_salt: str, token: str, max_age: int = 10 * 60
+    ) -> str:
         """
         Checks if a verification token passed is valid, returning the
         email it was issued for if so.
         """
         if not isinstance(secret_key, str):
-            logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
-            raise TypeError("Secret key for token hashing not present or of wrong type.")
-        
+            logger.error(
+                f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}."
+            )
+            raise TypeError(
+                "Secret key for token hashing not present or of wrong type."
+            )
+
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
         try:
             email = serializer.loads(token, max_age=max_age)
         except BadSignature:
-            logger.warning(f"Verification token failed signature check (salt='{context_salt}').")
+            logger.warning(
+                f"Verification token failed signature check (salt='{context_salt}')."
+            )
             raise
         except BadData:
             logger.warning(f"Verification token was malformed (salt='{context_salt}').")
@@ -53,7 +66,9 @@ class AccountManager(CommonQueries):
     def check_username_valid(username: str) -> tuple[bool, str | None]:
         # Check if username meets website requirements.
         # Username must be ascii and without spaces.
-        if not all(char.isascii() and char.isalnum() and char != " " for char in username):
+        if not all(
+            char.isascii() and char.isalnum() and char != " " for char in username
+        ):
             return False, "Username must be alphanumeric (A-Z, 0-9) with no spaces."
         if len(username) < 1:
             return False, "Username must be at least 1 char long."
@@ -85,7 +100,7 @@ class AccountManager(CommonQueries):
         FROM users
         WHERE email = ?
         """
-        rows = self.select_query(email_sql, (email, ))
+        rows = self.select_query(email_sql, (email,))
         if len(rows) >= 1:
             return True
         else:
@@ -120,21 +135,19 @@ class AccountManager(CommonQueries):
             """
             INSERT INTO users (username, email, hash)
             VALUES (?, ?)
-            """, (username, email, hash))
-        
+            """,
+            (username, email, hash),
+        )
+
         logger.info(f"User '{username}' registered")
         return result
 
     def login(self, username, password, session) -> bool:
         # Query database for username
-        rows = self.select_query(
-            "SELECT * FROM users WHERE username = ?", (username, )
-            )
+        rows = self.select_query("SELECT * FROM users WHERE username = ?", (username,))
 
         # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(
-            rows[0]["hash"], password
-        ):
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
             logger.warning(f"Failed login attempt for username '{username}'")
             return False
 
@@ -146,4 +159,3 @@ class AccountManager(CommonQueries):
 
 if __name__ == "__main__":
     am = AccountManager()
-    
