@@ -9,75 +9,6 @@ logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
-@auth_bp.route("/token/generate/forgot_pw", methods=["GET"])
-def generate_and_send_forgot_pw_token():
-    am = AccountManager()
-
-    email = request.args.get("email")
-    if not email:
-        return jsonify({
-            "success": False,
-            "message": "Must provide ?email=<str> query parameter."
-        }), 400
-
-    user_id = am.get_user_id_from_email(email=email)
-    if not user_id:
-        return jsonify({
-            "success": False,
-            "message": f"No user found for email {email}."
-        }), 400
-
-    try:
-        signed_token = am.generate_verification_token(context_salt="forgot_pw", email=email, user_id=user_id)
-    except TypeError:
-        logger.exception("Failed to generate verification token due to server misconfiguration.")
-        return jsonify({
-            "success": False,
-            "message": "Unable to process request at this time."
-        }), 500
-
-    return jsonify({
-        "success": True,
-        "data": signed_token
-    }), 200
-
-@auth_bp.route("/token/verify/forgot_pw", methods=["GET"])
-def verify_signed_token_forgot_pw():
-    """
-    This route is used to verify at token, and then redirect the user to a form to enter their new pw.
-    """
-    am = AccountManager()
-
-    token = request.args.get("token")
-    if not token:
-        return jsonify({
-            "success": False,
-            "message": "Must provide ?token=<str> query parameter."
-        }), 400
-
-    try:
-        decrypted_token = am.validate_verification_token(context_salt="forgot_pw", token=token)
-    except SignatureExpired:
-        return jsonify({
-            "success": False,
-            "message": "Token has expired."
-        }), 400
-    except (BadSignature, BadData):
-        return jsonify({
-            "success": False,
-            "message": "Invalid token."
-        }), 400
-    except TypeError:
-        logger.exception("Failed to validate verification token due to server misconfiguration.")
-        return jsonify({
-            "success": False,
-            "message": "Unable to process request at this time."
-        }), 500
-
-    return jsonify({
-        "success": True,
-        "data": decrypted_token
-    }), 200
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
@@ -101,8 +32,8 @@ def register():
 
     am = AccountManager()
     request_body = dict(request.json)
-    username = str(request_body.get('username', '')).strip()
-    password= str(request_body.get('password', ''))
+    username = str(request_body.get("username", "")).strip()
+    password = str(request_body.get("password", ""))
 
     username_valid, username_message = am.check_username_valid(username)
     if not username_valid:
@@ -114,10 +45,133 @@ def register():
     # Add user to db
     ret = am.register(username=username, password=password)
     if ret == 0:
-        return jsonify({
-            "success": False,
-            "message": f"Username {username} already in use."
-            }), 409
+        return (
+            jsonify(
+                {"success": False, "message": f"Username {username} already in use."}
+            ),
+            409,
+        )
 
     # Return good state
     return jsonify({"success": True}), 201
+
+
+@auth_bp.route("/token/generate/forgot_pw", methods=["GET"])
+def generate_and_send_forgot_pw_token():
+    am = AccountManager()
+
+    email = request.args.get("email")
+    if not email:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Must provide ?email=<str> query parameter.",
+                }
+            ),
+            400,
+        )
+
+    user_id = am.get_user_id_from_email(email=email)
+    if not user_id:
+        return (
+            jsonify({"success": False, "message": f"No user found for email {email}."}),
+            400,
+        )
+
+    try:
+        signed_token = am.generate_verification_token(
+            context_salt="forgot_pw", email=email, user_id=user_id
+        )
+    except TypeError:
+        logger.exception(
+            "Failed to generate verification token due to server misconfiguration."
+        )
+        return (
+            jsonify(
+                {"success": False, "message": "Unable to process request at this time."}
+            ),
+            500,
+        )
+
+    return jsonify({"success": True, "data": signed_token}), 200
+
+
+@auth_bp.route("/token/verify/forgot_pw", methods=["GET"])
+def verify_signed_token_forgot_pw():
+    """
+    This route is used to verify at token, and then redirect the user to a form to enter their new pw.
+    """
+    am = AccountManager()
+
+    token = request.args.get("token")
+    if not token:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Must provide ?token=<str> query parameter.",
+                }
+            ),
+            400,
+        )
+
+    try:
+        decrypted_token = am.validate_verification_token(
+            context_salt="forgot_pw", token=token
+        )
+    except SignatureExpired:
+        return jsonify({"success": False, "message": "Token has expired."}), 400
+    except (BadSignature, BadData):
+        return jsonify({"success": False, "message": "Invalid token."}), 400
+    except TypeError:
+        logger.exception(
+            "Failed to validate verification token due to server misconfiguration."
+        )
+        return (
+            jsonify(
+                {"success": False, "message": "Unable to process request at this time."}
+            ),
+            500,
+        )
+
+    return jsonify({"success": True, "data": decrypted_token}), 200
+
+
+@auth_bp.route("/token/verifed", methods=["GET"])
+def verify_signed_token_forgot_pw():
+    """
+    This route is used to verify at token, and then redirect the user to a form to enter their new pw.
+    """
+    am = AccountManager()
+
+    token = request.args.get("token")
+    if not token:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Must provide ?token=<str> query parameter.",
+                }
+            ),
+            400,
+        )
+
+    try:
+        decrypted_token = am.validate_verification_token(
+            context_salt="forgot_pw", token=token
+        )
+    except SignatureExpired:
+        return jsonify({"success": False, "message": "Token has expired."}), 400
+    except (BadSignature, BadData):
+        return jsonify({"success": False, "message": "Invalid token."}), 400
+    except TypeError:
+        logger.exception(
+            "Failed to validate verification token due to server misconfiguration."
+        )
+        return (
+            jsonify(
+                {"success": False, "message": "Unable to process request at this time."}
+            ),
+            500,
+        )
