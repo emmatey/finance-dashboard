@@ -1,8 +1,11 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
 
 import Home from './pages/Home.jsx'
 import Auth from './pages/Auth.jsx'
+import Login from './components/auth/Login.jsx'
+import Register from './components/auth/Register.jsx'
+import Change from './components/auth/Change.jsx'
 import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
@@ -14,7 +17,12 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/test" element={<Test />} />
-      <Route path="/auth" element={<Auth />} />
+      <Route path="/auth" element={<Auth />}>
+        <Route index element={<Navigate to="login" replace />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+        <Route path="change" element={<Change />} />
+      </Route>
       <Route path="/search" element={<Search />} />
       <Route path="/research" element={<Research />} />
       <Route path="/user/:username" element={<User />} />

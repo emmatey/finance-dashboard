@@ -1,7 +1,6 @@
-import Header from '@/components/Header.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function Change({ onSetMode }) {
+export default function Change() {
     return (
         <div className="flex justify-center px-6 py-16">
             <Card className="w-full max-w-sm">

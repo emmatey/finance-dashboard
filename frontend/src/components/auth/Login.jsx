@@ -33,7 +33,7 @@ async function logIn(username, password) {
     }
 }
 
-export default function Login({ onSetMode }) {
+export default function Login() {
     const[username, setUsername] = useState("");
     const[password, setPassword] = useState("");
     const {setUser} = useAuth();
@@ -80,11 +80,10 @@ export default function Login({ onSetMode }) {
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Password</Label>
-                                {/* onSetMode is used to "navigate" see /pages/auth.jsx*/}
                                 <button
                                     type="button"
                                     className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-                                    onClick={() => onSetMode('change')}
+                                    onClick={() => navigate('/auth/change')}
                                 >
                                     Forgot password?
                                 </button>
@@ -99,7 +98,7 @@ export default function Login({ onSetMode }) {
                         {wrong ? (
                             <p className="text-sm text-destructive">
                                 Unknown username or password.{' '}
-                                <button type="button" className="underline underline-offset-4" onClick={() => onSetMode('register')}>Register</button>
+                                <button type="button" className="underline underline-offset-4" onClick={() => navigate('/auth/register')}>Register</button>
                                 {' '}for a new account?
                             </p>
                         ) : null}

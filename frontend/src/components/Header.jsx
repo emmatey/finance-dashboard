@@ -32,7 +32,7 @@ export default function Header() {
 
     function handleLogout() {
         logout();
-        navigate('/auth?mode=login');
+        navigate('/auth/login');
     }
 
     return (
@@ -59,7 +59,7 @@ export default function Header() {
                         </>
                     )
                     : (
-                        <Button type="button" onClick={() => navigate('/auth?mode=login')}>Log In</Button>
+                        <Button type="button" onClick={() => navigate('/auth/login')}>Log In</Button>
                     )}
             </div>
         </header>

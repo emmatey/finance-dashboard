@@ -15,8 +15,8 @@ export default function Landing() {
             </p>
 
             <div className="mt-4 flex items-center gap-3">
-                <Button onClick={() => navigate('/auth?mode=login')}>Log in</Button>
-                <Button variant="outline" onClick={() => navigate('/auth?mode=register')}>New here? Register</Button>
+                <Button onClick={() => navigate('/auth/login')}>Log in</Button>
+                <Button variant="outline" onClick={() => navigate('/auth/register')}>New here? Register</Button>
             </div>
         </div>
         </>
