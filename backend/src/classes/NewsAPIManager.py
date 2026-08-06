@@ -122,7 +122,10 @@ class NewsAPIManager(CommonQueries):
             FROM global_events
             WHERE id = 1
             """
-            rows = self.select_query(ttl_sql, ())
+            try:
+                rows = self.select_query(ttl_sql, ())
+            except Exception as e:
+                logger.exception(e)
             res = None
 
             if isinstance(rows, list):
@@ -156,7 +159,8 @@ class NewsAPIManager(CommonQueries):
             try:
                 self.modify_query(stamp_sql, (now, ))
                 return True
-            except:
+            except Exception as e:
+                logger.exception(e)
                 return False
 
         cache_fresh = _check_ttl()
