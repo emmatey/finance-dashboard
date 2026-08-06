@@ -164,13 +164,13 @@ class NewsAPIManager(CommonQueries):
             return True
 
         res = self.api.get_top_headlines(category=category)
-        if not self._response_type_enforce(res):
+        if not self.response_type_enforce(res):
             return False
-        if not self._handle_return_status(res):
+        if not self.handle_return_status(res):
             return False
 
-        prepared_data = self._prepare_to_write(res)
-        self._write_to_db(prepared_data)
+        prepared_data = self.prepare_to_write(res)
+        self.write_to_db(prepared_data)
         _write_fetch_time()
 
         return True
@@ -191,12 +191,12 @@ class NewsAPIManager(CommonQueries):
             logger.error(f"newsAPI search failed for '{safe_query}': {e.get_message()}")
             return False
 
-        if not self._response_type_enforce(res):
+        if not self.response_type_enforce(res):
             return False
-        if not self._handle_return_status(res):
+        if not self.handle_return_status(res):
             return False
 
-        prepared_data = self._prepare_to_write(res)
-        self._write_to_db(prepared_data)
+        prepared_data = self.prepare_to_write(res)
+        self.write_to_db(prepared_data)
 
         return prepared_data
