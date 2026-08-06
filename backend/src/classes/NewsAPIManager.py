@@ -126,6 +126,7 @@ class NewsAPIManager(CommonQueries):
                 rows = self.select_query(ttl_sql, ())
             except Exception as e:
                 logger.exception(e)
+                return fresh
             res = None
 
             if isinstance(rows, list):
@@ -167,7 +168,11 @@ class NewsAPIManager(CommonQueries):
         if cache_fresh:
             return True
 
-        res = self.api.get_top_headlines(category=category)
+        try:
+            res = self.api.get_top_headlines(category=category)
+        except NewsAPIException as e:
+            logger.exception(e)
+            return False
         if not self.response_type_enforce(res):
             return False
         if not self.handle_return_status(res):
