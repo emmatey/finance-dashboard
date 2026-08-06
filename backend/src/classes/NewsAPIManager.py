@@ -21,14 +21,14 @@ class NewsAPIManager(CommonQueries):
         api_key = os.getenv("NEWS_API_KEY")
         self.api = NewsApiClient(api_key=api_key)
 
-    def _response_type_enforce(self, response) -> bool:
+    def response_type_enforce(self, response) -> bool:
         if not isinstance(response, dict):
             logger.error(f"Invalid API response format.")
             return False
 
         return True
 
-    def _handle_return_status(self, response: dict) -> bool:
+    def handle_return_status(self, response: dict) -> bool:
         """
         Check the "status" field of the APIs return value to see if there's an error.
         """
@@ -39,7 +39,7 @@ class NewsAPIManager(CommonQueries):
             logger.error(f"Response status from news API is {status}")
             return False
 
-    def _prepare_to_write(self, response: dict) -> list:
+    def prepare_to_write(self, response: dict) -> list:
         total_results = int(response.get("totalResults", 0))
         if total_results == 0:
             logger.info("Empty api response from newsAPI, but valid return code...")
@@ -76,7 +76,7 @@ class NewsAPIManager(CommonQueries):
 
         return articles
 
-    def _write_to_db(self, prepared_data: list) -> int:
+    def write_to_db(self, prepared_data: list) -> int:
         """
         Bulk insert articles, skipping any that already exist by link.
         """
