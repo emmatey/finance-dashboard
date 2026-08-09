@@ -53,7 +53,8 @@ export async function parseResponse(response) {
     if (!response.ok || body?.success === false) {
         const error = new Error(body.message || `Request failed with status ${response.status}`);
         error.status = response.status;
-        error.data = body;
+        error.data = body.message;
+        console.error(error);
         throw error;
     }
 
