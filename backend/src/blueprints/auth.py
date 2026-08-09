@@ -231,7 +231,12 @@ def verify_signed_token_pw_change_request():
             500,
         )
 
-    return jsonify({"success": True, "data": decrypted_token}), 200
+    username = am.get_username_from_user_id(int(decrypted_token.get("user_id") or 0))
+
+    return (
+        jsonify({"success": True, "data": {**decrypted_token, "username": username}}),
+        200,
+    )
 
 
 @auth_bp.route("/token/verify/pw_change_submit", methods=["POST"])
