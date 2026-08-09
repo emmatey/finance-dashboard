@@ -53,7 +53,7 @@ export default function Change() {
                         <CardContent>
                             <form onSubmit={handleRequestPw}>
                                 <div className="flex flex-col gap-2 mb-2">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email-entry-field">Email</Label>
                                     <Input type="email" id="email-entry-field" name="email" placeholder="your_email@email.com" />
                                 </div>
                                 <Button type="submit">Submit</Button>
