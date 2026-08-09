@@ -1,12 +1,26 @@
 import logging
 import os
+import resend
 
 from dotenv import load_dotenv
 from flask import Blueprint, jsonify, request
 from itsdangerous import BadData, BadSignature, SignatureExpired
+from pathlib import Path
+from resend.exceptions import ResendError
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 from classes.AccountManager import AccountManager
+
+FORGOT_PW_EMAIL_TEMPLATE_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "frontend"
+    / "src"
+    / "components"
+    / "auth"
+    / "EmailTemplates"
+    / "ForgotPassword.html"
+)
+FORGOT_PW_TOKEN_MAX_AGE_SECONDS = 10 * 60
 
 logger = logging.getLogger(__name__)
 
@@ -77,11 +91,11 @@ def generate_and_send_forgot_pw_token():
         email (str): Email address of the account to generate a token for.
 
     Returns:
-        200: Token generated. {"success": True, "data": str}
+        200: Reset email sent. {"success": True, "message": str}
         400: Missing email query parameter or no user found for email.
              {"success": False, "message": str}
-        500: Server misconfiguration prevented token generation.
-             {"success": False, "message": str}
+        500: Server misconfiguration prevented token generation, or the
+             reset email failed to send. {"success": False, "message": str}
     """
     am = AccountManager()
 
@@ -121,8 +135,47 @@ def generate_and_send_forgot_pw_token():
 
     load_dotenv()
     resend_api_key = os.getenv("RESEND_API_KEY")
+    if not resend_api_key:
+        logger.error("RESEND_API_KEY not set; cannot send forgot-password email.")
+        return (
+            jsonify(
+                {"success": False, "message": "Unable to process request at this time."}
+            ),
+            500,
+        )
+    resend.api_key = resend_api_key
 
-    
+    username = am.get_username_from_user_id(user_id)
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    reset_link = f"{frontend_url}/auth/change?token={signed_token}"
+    expires_in = f"{FORGOT_PW_TOKEN_MAX_AGE_SECONDS // 60} minutes"
+
+    html = FORGOT_PW_EMAIL_TEMPLATE_PATH.read_text()
+    html = (
+        html.replace("{{username}}", username)
+        .replace("{{reset_link}}", reset_link)
+        .replace("{{expires_in}}", expires_in)
+    )
+
+    params: resend.Emails.SendParams = {
+        "from": "onboarding@resend.dev",
+        "to": [email],
+        "subject": "Reset your password",
+        "html": html,
+    }
+
+    try:
+        resend.Emails.send(params)
+    except ResendError:
+        logger.exception(f"Failed to send forgot-password email to {email}.")
+        return (
+            jsonify(
+                {"success": False, "message": "Unable to process request at this time."}
+            ),
+            500,
+        )
+
+    return jsonify({"success": True, "message": "Password reset email sent."}), 200
 
 
 @auth_bp.route("/token/verify/pw_change_request", methods=["GET"])
@@ -159,7 +212,9 @@ def verify_signed_token_pw_change_request():
 
     try:
         decrypted_token = am.validate_verification_token(
-            context_salt="forgot_pw", token=token
+            context_salt="forgot_pw",
+            token=token,
+            max_age=FORGOT_PW_TOKEN_MAX_AGE_SECONDS,
         )
     except SignatureExpired:
         return jsonify({"success": False, "message": "Token has expired."}), 400
@@ -217,7 +272,12 @@ def verify_signed_token_pw_change_submit():
     try:
         request_body = dict(request.get_json())
     except UnsupportedMediaType:
-        return jsonify({"success": False, "message": "Content-Type must be application/json"}), 415
+        return (
+            jsonify(
+                {"success": False, "message": "Content-Type must be application/json"}
+            ),
+            415,
+        )
     except BadRequest:
         return jsonify({"success": False, "message": "Malformed JSON"}), 400
     except TypeError:
@@ -227,7 +287,9 @@ def verify_signed_token_pw_change_submit():
     am = AccountManager()
     try:
         decrypted_token = am.validate_verification_token(
-            context_salt="forgot_pw", token=token
+            context_salt="forgot_pw",
+            token=token,
+            max_age=FORGOT_PW_TOKEN_MAX_AGE_SECONDS,
         )
     except SignatureExpired:
         return jsonify({"success": False, "message": "Token has expired."}), 400
@@ -243,20 +305,36 @@ def verify_signed_token_pw_change_submit():
             ),
             500,
         )
-    
+
     try:
         user_id = int(decrypted_token.get("user_id") or 0)
     except TypeError:
-        return jsonify({"success": False, "message": "Unable to type coerce user_id from token"}), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Unable to type coerce user_id from token",
+                }
+            ),
+            400,
+        )
 
     if not user_id:
-        return jsonify({"success": False, "message": "Token did not contain a valid user_id"}), 400
+        return (
+            jsonify(
+                {"success": False, "message": "Token did not contain a valid user_id"}
+            ),
+            400,
+        )
 
     password = request_body.get("new_password")
     if not isinstance(password, str):
         return (
             jsonify(
-                {"success": False, "message": "Must provide new_password: str in request body"}
+                {
+                    "success": False,
+                    "message": "Must provide new_password: str in request body",
+                }
             ),
             400,
         )
