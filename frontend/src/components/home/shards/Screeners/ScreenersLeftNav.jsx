@@ -23,6 +23,10 @@ export default function ScreenersLeftNav() {
         };
     }
 
+    function prettifyCategory(key) {
+        return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
     let content;
     if (availableLoading) {
         content = (
@@ -42,23 +46,24 @@ export default function ScreenersLeftNav() {
                                 <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
                                     <ChevronRightIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                                     <FolderIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                                    <span className="truncate">{key}</span>
+                                    <span className="truncate">{prettifyCategory(key)}</span>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="ml-2.5 flex flex-col gap-0.5 border-l border-border py-0.5 pl-2.5">
                                     {value.map((screener) => (
                                         <button
-                                            key={screener}
+                                            key={screener.name}
                                             type="button"
-                                            onClick={() => toggleSelect(screener)}
+                                            title={screener.title}
+                                            onClick={() => toggleSelect(screener.name)}
                                             className={cn(
                                                 "flex items-center gap-1.5 rounded-lg px-2 py-1 text-left text-sm transition-colors hover:bg-muted",
-                                                screenersSelected.includes(screener)
+                                                screenersSelected.includes(screener.name)
                                                     ? "bg-muted font-medium text-primary"
                                                     : "text-muted-foreground hover:text-foreground"
                                             )}
                                         >
                                             <FileIcon className="size-3.5 shrink-0" />
-                                            <span className="truncate">{screener}</span>
+                                            <span className="truncate">{screener.title}</span>
                                         </button>
                                     ))}
                                 </CollapsibleContent>

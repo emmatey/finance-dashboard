@@ -3,7 +3,7 @@ import logging
 from flask import Blueprint, jsonify, request
 
 from classes.APIDataIO import APIDataIO
-from classes.StockScreenerManager import SCREENER_CATEGORIES, StockScreenerManager
+from classes.StockScreenerManager import SCREENER_CATEGORIES, SCREENER_TITLES, StockScreenerManager
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,15 @@ def screeners_available():
     by category.
 
     Returns:
-        200 - {"success": True, "data": {category_name: [screener_name, ...], ...}}
+        200 - {"success": True, "data": {category_name: [{"name": str, "title": str}, ...], ...}}
     """
-    return jsonify({"success": True, "data": SCREENER_CATEGORIES}), 200
+    data = {
+        category: [
+            {"name": name, "title": SCREENER_TITLES.get(name, name)} for name in names
+        ]
+        for category, names in SCREENER_CATEGORIES.items()
+    }
+    return jsonify({"success": True, "data": data}), 200
 
 
 @screeners_bp.route("/fetch", methods=["GET"])
@@ -148,6 +154,76 @@ def refresh_custom_screeners():
                 {
                     "success": False,
                     "message": "Server error refreshing custom screeners. (/screeners/refresh_custom)",
+                }
+            ),
+            500,
+        )
+
+    if not ok:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "One or more custom screeners failed to refresh. See finance.log for details.",
+                }
+            ),
+            500,
+        )
+
+    return jsonify({"success": True}), 200
+
+
+@screeners_bp.route("/refresh", methods=["POST"])
+def refresh_screeners():
+    """
+    On-demand refresh for a specific set of screeners - e.g. whatever the
+    user currently has selected - instead of waiting for the daemon's next
+    sweep through the full catalog.
+
+    Yahooquery-sourced screeners are only re-fetched if stale (see
+    StockScreenerManager.screener_data_update_orchestrator); custom/derived
+    screeners are always recomputed from current DB state.
+
+    Body: {"screener_names": [str, ...]}   - required, non-empty
+
+    Returns:
+        200 - {"success": True}
+        400 - missing/empty/unknown screener_names
+        500 - custom screener recompute failed (a stale yahooquery-sourced
+              fetch failing is logged but doesn't fail this request - that
+              screener's data just stays stale)
+    """
+    body = request.get_json(silent=True) or {}
+    screener_names = body.get("screener_names")
+    if not screener_names or not isinstance(screener_names, list):
+        return (
+            jsonify(
+                {"success": False, "message": "'screener_names' must be a non-empty list."}
+            ),
+            400,
+        )
+
+    unknown = [name for name in screener_names if name not in _ALL_SCREENERS]
+    if unknown:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": f"Unknown screener(s) {unknown}. See /api/screeners/available for valid screeners.",
+                }
+            ),
+            400,
+        )
+
+    try:
+        ok = StockScreenerManager().refresh_screeners(screener_names)
+    except Exception as e:
+        logger.exception(e)
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Server error refreshing screeners. (/screeners/refresh)",
                 }
             ),
             500,

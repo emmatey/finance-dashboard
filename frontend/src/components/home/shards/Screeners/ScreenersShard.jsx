@@ -5,7 +5,7 @@ import useAvailableScreeners from "./useAvailableScreeners";
 import TableSkeleton from "@/components/TableSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ScreenersTable from "./ScreenersTable";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { RotateCwIcon, XIcon } from "lucide-react";
 import { parseResponse } from "@/scripts/utils";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,16 @@ export default function ScreenersShard() {
     let toSearch = screenersSelected.filter((screener) => (!Object.keys(screenerCache).includes(screener)));
     const { dataLoading, errorMsg, screenerData } = useScreenerData(toSearch);
 
+    const screenerTitles = useMemo(() => {
+        const titles = {};
+        for (const names of Object.values(screenersAvailable ?? {})) {
+            for (const { name, title } of names) {
+                titles[name] = title;
+            }
+        }
+        return titles;
+    }, [screenersAvailable]);
+
     useEffect(() => {
         let cache = {...screenerCache};
         for (const [screener, data] of Object.entries(screenerData)) {
@@ -27,17 +37,18 @@ export default function ScreenersShard() {
     }, [screenerData]);
 
     async function refreshScreeners() {
-        const customScreenerNames = screenersAvailable?.custom ?? [];
-        const hasCustomSelected = screenersSelected.some((s) => customScreenerNames.includes(s));
-
-        if (!hasCustomSelected) {
+        if (screenersSelected.length === 0) {
             setScreenerCache({});
             return;
         }
 
         setRefreshing(true);
         try {
-            const res = await fetch('/api/screeners/refresh_custom', { method: 'POST' });
+            const res = await fetch('/api/screeners/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ screener_names: screenersSelected }),
+            });
             await parseResponse(res);
         } catch (error) {
             console.error(error);
@@ -111,6 +122,11 @@ export default function ScreenersShard() {
                             const companiesObjectList = screenerCache[screener];
                             return (
                                 <TabsContent key={screener} value={screener}>
+                                    {screenerTitles[screener] && (
+                                        <p className="mb-2 text-sm text-muted-foreground">
+                                            {screenerTitles[screener]}
+                                        </p>
+                                    )}
                                     {companiesObjectList ? (
                                         <ScreenersTable data={companiesObjectList} />
                                     ) : dataLoading ? (

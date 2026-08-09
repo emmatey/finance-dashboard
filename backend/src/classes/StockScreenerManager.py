@@ -5,6 +5,7 @@ from classes.CommonQueries import CommonQueries
 from enum import Enum
 from scripts.logging_utils import fmt_data
 from classes.YahooQueryService import YahooQueryService as yqs
+from yahooquery.constants import SCREENERS as _YQ_SCREENER_META
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,16 @@ CUSTOM_SCREENERS = [
     "insider_buying_surge",
     "insider_selling_surge",
 ]
+
+# Human-readable descriptions for the custom screeners above - yahooquery has
+# no catalog entry for these since they're computed locally, not fetched.
+CUSTOM_SCREENER_TITLES = {
+    "volume_spike_bullish": "Stocks with volume >1.5x their 3-month average and price up on the day",
+    "volume_spike_bearish": "Stocks with volume >1.5x their 3-month average and price down on the day",
+    "volume_compression": "Stocks trading at less than half their 3-month average volume",
+    "insider_buying_surge": "Largest recent open-market insider purchases, by dollar value",
+    "insider_selling_surge": "Largest recent open-market insider sales, by dollar value",
+}
 
 # Screener names grouped by category, so the frontend can request a whole
 # category at once or a single screener within it. Scoped to US equities -
@@ -266,6 +277,15 @@ YQ_SCREENER_NAMES = [
     for name in names
 ]
 
+# Human-readable title for every screener name, for the frontend to display
+# instead of the raw snake_case key. Yahooquery-sourced names pull their
+# 'desc' from its own screener catalog; custom/derived names (not in that
+# catalog) fall back to the hand-written titles above.
+SCREENER_TITLES: dict[str, str] = {
+    name: _YQ_SCREENER_META[name]["desc"] for name in YQ_SCREENER_NAMES
+}
+SCREENER_TITLES.update(CUSTOM_SCREENER_TITLES)
+
 
 class TableLifetimes(Enum):
     YQ_SCREENER_UPDATE_FREQUENCY = 60 * 60
@@ -420,6 +440,31 @@ class StockScreenerManager(CommonQueries):
 
         self.write_screener_data(filtered_screeners, yqs_instance, dbio_instance)
         logger.info("Screener data update orchestrator complete.")
+
+    def refresh_screeners(self, screener_names) -> bool:
+        """
+        On-demand refresh for exactly the screeners a user has selected,
+        instead of waiting for the daemon's next sweep through the full
+        catalog (see /api/screeners/refresh).
+
+        Yahooquery-sourced names go through screener_data_update_orchestrator,
+        which is a no-op for any that are already fresh. Custom/derived names
+        trigger a recompute of ALL custom screeners, since they share one
+        recompute pass (see refresh_custom_screeners).
+
+        Returns:
+            True unless the custom screener recompute was needed and failed
+            (yahooquery fetch failures for stale non-custom screeners are
+            logged but don't fail this - the data just stays stale).
+        """
+        yq_names = [name for name in screener_names if name not in CUSTOM_SCREENERS]
+        if yq_names:
+            self.screener_data_update_orchestrator(screener_names=yq_names)
+
+        if any(name in CUSTOM_SCREENERS for name in screener_names):
+            return self.refresh_custom_screeners()
+
+        return True
 
     def volume_spike_screeners(self) -> bool:
         """
