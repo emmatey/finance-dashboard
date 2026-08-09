@@ -12,10 +12,10 @@ from classes.YahooQueryService import YahooQueryService
 
 logger = logging.getLogger(__name__)
 
-trade_bp = Blueprint("trade", __name__, url_prefix="/api")
+trade_bp = Blueprint("trade", __name__, url_prefix="/api/trade")
 
 
-@trade_bp.route("/trade", methods=["GET", "POST"])
+@trade_bp.route("", methods=["GET", "POST"])
 def trade():
     """
     Trade endpoint. Handles both preview (GET) and execution (POST) of buy/sell transactions.

@@ -7,13 +7,13 @@ from classes.StockScreenerManager import SCREENER_CATEGORIES, StockScreenerManag
 
 logger = logging.getLogger(__name__)
 
-screeners_bp = Blueprint("screeners", __name__, url_prefix="/api")
+screeners_bp = Blueprint("screeners", __name__, url_prefix="/api/screeners")
 
 # Flat set of every valid screener name, for validating ?screener=.
 _ALL_SCREENERS = {name for names in SCREENER_CATEGORIES.values() for name in names}
 
 
-@screeners_bp.route("/screeners/available", methods=["GET"])
+@screeners_bp.route("/available", methods=["GET"])
 def screeners_available():
     """
     Returns the list of screeners that the frontend can select from, grouped
@@ -25,7 +25,7 @@ def screeners_available():
     return jsonify({"success": True, "data": SCREENER_CATEGORIES}), 200
 
 
-@screeners_bp.route("/screeners/fetch", methods=["GET"])
+@screeners_bp.route("/fetch", methods=["GET"])
 def screeners_fetch():
     """
     Fetch a single screener, a whole category, or everything.
@@ -124,7 +124,7 @@ def screeners_fetch():
     return jsonify({"success": True, "data": grouped}), 200
 
 
-@screeners_bp.route("/screeners/refresh_custom", methods=["POST"])
+@screeners_bp.route("/refresh_custom", methods=["POST"])
 def refresh_custom_screeners():
     """
     Recomputes the derived/custom screeners (volume spikes, volume

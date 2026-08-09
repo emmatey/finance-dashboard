@@ -10,10 +10,10 @@ from classes.MarketOverviewCoordinator import (
 
 logger = logging.getLogger(__name__)
 
-market_overview_bp = Blueprint("market_overview", __name__, url_prefix="/api")
+market_overview_bp = Blueprint("market_overview", __name__, url_prefix="/api/market_overview")
 
 
-@market_overview_bp.route("/market_overview", methods=["GET"])
+@market_overview_bp.route("", methods=["GET"])
 def market_overview():
     """
     Returns regional market overview data for the homepage.
