@@ -1,5 +1,7 @@
 import logging
+import os
 
+from dotenv import load_dotenv
 from flask import Blueprint, jsonify, request
 from itsdangerous import BadData, BadSignature, SignatureExpired
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
@@ -117,7 +119,10 @@ def generate_and_send_forgot_pw_token():
             500,
         )
 
-    return jsonify({"success": True, "data": signed_token}), 200
+    load_dotenv()
+    resend_api_key = os.getenv("RESEND_API_KEY")
+
+    
 
 
 @auth_bp.route("/token/verify/pw_change_request", methods=["GET"])

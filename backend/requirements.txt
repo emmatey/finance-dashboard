@@ -1,6 +1,7 @@
 Flask
 Flask-Session
 requests
+resend
 itsdangerous
 newsapi-python
 python-dotenv
