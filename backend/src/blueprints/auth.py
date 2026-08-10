@@ -302,4 +302,8 @@ def verify_pw_change_token_submit_pw_change():
             500,
         )
 
-    return jsonify({"success": True}), 200
+    return jsonify({
+        "success": True,
+        "email": am.get_email_from_user_id(user_id),
+        "username": am.get_username_from_user_id(user_id)
+        }), 200

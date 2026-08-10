@@ -7,7 +7,8 @@ import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
 import { useSearchParams } from 'react-router-dom';
 
-function getState(token, sent, errorCode) {
+function getState(token, sent, errorCode, confirmed) {
+    if (confirmed) return 'confirmed';
     if (sent) return 'sent';
     if (errorCode) return 'error';
     if (token) return 'reset';
@@ -23,8 +24,11 @@ export default function Change() {
     const [username, setUsername] = useState(null);
     const [email, setEmail] = useState(null);
     const [pwEqual, setPwEqual] = useState(true);
+    const [confirmed, setConfirmed] = useState(false);
+    const [newPw, setNewPw] = useState("");
+    const [hideNewPw, setHideNewPw] = useState(true);
 
-    const state = getState(token, sent, errorCode);
+    const state = getState(token, sent, errorCode, confirmed);
 
     async function handleRequestPwReset(event) {
         event.preventDefault();
@@ -35,10 +39,9 @@ export default function Change() {
                 const response = await fetch(`/api/auth/token/generate/forgot_pw?email=${encodeURIComponent(email)}`);
                 const result = await parseResponse(response);
                 setUsername(result.username);
-                setEmail(email);
                 setSent(true);
             } catch (error) {
-                if (error.status == 400) {
+                if (error.status === 400) {
                     setSent(true);
                 } else {
                     setErrorStr(error.data);
@@ -52,17 +55,21 @@ export default function Change() {
 
     async function submitPwChange(token, pw) {
         try {
-            const response = await fetch("/api/auth/token/verify/forgot_pw", options = {
+            const response = await fetch("/api/auth/token/verify/forgot_pw", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: {
+                body: JSON.stringify({
                     'token': token,
-                    'new_pw': pw
-                }
+                    'new_password': pw
+                })
             });
             const result = await parseResponse(response);
+            setEmail(result.email);
+            setUsername(result.username);
+            setNewPw(pw);
+            setConfirmed(true);
         } catch (error) {
             setErrorStr(error.data);
             setErrorCode(error.status);
@@ -125,13 +132,32 @@ export default function Change() {
                         <CardContent>
                             <form onSubmit={(e) => handleSubmitPwChange(e)}>
                                 <div className="flex flex-col gap-2 mb-2">
-                                    <Label htmlFor="password">New password</Label>
+                                    <Label htmlFor="password1">New password</Label>
                                     <Input aria-invalid={pwEqual === false ? true : undefined} onChange={() => setPwEqual(true)} type="password" id="password1" name="password1" />
+                                    <Label htmlFor="password2">Confirm password</Label>
                                     <Input aria-invalid={pwEqual === false ? true : undefined} onChange={() => setPwEqual(true)} type="password" id="password2" name="password2" />
                                 </div>
                                 <Button type="submit">Submit</Button>
-                                <Button onClick={() => window.location.replace("/auth")}>Go Back</Button>
+                                <Button type="button" onClick={() => window.location.replace("/auth")}>Go Back</Button>
                             </form>
+                        </CardContent>
+                    </>
+                )}
+
+                {state === 'confirmed' && (
+                    <>
+                        <CardHeader>
+                            <CardTitle>Success!</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-2">
+                            <p className="text-sm">You have changed the password for this account to:</p>
+                            <p className="text-sm"><strong>Email:</strong> {email}</p>
+                            <p className="text-sm"><strong>Username:</strong> {username}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm"><strong>Password:</strong> {hideNewPw ? "•".repeat(newPw.length) : newPw}</p>
+                                <Button type="button" onClick={() => setHideNewPw(!hideNewPw)}>{hideNewPw ? "Show" : "Hide"}</Button>
+                            </div>
+                            <Button onClick={() => window.location.replace("/auth")}>Go Back</Button>
                         </CardContent>
                     </>
                 )}
@@ -139,7 +165,7 @@ export default function Change() {
                 {state === 'error' && (
                     <>
                         <CardHeader>
-                            <CardTitle>Oops wooks wike thewe was an ewwow... Cwode: {errorCode}</CardTitle>
+                            <CardTitle>Oops wooks wike thewe was an ewwow... Code: {errorCode}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col gap-2 mb-2">

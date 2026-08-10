@@ -43,6 +43,20 @@ class CommonQueries(DbManager):
         else:
             return ""
     
+    def get_email_from_user_id(self, user_id: int) -> str:
+        """
+        Get email from user_id
+        """
+        sql = """
+        SELECT email FROM users WHERE id = ?
+        """
+        result = self.select_query(sql, (user_id,))
+
+        if result:
+            return result[0]['email']
+        else:
+            return ""
+
     def get_user_id_from_username(self, username: str) -> int:
         """
         Get user_id from username
