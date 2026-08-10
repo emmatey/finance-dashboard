@@ -8,11 +8,10 @@ import { useState } from "react";
 import { useSearchParams } from 'react-router-dom';
 
 function getState(token, sent, errorCode) {
-    return 'reset'
-    //if (sent) return 'sent';
-    //if (errorCode) return 'error';
-    //if (token) return 'reset';
-    //return 'request';
+    if (sent) return 'sent';
+    if (errorCode) return 'error';
+    if (token) return 'reset';
+    return 'request';
 }
 
 export default function Change() {
@@ -51,9 +50,9 @@ export default function Change() {
         };
     }
 
-    async function handleSubmitPwChange(token, pw) {
+    async function submitPwChange(token, pw) {
         try {
-            const response = await fetch("/api/auth/token/verify/forgot_pw", options={
+            const response = await fetch("/api/auth/token/verify/forgot_pw", options = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -64,8 +63,9 @@ export default function Change() {
                 }
             });
             const result = await parseResponse(response);
-        } catch(error) {
-            
+        } catch (error) {
+            setErrorStr(error.data);
+            setErrorCode(error.status);
         };
     }
 
@@ -76,9 +76,20 @@ export default function Change() {
         const pw2 = formData.get("password2");
         if (pw1 !== pw2) {
             setPwEqual(false);
+        } else {
+            return pw1;
         }
     }
 
+    function handleSubmitPwChange(event) {
+        const pw = checkPwFieldsEqual(event);
+        if (pw) {
+            submitPwChange(token, pw);
+        } else {
+            return;
+        }
+
+    }
     return (
         <div className="flex justify-center px-6 py-16">
             <Card className="w-full max-w-sm">
@@ -112,7 +123,7 @@ export default function Change() {
                             <CardTitle>Hello {username}! Choose a new password</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={(e) => checkPwFieldsEqual(e)}>
+                            <form onSubmit={(e) => handleSubmitPwChange(e)}>
                                 <div className="flex flex-col gap-2 mb-2">
                                     <Label htmlFor="password">New password</Label>
                                     <Input aria-invalid={pwEqual === false ? true : undefined} onChange={() => setPwEqual(true)} type="password" id="password1" name="password1" />
