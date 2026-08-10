@@ -17,7 +17,8 @@ export default function Change() {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const [sent, setSent] = useState(false);
-    const [error, setError] = useState(null);
+    const [errorStr, setErrorStr] = useState(null);
+    const [errorCode, setErrorCode] = useState(null);
     const [username, setUsername] = useState(null);
     const [email, setEmail] = useState(null);
 
@@ -38,7 +39,8 @@ export default function Change() {
                 if (error.status == 400) {
                     setSent(true);
                 } else {
-                    setError(`${error.status} - ${error.data}`);
+                    setErrorStr(error.data);
+                    setErrorCode(error.status);
                 };
             };
         } else {
@@ -46,36 +48,15 @@ export default function Change() {
         };
     }
 
-    async function submitPwChange(event) {
+    async function handleSubmitPwChange(event) {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
-
-    }
-
-    async function handleValidateResetToken(event) {
-        };
         try {
-            const response = await fetch(`/api/auth/token/verify/pw_change_token?token=${encodeURIComponent(token)}`, {
-                method: 'GET'
-            });
+            const response = await fetch(`/api/auth/token/generate/forgot_pw?email=${encodeURIComponent(email)}`);
             const result = await parseResponse(response);
-            switch (response.status) {
-                case 200:
+        } catch(error) {
 
-                    break;
-                case 400:
-
-                    break;
-                case 415:
-
-                    break;
-                case 500:
-
-                    break;
-            }
-        } catch (error) {
-            console.error("Network or execution error:", error);
-        }
+        };
     }
 
     return (
@@ -127,11 +108,11 @@ export default function Change() {
                 {state === 'error' && (
                     <>
                         <CardHeader>
-                            <CardTitle>Something went wrong</CardTitle>
+                            <CardTitle>Oops wooks wike thewe was an ewwow... Cwode: {errorCode}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col gap-2 mb-2">
-                                <p className="text-sm text-destructive">{error}</p>
+                                <p className="text-sm text-destructive">{errorStr}</p>
                             </div>
                             <Button onClick={() => window.location.replace("/auth")}>Go Back</Button>
                         </CardContent>

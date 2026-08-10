@@ -184,14 +184,12 @@ def generate_and_send_forgot_pw_token():
 
 
 @auth_bp.route("/token/verify/forgot_pw", methods=["POST"])
-def pw_change_submit():
+def verify_pw_change_token_submit_pw_change():
     """
     Verifies "forgot PW" token, and submits a pw reset if valid.
 
-    Query parameters:
-        token (str): Signed verification token from the forgot-password email.
-
     Request body (JSON):
+        token (str): Signed verification token from the forgot-password email.
         new_password (str): See check_pw_valid for password requirements.
 
     Returns:
@@ -205,22 +203,10 @@ def pw_change_submit():
         500: Server misconfiguration prevented token validation, or password
              change failed unexpectedly. {"success": False, "message": str}
     """
-    # Validate Request
-    token = request.args.get("token")
-    if not token:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Must provide ?token=<str> query parameter.",
-                }
-            ),
-            400,
-        )
-
     try:
         request_body = dict(request.get_json())
     except UnsupportedMediaType:
+        logger.exception("Content-Type must be application/json, wrong headder?")
         return (
             jsonify(
                 {"success": False, "message": "Content-Type must be application/json"}
@@ -228,12 +214,25 @@ def pw_change_submit():
             415,
         )
     except BadRequest:
-        return jsonify({"success": False, "message": "Malformed JSON"}), 400
+        logger.exception("Bad Request")
+        return jsonify({"success": False, "message": "Bad Request..."}), 400
     except TypeError:
-        return jsonify({"success": False, "message": "Malformed Request Body"}), 400
+        logger.exception("Cannot convert request body to dict.")
+        return jsonify({"success": False, "message": "Bad Request..."}), 400
 
     # Validate Token
     am = AccountManager()
+    token:str = str(request_body.get("token"))
+    if not isinstance(token, str):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Must provide token: str in request body",
+                }
+            ),
+            400,
+        )
     try:
         decrypted_token = am.validate_verification_token(
             context_salt="forgot_pw",
