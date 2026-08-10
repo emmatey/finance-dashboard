@@ -18,17 +18,21 @@ export default function Change() {
     const token = searchParams.get('token');
     const [sent, setSent] = useState(false);
     const [error, setError] = useState(null);
+    const [username, setUsername] = useState(null);
+    const [email, setEmail] = useState(null);
 
     const state = getState(token, sent, error);
 
-    async function handleRequestPw(event) {
+    async function handleRequestPwReset(event) {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
         const email = formData.get("email");
         if (email) {
             try {
-                const response = await fetch(`/api/auth/token/generate/forgot_pw?email=${email}`);
+                const response = await fetch(`/api/auth/token/generate/forgot_pw?email=${encodeURIComponent(email)}`);
                 const result = await parseResponse(response);
+                setUsername(result.username);
+                setEmail(email);
                 setSent(true);
             } catch (error) {
                 if (error.status == 400) {
@@ -42,6 +46,38 @@ export default function Change() {
         };
     }
 
+    async function submitPwChange(event) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+
+    }
+
+    async function handleValidateResetToken(event) {
+        };
+        try {
+            const response = await fetch(`/api/auth/token/verify/pw_change_token?token=${encodeURIComponent(token)}`, {
+                method: 'GET'
+            });
+            const result = await parseResponse(response);
+            switch (response.status) {
+                case 200:
+
+                    break;
+                case 400:
+
+                    break;
+                case 415:
+
+                    break;
+                case 500:
+
+                    break;
+            }
+        } catch (error) {
+            console.error("Network or execution error:", error);
+        }
+    }
+
     return (
         <div className="flex justify-center px-6 py-16">
             <Card className="w-full max-w-sm">
@@ -51,7 +87,7 @@ export default function Change() {
                             <CardTitle>Change password</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleRequestPw}>
+                            <form onSubmit={handleRequestPwReset}>
                                 <div className="flex flex-col gap-2 mb-2">
                                     <Label htmlFor="email-entry-field">Email</Label>
                                     <Input type="email" id="email-entry-field" name="email" placeholder="your_email@email.com" />
@@ -72,14 +108,18 @@ export default function Change() {
                 {state === 'reset' && (
                     <>
                         <CardHeader>
-                            <CardTitle>Choose a new password</CardTitle>
+                            <CardTitle>Hello {username}! Choose a new password</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex flex-col gap-2 mb-2">
-                                <Label htmlFor="password">New password</Label>
-                                <Input type="password" id="password" />
-                            </div>
-                            <Button>Submit</Button>
+                            <form onSubmit={ }>
+                                <div className="flex flex-col gap-2 mb-2">
+                                    <Label htmlFor="password">New password</Label>
+                                    <Input type="password" id="password" name="password" />
+                                    <Input type="password" id="password2" name="password2" />
+                                </div>
+                                <Button type="submit">Submit</Button>
+                                <Button onClick={() => window.location.replace("/auth")}>Go Back</Button>
+                            </form>
                         </CardContent>
                     </>
                 )}

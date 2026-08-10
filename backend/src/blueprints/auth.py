@@ -175,74 +175,18 @@ def generate_and_send_forgot_pw_token():
             500,
         )
 
-    return jsonify({"success": True, "message": "Password reset email sent."}), 200
+    return jsonify({
+        "success": True,
+        "message": "Password reset email sent.",
+        "email": email,
+        "username": username
+        }), 200
 
 
-@auth_bp.route("/token/verify/pw_change_request", methods=["GET"])
-def verify_signed_token_pw_change_request():
+@auth_bp.route("/token/verify/forgot_pw", methods=["POST"])
+def pw_change_submit():
     """
-    Verifies a password-reset token without consuming it.
-
-    Used to check that a token is valid before redirecting the user to a
-    form where they can enter their new password.
-
-    Query parameters:
-        token (str): Signed verification token from the forgot-password email.
-
-    Returns:
-        200: Token is valid. {"success": True, "data": dict} (decrypted token payload)
-        400: Missing token, expired token, or invalid token.
-             {"success": False, "message": str}
-        500: Server misconfiguration prevented token validation.
-             {"success": False, "message": str}
-    """
-    am = AccountManager()
-
-    token = request.args.get("token")
-    if not token:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Must provide ?token=<str> query parameter.",
-                }
-            ),
-            400,
-        )
-
-    try:
-        decrypted_token = am.validate_verification_token(
-            context_salt="forgot_pw",
-            token=token,
-            max_age=FORGOT_PW_TOKEN_MAX_AGE_SECONDS,
-        )
-    except SignatureExpired:
-        return jsonify({"success": False, "message": "Token has expired."}), 400
-    except (BadSignature, BadData):
-        return jsonify({"success": False, "message": "Invalid token."}), 400
-    except TypeError:
-        logger.exception(
-            "Failed to validate verification token due to server misconfiguration."
-        )
-        return (
-            jsonify(
-                {"success": False, "message": "Unable to process request at this time."}
-            ),
-            500,
-        )
-
-    username = am.get_username_from_user_id(int(decrypted_token.get("user_id") or 0))
-
-    return (
-        jsonify({"success": True, "data": {**decrypted_token, "username": username}}),
-        200,
-    )
-
-
-@auth_bp.route("/token/verify/pw_change_submit", methods=["POST"])
-def verify_signed_token_pw_change_submit():
-    """
-    Verifies a password-reset token and, if valid, applies a new password.
+    Verifies "forgot PW" token, and submits a pw reset if valid.
 
     Query parameters:
         token (str): Signed verification token from the forgot-password email.
