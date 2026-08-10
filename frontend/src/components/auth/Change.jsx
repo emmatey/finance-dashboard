@@ -1,16 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
 import { useSearchParams } from 'react-router-dom';
 
-function getState(token, sent, error) {
-    if (sent) return 'sent';
-    if (error) return 'error';
-    if (token) return 'reset';
-    return 'request';
+function getState(token, sent, errorCode) {
+    return 'reset'
+    //if (sent) return 'sent';
+    //if (errorCode) return 'error';
+    //if (token) return 'reset';
+    //return 'request';
 }
 
 export default function Change() {
@@ -21,8 +23,9 @@ export default function Change() {
     const [errorCode, setErrorCode] = useState(null);
     const [username, setUsername] = useState(null);
     const [email, setEmail] = useState(null);
+    const [pwEqual, setPwEqual] = useState(true);
 
-    const state = getState(token, sent, error);
+    const state = getState(token, sent, errorCode);
 
     async function handleRequestPwReset(event) {
         event.preventDefault();
@@ -48,15 +51,32 @@ export default function Change() {
         };
     }
 
-    async function handleSubmitPwChange(event) {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
+    async function handleSubmitPwChange(token, pw) {
         try {
-            const response = await fetch(`/api/auth/token/generate/forgot_pw?email=${encodeURIComponent(email)}`);
+            const response = await fetch("/api/auth/token/verify/forgot_pw", options={
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: {
+                    'token': token,
+                    'new_pw': pw
+                }
+            });
             const result = await parseResponse(response);
         } catch(error) {
-
+            
         };
+    }
+
+    function checkPwFieldsEqual(event) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const pw1 = formData.get("password1");
+        const pw2 = formData.get("password2");
+        if (pw1 !== pw2) {
+            setPwEqual(false);
+        }
     }
 
     return (
@@ -92,11 +112,11 @@ export default function Change() {
                             <CardTitle>Hello {username}! Choose a new password</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={ }>
+                            <form onSubmit={(e) => checkPwFieldsEqual(e)}>
                                 <div className="flex flex-col gap-2 mb-2">
                                     <Label htmlFor="password">New password</Label>
-                                    <Input type="password" id="password" name="password" />
-                                    <Input type="password" id="password2" name="password2" />
+                                    <Input aria-invalid={pwEqual === false ? true : undefined} onChange={() => setPwEqual(true)} type="password" id="password1" name="password1" />
+                                    <Input aria-invalid={pwEqual === false ? true : undefined} onChange={() => setPwEqual(true)} type="password" id="password2" name="password2" />
                                 </div>
                                 <Button type="submit">Submit</Button>
                                 <Button onClick={() => window.location.replace("/auth")}>Go Back</Button>
