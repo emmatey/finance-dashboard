@@ -206,7 +206,7 @@ def verify_pw_change_token_submit_pw_change():
     try:
         request_body = dict(request.get_json())
     except UnsupportedMediaType:
-        logger.exception("Content-Type must be application/json, wrong headder?")
+        logger.warning("Password change request had wrong Content-Type header.")
         return (
             jsonify(
                 {"success": False, "message": "Content-Type must be application/json"}
@@ -214,16 +214,16 @@ def verify_pw_change_token_submit_pw_change():
             415,
         )
     except BadRequest:
-        logger.exception("Bad Request")
-        return jsonify({"success": False, "message": "Bad Request..."}), 400
+        logger.warning("Password change request had malformed JSON body.")
+        return jsonify({"success": False, "message": "Malformed JSON body"}), 400
     except TypeError:
-        logger.exception("Cannot convert request body to dict.")
-        return jsonify({"success": False, "message": "Bad Request..."}), 400
+        logger.warning("Password change request body could not be parsed as an object.")
+        return jsonify({"success": False, "message": "Malformed request body"}), 400
 
     # Validate Token
     am = AccountManager()
-    token:str = str(request_body.get("token"))
-    if not isinstance(token, str):
+    token = request_body.get("token")
+    if not token or not isinstance(token, str):
         return (
             jsonify(
                 {
