@@ -22,38 +22,26 @@ class AccountManager(CommonQueries):
         Generates a time sensitive, url safe, token to verify various actions.
         """
         if not isinstance(secret_key, str):
-            logger.error(
-                f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}."
-            )
-            raise TypeError(
-                "Secret key for token hashing not present or of wrong type."
-            )
+            logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
+            raise TypeError("Secret key for token hashing not present or of wrong type.")
 
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
         return serializer.dumps({"user_id": user_id, "email": email})
 
     @staticmethod
-    def validate_verification_token(
-        context_salt: str, token: str, max_age: int = 10 * 60
-    ) -> dict:
+    def validate_verification_token(context_salt: str, token: str, max_age: int = 10 * 60) -> dict:
         """
         Checks if a verification token passed is valid
         """
         if not isinstance(secret_key, str):
-            logger.error(
-                f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}."
-            )
-            raise TypeError(
-                "Secret key for token hashing not present or of wrong type."
-            )
+            logger.error(f"Secret key for token hashing not present or of wrong type. Must be str is {type(secret_key)}.")
+            raise TypeError("Secret key for token hashing not present or of wrong type.")
 
         serializer = URLSafeTimedSerializer(secret_key=secret_key, salt=context_salt)
         try:
             decrypted_token = serializer.loads(token, max_age=max_age)
         except BadSignature:
-            logger.warning(
-                f"Verification token failed signature check (salt='{context_salt}')."
-            )
+            logger.warning(f"Verification token failed signature check (salt='{context_salt}').")
             raise
         except BadData:
             logger.warning(f"Verification token was malformed (salt='{context_salt}').")
@@ -65,9 +53,7 @@ class AccountManager(CommonQueries):
     def check_username_valid(username: str) -> tuple[bool, str | None]:
         # Check if username meets website requirements.
         # Username must be ascii and without spaces.
-        if not all(
-            char.isascii() and char.isalnum() and char != " " for char in username
-        ):
+        if not all(char.isascii() and char.isalnum() and char != " " for char in username):
             return False, "Username must be alphanumeric (A-Z, 0-9) with no spaces."
         if len(username) < 1:
             return False, "Username must be at least 1 char long."

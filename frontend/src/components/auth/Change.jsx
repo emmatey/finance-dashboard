@@ -37,12 +37,8 @@ export default function Change() {
             try {
                 const response = await fetch("/api/auth/token/generate/forgot_pw", {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        'email': email
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 'email': email })
                 });
                 await parseResponse(response);
                 setSent(true);
@@ -59,9 +55,7 @@ export default function Change() {
         try {
             const response = await fetch("/api/auth/token/verify/forgot_pw", {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     'token': token,
                     'new_password': pw

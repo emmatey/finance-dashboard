@@ -63,17 +63,9 @@ def register():
     if not password_valid:
         return jsonify({"success": False, "message": password_message}), 400
     if am.get_user_id_from_username(username=username):
-        return (
-            jsonify(
-                {"success": False, "message": f"Username {username} already in use."}
-            ),
-            409,
-        )
+        return jsonify({"success": False, "message": f"Username {username} already in use."}), 409
     if email and am.check_email_in_use(email=email):
-        return (
-            jsonify({"success": False, "message": f"Email {email} already in use."}),
-            409,
-        )
+        return jsonify({"success": False, "message": f"Email {email} already in use."}), 409
 
     # Add user to db
     am.register(username=username, password=password, email=email)
@@ -107,48 +99,20 @@ def generate_and_send_forgot_pw_token():
         request_body = dict(request.get_json())
     except UnsupportedMediaType:
         logger.warning("Forgot-password request had wrong Content-Type header.")
-        return (
-            jsonify(
-                {"success": False, "message": "Content-Type must be application/json"}
-            ),
-            415,
-        )
+        return jsonify({"success": False, "message": "Content-Type must be application/json"}), 415
     except BadRequest:
         logger.warning("Forgot-password request had malformed JSON body.")
-        return (
-            jsonify(
-                {"success": False, "message": "Malformed JSON body"}
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Malformed JSON body"}), 400
     except TypeError:
         logger.warning("Forgot-password request body could not be parsed as an object.")
-        return (
-            jsonify(
-                {"success": False, "message": "Malformed request body"}
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Malformed request body"}), 400
 
     email = request_body.get("email")
     if not email or not isinstance(email, str):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Must provide email: str in request body",
-                }
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Must provide email: str in request body"}), 400
 
     generic_response = (
-        jsonify(
-            {
-                "success": True,
-                "message": "If that email is registered, a password reset link has been sent.",
-            }
-        ),
+        jsonify({"success": True, "message": "If that email is registered, a password reset link has been sent."}),
         200,
     )
 
@@ -159,30 +123,16 @@ def generate_and_send_forgot_pw_token():
         return generic_response
 
     try:
-        signed_token = am.generate_verification_token(
-            context_salt="forgot_pw", email=email, user_id=user_id
-        )
+        signed_token = am.generate_verification_token(context_salt="forgot_pw", email=email, user_id=user_id)
     except TypeError:
-        logger.exception(
-            "Failed to generate verification token due to server misconfiguration."
-        )
-        return (
-            jsonify(
-                {"success": False, "message": "Unable to process request at this time."}
-            ),
-            500,
-        )
+        logger.exception("Failed to generate verification token due to server misconfiguration.")
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
     load_dotenv()
     resend_api_key = os.getenv("RESEND_API_KEY")
     if not resend_api_key:
         logger.error("RESEND_API_KEY not set; cannot send forgot-password email.")
-        return (
-            jsonify(
-                {"success": False, "message": "Unable to process request at this time."}
-            ),
-            500,
-        )
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
     resend.api_key = resend_api_key
 
     username = am.get_username_from_user_id(user_id)
@@ -208,12 +158,7 @@ def generate_and_send_forgot_pw_token():
         resend.Emails.send(params)
     except ResendError:
         logger.exception(f"Failed to send forgot-password email to {email}.")
-        return (
-            jsonify(
-                {"success": False, "message": "Unable to process request at this time."}
-            ),
-            500,
-        )
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
     return generic_response
 
@@ -242,12 +187,7 @@ def verify_pw_change_token_submit_pw_change():
         request_body = dict(request.get_json())
     except UnsupportedMediaType:
         logger.warning("Password change request had wrong Content-Type header.")
-        return (
-            jsonify(
-                {"success": False, "message": "Content-Type must be application/json"}
-            ),
-            415,
-        )
+        return jsonify({"success": False, "message": "Content-Type must be application/json"}), 415
     except BadRequest:
         logger.warning("Password change request had malformed JSON body.")
         return jsonify({"success": False, "message": "Malformed JSON body"}), 400
@@ -259,15 +199,7 @@ def verify_pw_change_token_submit_pw_change():
     am = AccountManager()
     token = request_body.get("token")
     if not token or not isinstance(token, str):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Must provide token: str in request body",
-                }
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Must provide token: str in request body"}), 400
     try:
         decrypted_token = am.validate_verification_token(
             context_salt="forgot_pw",
@@ -282,45 +214,19 @@ def verify_pw_change_token_submit_pw_change():
         logger.exception(
             "Failed to validate verification token due to server misconfiguration."
         )
-        return (
-            jsonify(
-                {"success": False, "message": "Unable to process request at this time."}
-            ),
-            500,
-        )
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
     try:
         user_id = int(decrypted_token.get("user_id") or 0)
     except TypeError:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Unable to type coerce user_id from token",
-                }
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Unable to type coerce user_id from token"}), 400
 
     if not user_id:
-        return (
-            jsonify(
-                {"success": False, "message": "Token did not contain a valid user_id"}
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Token did not contain a valid user_id"}), 400
 
     password = request_body.get("new_password")
     if not isinstance(password, str):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Must provide new_password: str in request body",
-                }
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Must provide new_password: str in request body"}), 400
 
     password_valid, password_message = am.check_pw_valid(password)
     if not password_valid:
@@ -330,12 +236,7 @@ def verify_pw_change_token_submit_pw_change():
         am.change_password(password=password, user_id=user_id)
     except Exception:
         logger.exception(f"Failed to change password for user_id={user_id}.")
-        return (
-            jsonify(
-                {"success": False, "message": "Unable to process request at this time."}
-            ),
-            500,
-        )
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
     return jsonify({
         "success": True,
