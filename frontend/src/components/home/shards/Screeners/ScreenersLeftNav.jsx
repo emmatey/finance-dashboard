@@ -63,7 +63,7 @@ export default function ScreenersLeftNav() {
                                             )}
                                         >
                                             <FileIcon className="size-3.5 shrink-0" />
-                                            <span className="truncate">{screener.title}</span>
+                                            <span className="truncate">{screener.name}</span>
                                         </button>
                                     ))}
                                 </CollapsibleContent>
