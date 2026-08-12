@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import {
     Table,
     TableBody,
@@ -10,8 +9,6 @@ import {
 import { formatCurrencyUSD, formatNumber } from "@/scripts/utils";
 
 export default function ScreenersTable({ data }) {
-    const navigate = useNavigate();
-
     //from - {
     //screener_name: [{
     //    screener_name: str,
@@ -46,7 +43,7 @@ export default function ScreenersTable({ data }) {
                     <TableRow
                         key={row.ticker}
                         className="cursor-pointer"
-                        onClick={() => navigate(`/research?ticker=${encodeURIComponent(row.ticker)}`)}
+                        onClick={() => window.open(`/research?ticker=${encodeURIComponent(row.ticker)}`, '_blank', 'noopener,noreferrer')}
                     >
                         <TableCell>{row.ticker}</TableCell>
                         <TableCell>{row.company_name}</TableCell>

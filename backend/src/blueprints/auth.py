@@ -109,7 +109,7 @@ def generate_and_send_forgot_pw_token():
         return jsonify({"success": False, "message": "Must provide email: str in request body"}), 400
 
     generic_response = (
-        jsonify({"success": True, "message": "If that email is registered, a password reset link has been sent."}),
+        jsonify({"success": True, "message": "If that email is registered and validated, a password reset link has been sent."}),
         200,
     )
 
@@ -119,9 +119,13 @@ def generate_and_send_forgot_pw_token():
         # avoid leaking whether an email is registered.
         return generic_response
 
+    verified = am.check_email_validated(email=email)
+    if not verified:
+        return generic_response
+
     try:
         signed_token = am.generate_verification_token(context_salt="forgot_pw", email=email, user_id=user_id)
-    except TypeError:
+    except Exception:
         logger.exception("Failed to generate verification token due to server misconfiguration.")
         return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
