@@ -460,3 +460,20 @@ I'm thinking I should examine the way the screener data is currently captured an
     Navigates to confirmation page
         >
     Updates email verified bool to 1
+
+8/12:
+    I'm at the point where I currently have a working implementation of my pw email reset system and today I want to use similar 
+    infrastructure to establish a system for verifying emails after an account is created or aftewards. The only issue I'm thinking of is 
+    what about when someone wants to change an email? Okay never mind they can only change email by the same method, a link from a token in an email.
+
+    This means i need a route to request email verification, and a route to update the email status to verified. I also need to add a column to the
+    db that will say rather or not the email is verified and check that before allowing a user to send a reset pw request to it.
+
+    Todo:
+        - Add field in db to flag email as verified or not - DONE
+        - Add check in "forgot_pw" token generate route to check if email is verified, rejecting request if not.
+        - Add a route to generate a token and send an email containing a link with the token to verify.
+        - Add route to recieve and validate the token and update the email and the verified status.
+            - NOTE: the url will be directed to a page on the frontend via react router which will call this route.
+    
+    Later I will worry about the frontend stuff.

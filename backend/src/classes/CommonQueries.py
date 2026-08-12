@@ -56,7 +56,27 @@ class CommonQueries(DbManager):
             return result[0]['email']
         else:
             return ""
+        
+    def get_user_id_from_email(self, email: str) -> int:
+        """
+        Get user_id from email
 
+        Returns:
+            user_id on success.\n
+            0 on failure.
+        """
+        sql = """
+        SELECT id
+        FROM users
+        WHERE email = ?
+        """
+        result = self.select_query(sql, (email.strip(),))
+
+        if result:
+            return result[0]['id']
+        else:
+            return 0
+        
     def get_user_id_from_username(self, username: str) -> int:
         """
         Get user_id from username
@@ -77,25 +97,25 @@ class CommonQueries(DbManager):
         else:
             return 0
 
-    def get_user_id_from_email(self, email: str) -> int:
+    def check_email_validated(self, email: str) -> bool:
         """
-        Get user_id from email
-
-        Returns:
-            user_id on success.\n
-            0 on failure.
+        Check if an email is validated. Will work if any user has this email since there's 1-1 relationship 
+        between emails and users.
         """
         sql = """
-        SELECT id
+        SELECT email_verified 
         FROM users
         WHERE email = ?
         """
-        result = self.select_query(sql, (email.strip(),))
-
-        if result:
-            return result[0]['id']
+        result = self.select_query(sql, (email, ))
+        if result and len(result) >= 1:
+            status = result[0].get("email_verified", False)
+            if int(status) == 1 or str(status).lower() == "true":
+                return True
+            else:
+                return False
         else:
-            return 0
+            return False
 
     def get_symbol_id(self, ticker: str) -> int | None:
         """

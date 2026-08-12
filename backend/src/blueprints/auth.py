@@ -233,3 +233,9 @@ def verify_pw_change_token_submit_pw_change():
         "email": am.get_email_from_user_id(user_id),
         "username": am.get_username_from_user_id(user_id)
         }), 200
+
+@auth_bp.route("/token/generate/verify_email", methods=["POST"])
+def generate_and_send_email_verify_token():
+
+    @auth_bp.route("/token/verify/verify_email", methods=["POST"])
+def verify_email_verification_token():
