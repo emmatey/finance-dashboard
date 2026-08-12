@@ -66,7 +66,6 @@ class NewsAPIManager(CommonQueries):
             articles.append({
                 # Not used for dedup on this path (link is, via ON CONFLICT below) - just satisfies the NOT NULL/UNIQUE constraint, since NewsAPI doesn't hand back a stable article id like yahooquery does.
                 "uuid": str(uuid.uuid4()),
-
                 "title": article.get("title", "N/A"),
                 "thumbnail": article.get("urlToImage"),
                 "link": article.get("url"),
@@ -125,7 +124,7 @@ class NewsAPIManager(CommonQueries):
             try:
                 rows = self.select_query(ttl_sql, ())
             except Exception as e:
-                logger.exception()
+                logger.exception("Failed to check headline cache TTL")
                 return fresh
             res = None
 
@@ -161,7 +160,7 @@ class NewsAPIManager(CommonQueries):
                 self.modify_query(stamp_sql, (now, ))
                 return True
             except Exception as e:
-                logger.exception()
+                logger.exception("Failed to write fetch time.")
                 return False
 
         cache_fresh = _check_ttl()
@@ -171,7 +170,7 @@ class NewsAPIManager(CommonQueries):
         try:
             res = self.api.get_top_headlines(category=category)
         except NewsAPIException as e:
-            logger.exception()
+            logger.exception("Error in news API.")
             return False
         if not self.response_type_enforce(res):
             return False
@@ -197,7 +196,7 @@ class NewsAPIManager(CommonQueries):
         try:
             res = self.api.get_everything(q=safe_query, page_size=limit)
         except NewsAPIException as e:
-            logger.error(f"newsAPI search failed for '{safe_query}': {e.get_message()}")
+            logger.error(f"newsAPI search failed for '{safe_query}': {e}")
             return False
 
         if not self.response_type_enforce(res):
