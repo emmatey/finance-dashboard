@@ -35,7 +35,15 @@ export default function Change() {
         const email = formData.get("email");
         if (email) {
             try {
-                const response = await fetch(`/api/auth/token/generate/forgot_pw?email=${encodeURIComponent(email)}`);
+                const response = await fetch("/api/auth/token/generate/forgot_pw", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        'email': email
+                    })
+                });
                 await parseResponse(response);
                 setSent(true);
             } catch (error) {

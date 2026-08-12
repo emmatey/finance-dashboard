@@ -82,31 +82,61 @@ def register():
     return jsonify({"success": True}), 201
 
 
-@auth_bp.route("/token/generate/forgot_pw", methods=["GET"])
+@auth_bp.route("/token/generate/forgot_pw", methods=["POST"])
 def generate_and_send_forgot_pw_token():
     """
     Generates a signed, time-limited password-reset token for a user.
 
-    Query parameters:
+    Request body (JSON):
         email (str): Email address of the account to generate a token for.
 
     Returns:
         200: Request processed. Always returned regardless of whether the
              email is registered, to avoid leaking account existence.
              {"success": True, "message": str}
-        400: Missing email query parameter. {"success": False, "message": str}
+        400: Missing/malformed request body or missing email.
+             {"success": False, "message": str}
+        415: Request Content-Type was not application/json.
+             {"success": False, "message": str}
         500: Server misconfiguration prevented token generation, or the
              reset email failed to send. {"success": False, "message": str}
     """
     am = AccountManager()
 
-    email = request.args.get("email")
-    if not email:
+    try:
+        request_body = dict(request.get_json())
+    except UnsupportedMediaType:
+        logger.warning("Forgot-password request had wrong Content-Type header.")
+        return (
+            jsonify(
+                {"success": False, "message": "Content-Type must be application/json"}
+            ),
+            415,
+        )
+    except BadRequest:
+        logger.warning("Forgot-password request had malformed JSON body.")
+        return (
+            jsonify(
+                {"success": False, "message": "Malformed JSON body"}
+            ),
+            400,
+        )
+    except TypeError:
+        logger.warning("Forgot-password request body could not be parsed as an object.")
+        return (
+            jsonify(
+                {"success": False, "message": "Malformed request body"}
+            ),
+            400,
+        )
+
+    email = request_body.get("email")
+    if not email or not isinstance(email, str):
         return (
             jsonify(
                 {
                     "success": False,
-                    "message": "Must provide ?email=<str> query parameter.",
+                    "message": "Must provide email: str in request body",
                 }
             ),
             400,
