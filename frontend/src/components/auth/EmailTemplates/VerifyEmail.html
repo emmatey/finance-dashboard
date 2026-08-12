@@ -1,8 +1,14 @@
 <!--
-  Forgot-password email template for the Resend service.
+  Verify-email email template for the Resend service. Sent when a user
+  requests an email-verification link (see generate_and_send_email_verify_token
+  in backend/src/blueprints/auth.py). The link should point at a frontend
+  route (e.g. /auth/verify?token=...) that reads the token from the query
+  string and calls POST /auth/token/verify/verify_email, mirroring how
+  Change.jsx consumes the forgot-password reset_link.
+
   Placeholders (replace before sending, e.g. via str.replace or .format in Python):
     {{username}}    - account username
-    {{reset_link}}  - signed link to /auth/change?token=... (see Change.jsx)
+    {{verify_link}} - signed link to /auth/verify?token=...
     {{expires_in}}  - human-readable expiry window, e.g. "1 hour"
 
   Styles are inlined (no <style> block, no external CSS) because most email
@@ -15,7 +21,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reset your password</title>
+  <title>Verify your email address</title>
 </head>
 <body style="margin:0; padding:0; background-color:#F1F5F9; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F1F5F9; padding:32px 16px;">
@@ -36,23 +42,23 @@
           <tr>
             <td style="padding:32px;">
               <h1 style="margin:0 0 16px; font-size:20px; line-height:28px; color:#334155;">
-                Reset your password
+                Verify your email address
               </h1>
               <p style="margin:0 0 8px; font-size:14px; line-height:22px; color:#64748B;">
                 Hi {{username}},
               </p>
               <p style="margin:0 0 24px; font-size:14px; line-height:22px; color:#64748B;">
-                We received a request to reset your password. Click the button below to
-                choose a new one. This link will expire in {{expires_in}}.
+                Please confirm this is your email address by clicking the button below.
+                This link will expire in {{expires_in}}.
               </p>
 
               <!-- CTA Button -->
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="border-radius:8px; background-color:#006C83;">
-                    <a href="{{reset_link}}"
+                    <a href="{{verify_link}}"
                        style="display:inline-block; padding:12px 24px; font-size:14px; font-weight:600; color:#FFFFFF; text-decoration:none; border-radius:8px;">
-                      Reset password
+                      Verify email address
                     </a>
                   </td>
                 </tr>
@@ -62,12 +68,12 @@
                 If the button doesn't work, copy and paste this link into your browser:
               </p>
               <p style="margin:4px 0 0; font-size:12px; line-height:20px; word-break:break-all;">
-                <a href="{{reset_link}}" style="color:#1996AC;">{{reset_link}}</a>
+                <a href="{{verify_link}}" style="color:#1996AC;">{{verify_link}}</a>
               </p>
 
               <p style="margin:24px 0 0; font-size:12px; line-height:20px; color:#94A3B8;">
-                Didn't request this? You can safely ignore this email — your password
-                won't be changed.
+                Didn't request this? You can safely ignore this email &mdash; no changes
+                will be made to your account.
               </p>
             </td>
           </tr>
