@@ -91,9 +91,10 @@ def generate_and_send_forgot_pw_token():
         email (str): Email address of the account to generate a token for.
 
     Returns:
-        200: Reset email sent. {"success": True, "message": str}
-        400: Missing email query parameter or no user found for email.
-             {"success": False, "message": str}
+        200: Request processed. Always returned regardless of whether the
+             email is registered, to avoid leaking account existence.
+             {"success": True, "message": str}
+        400: Missing email query parameter. {"success": False, "message": str}
         500: Server misconfiguration prevented token generation, or the
              reset email failed to send. {"success": False, "message": str}
     """
@@ -111,12 +112,21 @@ def generate_and_send_forgot_pw_token():
             400,
         )
 
+    generic_response = (
+        jsonify(
+            {
+                "success": True,
+                "message": "If that email is registered, a password reset link has been sent.",
+            }
+        ),
+        200,
+    )
+
     user_id = am.get_user_id_from_email(email=email)
     if not user_id:
-        return (
-            jsonify({"success": False, "message": f"No user found for email {email}."}),
-            400,
-        )
+        # Deliberately indistinguishable from the success path below, to
+        # avoid leaking whether an email is registered.
+        return generic_response
 
     try:
         signed_token = am.generate_verification_token(
@@ -175,12 +185,7 @@ def generate_and_send_forgot_pw_token():
             500,
         )
 
-    return jsonify({
-        "success": True,
-        "message": "Password reset email sent.",
-        "email": email,
-        "username": username
-        }), 200
+    return generic_response
 
 
 @auth_bp.route("/token/verify/forgot_pw", methods=["POST"])

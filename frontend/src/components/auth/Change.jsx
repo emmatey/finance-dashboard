@@ -36,16 +36,11 @@ export default function Change() {
         if (email) {
             try {
                 const response = await fetch(`/api/auth/token/generate/forgot_pw?email=${encodeURIComponent(email)}`);
-                const result = await parseResponse(response);
-                setUsername(result.username);
+                await parseResponse(response);
                 setSent(true);
             } catch (error) {
-                if (error.status === 400) {
-                    setSent(true);
-                } else {
-                    setErrorStr(error.data);
-                    setErrorCode(error.status);
-                };
+                setErrorStr(error.data);
+                setErrorCode(error.status);
             };
         } else {
             return;
@@ -126,7 +121,7 @@ export default function Change() {
                 {state === 'reset' && (
                     <>
                         <CardHeader>
-                            <CardTitle>Hello {username}! Choose a new password</CardTitle>
+                            <CardTitle>Choose a new password</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={(e) => handleSubmitPwChange(e)}>
@@ -164,7 +159,7 @@ export default function Change() {
                 {state === 'error' && (
                     <>
                         <CardHeader>
-                            <CardTitle>Oops wooks wike thewe was an ewwow... Code: {errorCode}</CardTitle>
+                            <CardTitle>Oops looks like there was an error... Status Code: {errorCode}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col gap-2 mb-2">
