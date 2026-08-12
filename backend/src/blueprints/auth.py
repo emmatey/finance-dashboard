@@ -41,8 +41,11 @@ def register():
 
     Returns:
         201: Registration successful. {"success": True}
-        400: Invalid request body or validation failure. {"success": False, "message": str}
+        400: Missing/malformed request body or validation failure.
+             {"success": False, "message": str}
         409: Username or email already in use. {"success": False, "message": str}
+        415: Request Content-Type was not application/json.
+             {"success": False, "message": str}
     """
     # Checks for request body.
     try:
