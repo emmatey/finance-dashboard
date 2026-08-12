@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
     Table,
     TableBody,
@@ -10,6 +10,8 @@ import {
 import { formatCurrencyUSD, formatNumber } from "@/scripts/utils";
 
 export default function ScreenersTable({ data }) {
+    const navigate = useNavigate();
+
     //from - {
     //screener_name: [{
     //    screener_name: str,
@@ -41,12 +43,12 @@ export default function ScreenersTable({ data }) {
             </TableHeader>
             <TableBody>
                 {data.map((row) => (
-                    <TableRow key={row.ticker}>
-                        <TableCell>
-                            <Link to={`/research?ticker=${encodeURIComponent(row.ticker)}`} className="hover:underline">
-                                {row.ticker}
-                            </Link>
-                        </TableCell>
+                    <TableRow
+                        key={row.ticker}
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/research?ticker=${encodeURIComponent(row.ticker)}`)}
+                    >
+                        <TableCell>{row.ticker}</TableCell>
                         <TableCell>{row.company_name}</TableCell>
                         <TableCell>{formatCurrencyUSD(row.current_price)}</TableCell>
                         <TableCell>{formatCurrencyUSD(row.prev_close)}</TableCell>
