@@ -471,7 +471,7 @@ I'm thinking I should examine the way the screener data is currently captured an
 
     Todo:
         - Add field in db to flag email as verified or not - DONE
-        - Add check in "forgot_pw" token generate route to check if email is verified, rejecting request if not. - DONe
+        - Add check in "forgot_pw" token generate route to check if email is verified, rejecting request if not. - DONE
         - Add a route to generate a token and send an email containing a link with the token to verify.
         - Add route to recieve and validate the token and update the email and the verified status.
             - NOTE: the url will be directed to a page on the frontend via react router which will call this route.

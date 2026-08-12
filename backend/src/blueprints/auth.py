@@ -240,6 +240,56 @@ def verify_pw_change_token_submit_pw_change():
 
 @auth_bp.route("/token/generate/verify_email", methods=["POST"])
 def generate_and_send_email_verify_token():
+    """
+    Generates a signed, time-limited email-verification token.
 
-    @auth_bp.route("/token/verify/verify_email", methods=["POST"])
+    Request body (JSON):
+        email (str): Email address of the account to generate a token for.
+
+    Returns:
+        200: Request processed.
+             {"success": True, "message": str}
+        400: Missing/malformed request body or missing email.
+             {"success": False, "message": str}
+        415: Request Content-Type was not application/json.
+             {"success": False, "message": str}
+        500: Server misconfiguration prevented token generation, or the
+             reset email failed to send. {"success": False, "message": str}
+    """
+    try:
+        request_body = helpers.parse_json_body(request)
+    except helpers.InvalidJSONBodyError as e:
+        return jsonify({"success": False, "message": str(e)}), e.status_code
+
+    email = request_body.get("email")
+    if not email or not isinstance(email, str):
+        return jsonify({"success": False, "message": "Must provide email: str in request body"}), 400
+
+    generic_response = (
+        jsonify({"success": True, "message": "If that email is associated with a registered user, a validation link has been sent."}),
+        200,
+    )
+
+    am = AccountManager()
+
+    # Check if email in use
+    in_use = am.check_email_in_use(email=email)
+    if not in_use:
+        return generic_response
+
+    # Check if email already verified
+    validated = am.check_email_validated(email=email)
+    if validated:
+        return generic_response
+
+    # Generate token with "verify email salt"
+
+    # Try to mail out
+
+    # 200
+
+
+
+@auth_bp.route("/token/verify/verify_email", methods=["POST"])
 def verify_email_verification_token():
+    return jsonify({"hi":"mom"}), 200
