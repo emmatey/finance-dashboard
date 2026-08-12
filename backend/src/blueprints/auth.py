@@ -7,9 +7,9 @@ from flask import Blueprint, jsonify, request
 from itsdangerous import BadData, BadSignature, SignatureExpired
 from pathlib import Path
 from resend.exceptions import ResendError
-from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 from classes.AccountManager import AccountManager
+from scripts import helpers
 
 FORGOT_PW_EMAIL_TEMPLATE_PATH = (
     Path(__file__).resolve().parents[3]
@@ -45,11 +45,12 @@ def register():
         409: Username or email already in use. {"success": False, "message": str}
     """
     # Checks for request body.
-    if not request.is_json:
-        return jsonify({"success": False, "message": "Missing JSON in request"}), 400
+    try:
+        request_body = helpers.parse_json_body(request)
+    except helpers.InvalidJSONBodyError as e:
+        return jsonify({"success": False, "message": str(e)}), e.status_code
 
     am = AccountManager()
-    request_body = dict(request.json)
     username = str(request_body.get("username", "")).strip()
     password = str(request_body.get("password", ""))
     email = request_body.get("email")
@@ -96,16 +97,9 @@ def generate_and_send_forgot_pw_token():
     am = AccountManager()
 
     try:
-        request_body = dict(request.get_json())
-    except UnsupportedMediaType:
-        logger.warning("Forgot-password request had wrong Content-Type header.")
-        return jsonify({"success": False, "message": "Content-Type must be application/json"}), 415
-    except BadRequest:
-        logger.warning("Forgot-password request had malformed JSON body.")
-        return jsonify({"success": False, "message": "Malformed JSON body"}), 400
-    except TypeError:
-        logger.warning("Forgot-password request body could not be parsed as an object.")
-        return jsonify({"success": False, "message": "Malformed request body"}), 400
+        request_body = helpers.parse_json_body(request)
+    except helpers.InvalidJSONBodyError as e:
+        return jsonify({"success": False, "message": str(e)}), e.status_code
 
     email = request_body.get("email")
     if not email or not isinstance(email, str):
@@ -184,16 +178,9 @@ def verify_pw_change_token_submit_pw_change():
              change failed unexpectedly. {"success": False, "message": str}
     """
     try:
-        request_body = dict(request.get_json())
-    except UnsupportedMediaType:
-        logger.warning("Password change request had wrong Content-Type header.")
-        return jsonify({"success": False, "message": "Content-Type must be application/json"}), 415
-    except BadRequest:
-        logger.warning("Password change request had malformed JSON body.")
-        return jsonify({"success": False, "message": "Malformed JSON body"}), 400
-    except TypeError:
-        logger.warning("Password change request body could not be parsed as an object.")
-        return jsonify({"success": False, "message": "Malformed request body"}), 400
+        request_body = helpers.parse_json_body(request)
+    except helpers.InvalidJSONBodyError as e:
+        return jsonify({"success": False, "message": str(e)}), e.status_code
 
     # Validate Token
     am = AccountManager()
