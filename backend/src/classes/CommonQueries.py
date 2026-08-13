@@ -110,7 +110,7 @@ class CommonQueries(DbManager):
         result = self.select_query(sql, (email, ))
         if result and len(result) >= 1:
             status = result[0].get("email_verified", False)
-            if int(status) == 1 or str(status).lower() == "true":
+            if status:
                 return True
             else:
                 return False
