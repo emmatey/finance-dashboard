@@ -131,11 +131,14 @@ class AccountManager(CommonQueries):
         WHERE id = ?
         """
         try:
-            self.modify_query(password_sql, (hash, user_id))
+            rows_affected = self.modify_query(password_sql, (hash, user_id))
         except Exception:
             raise
 
-        return True
+        if rows_affected >= 1:
+            return True
+        else:
+            return False
 
     def register(self, username: str, password: str, email: str | None = None) -> int:
         """
