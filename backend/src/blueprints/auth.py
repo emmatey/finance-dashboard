@@ -193,15 +193,13 @@ def verify_pw_change_token_submit_pw_change():
         new_password (str): See check_pw_valid for password requirements.
 
     Returns:
-        200: Password changed successfully. {"success": True}
-        400: Missing/malformed request, missing/invalid token query param,
-             expired or invalid token, token missing a valid user_id,
-             missing/invalid new_password, or password validation failure.
-             {"success": False, "message": str}
-        415: Request Content-Type was not application/json.
-             {"success": False, "message": str}
+        200: Email verified successfully.
+    
+    Raises:
+        400: InvalidJSONBodyError
+        415: InvalidJSONBodyError; Invalid content type
         500: Server misconfiguration prevented token validation, or password
-             change failed unexpectedly. {"success": False, "message": str}
+             change failed unexpectedly.
     """
     try:
         request_body = helpers.parse_json_body(request)
@@ -364,4 +362,64 @@ def generate_and_send_email_verify_token():
 
 @auth_bp.route("/token/verify/verify_email", methods=["POST"])
 def verify_email_verification_token():
-    return jsonify({"hi":"mom"}), 200
+    """
+    Verifies "verify email" token, and marks user's email as verified if token is valid.
+
+    Request body (JSON):
+        token (str): Signed verification token from the forgot-password email.
+
+    Returns:
+        200: Email verified successfully.
+    
+    Raises:
+        400: InvalidJSONBodyError
+        415: InvalidJSONBodyError; Invalid content type
+        500: Server misconfiguration prevented token validation, or password
+             change failed unexpectedly.
+    """
+    # Validate request body shape and type.
+    try:
+        request_body = helpers.parse_json_body(request)
+    except helpers.InvalidJSONBodyError as e:
+        return jsonify({"success": False, "message": str(e)}), e.status_code
+
+    # Validate Token.
+    am = AccountManager()
+    token = request_body.get("token")
+    if not token or not isinstance(token, str):
+        return jsonify({"success": False, "message": "Must provide token: str in request body"}), 400
+    try:
+        decrypted_token = am.validate_verification_token(
+            context_salt="verify_email",
+            token=token,
+            max_age=FORGOT_PW_TOKEN_MAX_AGE_SECONDS,
+        )
+    except SignatureExpired:
+        return jsonify({"success": False, "message": "Token has expired."}), 400
+    except (BadSignature, BadData):
+        return jsonify({"success": False, "message": "Invalid token."}), 400
+    except TypeError:
+        logger.exception(
+            "Failed to validate verification token due to server misconfiguration."
+        )
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
+
+    # Extract user ID.
+    try:
+        user_id = int(decrypted_token.get("user_id") or 0)
+    except TypeError:
+        return jsonify({"success": False, "message": "Unable to type coerce user_id from token"}), 400
+    if not user_id:
+        return jsonify({"success": False, "message": "Token did not contain a valid user_id"}), 400
+
+    # Extract email.
+    try:
+        email = str(decrypted_token.get("email") or "")
+    except TypeError:
+        return jsonify({"success": False, "message": "Unable to type coerce email from token"}), 400
+    if not email:
+        return jsonify({"success": False, "message": "Token did not contain a valid user_id"}), 400
+
+    # Mark email as verified.
+
+    # 200
