@@ -79,6 +79,23 @@ class AccountManager(CommonQueries):
             return False, "Password must contain at least one non-letter character."
         return True, None
 
+    def check_login_credentials_correct(self, username, password):
+        """
+        Checks a provided username and password are correct.
+        """
+        sql = """
+        SELECT * 
+        FROM users 
+        WHERE username = ?
+        """
+        rows = self.select_query(sql, (username,))
+
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
+            logger.warning(f"Failed login attempt for username '{username}'")
+            return False
+        
+        return rows[0].get("id") or False
+    
     def check_email_in_use(self, email: str) -> bool:
         email_sql = """
         SELECT * 
@@ -138,19 +155,17 @@ class AccountManager(CommonQueries):
         return result
 
     def login(self, username, password, session) -> bool:
-        # Query database for username
-        rows = self.select_query("SELECT * FROM users WHERE username = ?", (username,))
-
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
-            logger.warning(f"Failed login attempt for username '{username}'")
+        """
+        Logs in a user by saving their user ID to the flask session cookie.
+        This is referenced by the auth context on the frontend.
+        """
+        user_id = self.check_login_credentials_correct(username=username, password=password)
+        if not user_id:
             return False
-
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-        logger.info(f"User '{username}' logged in (user_id={rows[0]['id']})")
+        
+        session["user_id"] = user_id
+        logger.info(f"User '{username}' logged in (user_id={user_id})")
         return True
-
 
 if __name__ == "__main__":
     am = AccountManager()

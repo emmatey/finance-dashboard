@@ -116,9 +116,22 @@ def change_pw_from_known_credentials():
         500: Password change failed unexpectedly.
     """
     # Validate request body format and type.
+    try:
+        request_body = helpers.parse_json_body(request)
+    except helpers.InvalidJSONBodyError as e:
+        return jsonify({"success": False, "message": str(e)}), e.status_code
 
     # Check all required fields are present.
-
+    username = request_body.get("username")
+    if not username or not isinstance(username, str):
+        return jsonify({"success": False, "message": "Must provide username: str in request body"}), 400
+    password = request_body.get("password")
+    if not password or not isinstance(password, str):
+        return jsonify({"success": False, "message": "Must provide password: str in request body"}), 400
+    new_password = request_body.get("new_password")
+    if not new_password or not isinstance(new_password, str):
+        return jsonify({"success": False, "message": "Must provide new_password: str in request body"}), 400
+    
     # Check current username and password are correct.
 
     # Check new password is valid.
