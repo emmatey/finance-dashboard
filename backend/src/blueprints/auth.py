@@ -59,12 +59,12 @@ def register():
         email (str, optional): Email address to associate with the account.
 
     Returns:
-        201: Registration successful. {"success": True}
+        201: Registration successful.
+
+    Raises:
         400: Missing/malformed request body or validation failure.
-             {"success": False, "message": str}
-        409: Username or email already in use. {"success": False, "message": str}
+        409: Username or email already in use.
         415: Request Content-Type was not application/json.
-             {"success": False, "message": str}
     """
     # Checks for request body.
     try:
@@ -96,6 +96,35 @@ def register():
     # Return good state
     return jsonify({"success": True}), 201
 
+@auth_bp.route("/change_pw", methods=["POST"])
+def change_pw_from_known_credentials():
+    """
+    Change the account password if the user already knows their username and password, bypassing the email token system.
+
+    Request Body (JSON):
+        username (str)
+        password (str)
+        new_password (str)
+
+    Returns:
+        200: Password changed.
+
+    Raises:
+        400: Missing/malformed request body, or new_password fails validation.
+        401: Current username/password combination is incorrect.
+        415: Request Content-Type was not application/json.
+        500: Password change failed unexpectedly.
+    """
+    # Validate request body format and type.
+
+    # Check all required fields are present.
+
+    # Check current username and password are correct.
+
+    # Check new password is valid.
+
+    # Update password in system.
+
 @auth_bp.route("/token/generate/forgot_pw", methods=["POST"])
 def generate_and_send_forgot_pw_token():
     """
@@ -107,13 +136,12 @@ def generate_and_send_forgot_pw_token():
     Returns:
         200: Request processed. Always returned regardless of whether the
              email is registered, to avoid leaking account existence.
-             {"success": True, "message": str}
+
+    Raises:
         400: Missing/malformed request body or missing email.
-             {"success": False, "message": str}
         415: Request Content-Type was not application/json.
-             {"success": False, "message": str}
         500: Server misconfiguration prevented token generation, or the
-             reset email failed to send. {"success": False, "message": str}
+             reset email failed to send.
     """
     am = AccountManager()
 
@@ -191,11 +219,13 @@ def verify_pw_change_token_submit_pw_change():
         new_password (str): See check_pw_valid for password requirements.
 
     Returns:
-        200: Email verified successfully.
-    
+        200: Password changed successfully.
+
     Raises:
-        400: InvalidJSONBodyError
-        415: InvalidJSONBodyError; Invalid content type
+        400: Missing/malformed request body, missing token, token missing a
+             valid user_id, or new_password missing/invalid.
+        401: Expired or invalid token.
+        415: Request Content-Type was not application/json.
         500: Server misconfiguration prevented token validation, or password
              change failed unexpectedly.
     """
@@ -216,9 +246,9 @@ def verify_pw_change_token_submit_pw_change():
             max_age=FORGOT_PW_TOKEN_MAX_AGE_SECONDS,
         )
     except SignatureExpired:
-        return jsonify({"success": False, "message": "Token has expired."}), 400
+        return jsonify({"success": False, "message": "Token has expired."}), 401
     except (BadSignature, BadData):
-        return jsonify({"success": False, "message": "Invalid token."}), 400
+        return jsonify({"success": False, "message": "Invalid token."}), 401
     except TypeError:
         logger.exception(
             "Failed to validate verification token due to server misconfiguration."
@@ -262,14 +292,15 @@ def generate_and_send_email_verify_token():
         email (str): Email address of the account to generate a token for.
 
     Returns:
-        200: Request processed.
-             {"success": True, "message": str}
+        200: Request processed. Always returned regardless of whether the
+             email is registered or already verified, to avoid leaking
+             account existence.
+
+    Raises:
         400: Missing/malformed request body or missing email.
-             {"success": False, "message": str}
         415: Request Content-Type was not application/json.
-             {"success": False, "message": str}
         500: Server misconfiguration prevented token generation, or the
-             reset email failed to send. {"success": False, "message": str}
+             verification/already-verified email failed to send.
     """
     try:
         request_body = helpers.parse_json_body(request)
@@ -364,16 +395,18 @@ def verify_email_verification_token():
     Verifies "verify email" token, and marks user's email as verified if token is valid.
 
     Request body (JSON):
-        token (str): Signed verification token from the forgot-password email.
+        token (str): Signed verification token from the verify-email email.
 
     Returns:
         200: Email verified successfully.
-    
+
     Raises:
-        400: InvalidJSONBodyError
-        415: InvalidJSONBodyError; Invalid content type
-        500: Server misconfiguration prevented token validation, or password
-             change failed unexpectedly.
+        400: Missing/malformed request body, missing token, or token missing
+             a valid user_id/email.
+        401: Expired or invalid token.
+        415: Request Content-Type was not application/json.
+        500: Server misconfiguration prevented token validation, or marking
+             the email verified failed unexpectedly.
     """
     # Validate request body shape and type.
     try:
@@ -393,9 +426,9 @@ def verify_email_verification_token():
             max_age=FORGOT_PW_TOKEN_MAX_AGE_SECONDS,
         )
     except SignatureExpired:
-        return jsonify({"success": False, "message": "Token has expired."}), 400
+        return jsonify({"success": False, "message": "Token has expired."}), 401
     except (BadSignature, BadData):
-        return jsonify({"success": False, "message": "Invalid token."}), 400
+        return jsonify({"success": False, "message": "Invalid token."}), 401
     except TypeError:
         logger.exception(
             "Failed to validate verification token due to server misconfiguration."
@@ -426,3 +459,8 @@ def verify_email_verification_token():
         return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
     
     # 200
+    return jsonify({
+        "success": True,
+        "email": email,
+        "username": am.get_username_from_user_id(user_id)
+        }), 200

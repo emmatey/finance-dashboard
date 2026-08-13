@@ -28,20 +28,53 @@ RESOURCES
             201 - registration successful
             400 - missing JSON, invalid username/password, or validation failure
             409 - username or email already in use
+            415 - Content-Type is not application/json
+        change_pw
+            to   - POST /api/auth/change_pw  {username: str, password: str, new_password: str}
+            from - {success: bool}
+            note - bypasses the email token system; requires the current username and password
+            200 - password changed
+            400 - missing/malformed body, or new_password fails validation
+            401 - current username/password combination is incorrect
+            415 - Content-Type is not application/json
+            500 - password change failed unexpectedly
         forgot_pw/generate
-            to   - GET /api/auth/token/generate/forgot_pw  ?email=str
-            from - {success: true, message: str, email: str, username: str}
-            note - emails a signed token link (?token=...) valid for 10 minutes
-            200 - reset email sent
-            400 - missing ?email, or no user found for email
-            500 - server misconfiguration, or email failed to send
+            to   - POST /api/auth/token/generate/forgot_pw  {email: str}
+            from - {success: true, message: str}
+            note - emails a signed token link (?token=...) valid for 10 minutes.
+                   Always returns 200, even if the email isn't registered, to
+                   avoid leaking account existence.
+            200 - request processed
+            400 - missing/malformed body or missing email
+            415 - Content-Type is not application/json
+            500 - server misconfiguration, or reset email failed to send
         forgot_pw/verify
             to   - POST /api/auth/token/verify/forgot_pw  {token: str, new_password: str}
             from - {success: true, email: str, username: str}
             200 - password changed
-            400 - malformed body, missing/invalid token, expired/invalid token, or password validation failure
+            400 - malformed body, missing token, token missing a valid user_id, or password validation failure
+            401 - expired or invalid token
             415 - Content-Type is not application/json
             500 - server misconfiguration, or password change failed
+        verify_email/generate
+            to   - POST /api/auth/token/generate/verify_email  {email: str}
+            from - {success: true, message: str}
+            note - emails a signed token link (?token=...) valid for 10 minutes;
+                   sends an "already verified" email instead if the account is
+                   already verified. Always returns 200, even if the email isn't
+                   registered, to avoid leaking account existence.
+            200 - request processed
+            400 - missing/malformed body or missing email
+            415 - Content-Type is not application/json
+            500 - server misconfiguration, or verification/already-verified email failed to send
+        verify_email/verify
+            to   - POST /api/auth/token/verify/verify_email  {token: str}
+            from - {success: true, email: str, username: str}
+            200 - email verified successfully
+            400 - malformed body, missing token, or token missing a valid user_id/email
+            401 - expired or invalid token
+            415 - Content-Type is not application/json
+            500 - server misconfiguration, or marking email verified failed unexpectedly
 
     SESSION
         login
