@@ -96,7 +96,6 @@ def register():
     # Return good state
     return jsonify({"success": True}), 201
 
-
 @auth_bp.route("/token/generate/forgot_pw", methods=["POST"])
 def generate_and_send_forgot_pw_token():
     """
@@ -181,7 +180,6 @@ def generate_and_send_forgot_pw_token():
         return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
     return generic_response
-
 
 @auth_bp.route("/token/verify/forgot_pw", methods=["POST"])
 def verify_pw_change_token_submit_pw_change():
@@ -421,5 +419,10 @@ def verify_email_verification_token():
         return jsonify({"success": False, "message": "Token did not contain a valid user_id"}), 400
 
     # Mark email as verified.
-
+    try:
+        am.set_email_verified(email=email, user_id=user_id)
+    except Exception:
+        logger.exception(f"Failed to validate email for user_id={user_id}.")
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
+    
     # 200

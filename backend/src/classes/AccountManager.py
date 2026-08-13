@@ -85,15 +85,29 @@ class AccountManager(CommonQueries):
         FROM users
         WHERE email = ?
         """
-        rows = self.select_query(email_sql, (email,))
-        if len(rows) >= 1:
+        try:
+            rows = self.select_query(email_sql, (email,))
+            if len(rows) >= 1:
+                return True
+            else:
+                return False
+        except Exception:
+            raise
+
+    def set_email_verified(self, email: str, user_id: int) -> bool:
+        sql = """
+        UPDATE users
+        SET email_verified = True
+        WHERE email = ? AND id = ?
+        """
+        try:
+            self.modify_query(query=sql, placeholders=(email, user_id))
             return True
-        else:
-            return False
+        except Exception:
+            raise
 
     def change_password(self, password: str, user_id: int) -> bool:
         hash = generate_password_hash(password=password)
-
         password_sql = """
         UPDATE users
         SET hash = ?
