@@ -3,7 +3,7 @@ import os
 import resend
 
 from dotenv import load_dotenv
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, render_template_string, request
 from itsdangerous import BadData, BadSignature, SignatureExpired
 from pathlib import Path
 from resend.exceptions import ResendError
@@ -219,11 +219,11 @@ def generate_and_send_forgot_pw_token():
     reset_link = f"{frontend_url}/auth/change?token={signed_token}"
     expires_in = f"{FORGOT_PW_TOKEN_MAX_AGE_SECONDS // 60} minutes"
 
-    html = FORGOT_PW_EMAIL_TEMPLATE_PATH.read_text()
-    html = (
-        html.replace("{{username}}", username)
-        .replace("{{reset_link}}", reset_link)
-        .replace("{{expires_in}}", expires_in)
+    html = render_template_string(
+        FORGOT_PW_EMAIL_TEMPLATE_PATH.read_text(),
+        username=username,
+        reset_link=reset_link,
+        expires_in=expires_in,
     )
 
     params: resend.Emails.SendParams = {
@@ -370,8 +370,10 @@ def generate_and_send_email_verify_token():
     # Send the "already verified" email if the account is validated already.
     validated = am.check_email_validated(email=email)
     if validated:
-        html = EMAIL_ALREADY_VERIFIED_TEMPLATE_PATH.read_text()
-        html = html.replace("{{username}}", username)
+        html = render_template_string(
+            EMAIL_ALREADY_VERIFIED_TEMPLATE_PATH.read_text(),
+            username=username,
+        )
         params: resend.Emails.SendParams = {
             "from": EMAIL_FROM_ADDRESS,
             "to": [email],
@@ -398,11 +400,11 @@ def generate_and_send_email_verify_token():
     verify_link = f"{frontend_url}/auth/verify?token={signed_token}"
     expires_in = f"{FORGOT_PW_TOKEN_MAX_AGE_SECONDS // 60} minutes"
 
-    html = VERIFY_EMAIL_TEMPLATE_PATH.read_text()
-    html = (
-        html.replace("{{username}}", username)
-        .replace("{{verify_link}}", verify_link)
-        .replace("{{expires_in}}", expires_in)
+    html = render_template_string(
+        VERIFY_EMAIL_TEMPLATE_PATH.read_text(),
+        username=username,
+        verify_link=verify_link,
+        expires_in=expires_in,
     )
 
     params: resend.Emails.SendParams = {
@@ -481,7 +483,7 @@ def verify_email_verification_token():
     except TypeError:
         return jsonify({"success": False, "message": "Unable to type coerce email from token"}), 400
     if not email:
-        return jsonify({"success": False, "message": "Token did not contain a valid user_id"}), 400
+        return jsonify({"success": False, "message": "Token did not contain a valid email"}), 400
 
     # Mark email as verified.
     try:
