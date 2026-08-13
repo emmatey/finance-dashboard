@@ -115,6 +115,9 @@ def change_pw_from_known_credentials():
         415: Request Content-Type was not application/json.
         500: Password change failed unexpectedly.
     """
+    # Summon the object (hi there)
+    am = AccountManager()
+
     # Validate request body format and type.
     try:
         request_body = helpers.parse_json_body(request)
@@ -133,10 +136,23 @@ def change_pw_from_known_credentials():
         return jsonify({"success": False, "message": "Must provide new_password: str in request body"}), 400
     
     # Check current username and password are correct.
+    credentials_valid = am.check_login_credentials_correct(username=username, password=password)
+    if not credentials_valid:
+        return jsonify({"success": False, "message": "Username and password provided are incorrect."}), 401
 
     # Check new password is valid.
+    pw_valid = AccountManager.check_pw_valid(pw=new_password)[0] # [0] b/c method returns tuple (bool, msg)
+    if not pw_valid:
+        return jsonify({"success": False, "message": "Password provided doesn't fit system rules. Please try again"}), 400
 
     # Update password in system.
+    try:
+        changed = am.change_password(password=new_password, user_id=am.get_user_id_from_username(username=username))
+    except Exception:
+        return jsonify({"success": False, "message": "Failure processing password change, see finance.log for details."}), 500
+
+    # 200
+    return jsonify({"success": True, "message": "Password updated successfully!"}), 200
 
 @auth_bp.route("/token/generate/forgot_pw", methods=["POST"])
 def generate_and_send_forgot_pw_token():
