@@ -20,7 +20,26 @@ FORGOT_PW_EMAIL_TEMPLATE_PATH = (
     / "EmailTemplates"
     / "ForgotPassword.html"
 )
+VERIFY_EMAIL_TEMPLATE_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "frontend"
+    / "src"
+    / "components"
+    / "auth"
+    / "EmailTemplates"
+    / "VerifyEmail.html"
+)
+EMAIL_ALREADY_VERIFIED_TEMPLATE_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "frontend"
+    / "src"
+    / "components"
+    / "auth"
+    / "EmailTemplates"
+    / "AlreadyVerified.html"
+)
 FORGOT_PW_TOKEN_MAX_AGE_SECONDS = 10 * 60
+EMAIL_FROM_ADDRESS = "onboarding@resend.dev"
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +168,7 @@ def generate_and_send_forgot_pw_token():
     )
 
     params: resend.Emails.SendParams = {
-        "from": "onboarding@resend.dev",
+        "from": EMAIL_FROM_ADDRESS,
         "to": [email],
         "subject": "Reset your password",
         "html": html,
@@ -272,23 +291,76 @@ def generate_and_send_email_verify_token():
 
     am = AccountManager()
 
+    # Load email API key.
+    load_dotenv()
+    resend_api_key = os.getenv("RESEND_API_KEY")
+    if not resend_api_key:
+        logger.error("RESEND_API_KEY not set; cannot send verification email.")
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
+    resend.api_key = resend_api_key
+
     # Check if email in use
     in_use = am.check_email_in_use(email=email)
     if not in_use:
         return generic_response
 
-    # Check if email already verified
+    # Lookup username from email for later use in both email templates.
+    user_id = am.get_user_id_from_email(email=email)
+    username = am.get_username_from_user_id(user_id)
+
+    # Send the "already verified" email if the account is validated already.
     validated = am.check_email_validated(email=email)
     if validated:
+        html = EMAIL_ALREADY_VERIFIED_TEMPLATE_PATH.read_text()
+        html = html.replace("{{username}}", username)
+        params: resend.Emails.SendParams = {
+            "from": EMAIL_FROM_ADDRESS,
+            "to": [email],
+            "subject": "Verify your email address.",
+            "html": html,
+        }
+        try:
+            resend.Emails.send(params)
+        except ResendError:
+            logger.exception(f"Failed to send verification email to {email}.")
+            return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
+
         return generic_response
 
     # Generate token with "verify email salt"
+    try:
+        signed_token = am.generate_verification_token(context_salt="verify_email", email=email, user_id=user_id)
+    except Exception:
+        logger.exception("Failed to generate verification token due to server misconfiguration.")
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
-    # Try to mail out
+    # Send out verification email
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    verify_link = f"{frontend_url}/auth/verify?token={signed_token}"
+    expires_in = f"{FORGOT_PW_TOKEN_MAX_AGE_SECONDS // 60} minutes"
+
+    html = VERIFY_EMAIL_TEMPLATE_PATH.read_text()
+    html = (
+        html.replace("{{username}}", username)
+        .replace("{{verify_link}}", verify_link)
+        .replace("{{expires_in}}", expires_in)
+    )
+
+    params: resend.Emails.SendParams = {
+        "from": EMAIL_FROM_ADDRESS,
+        "to": [email],
+        "subject": "Verify your email address.",
+        "html": html,
+    }
+
+    try:
+        resend.Emails.send(params)
+    except ResendError:
+        logger.exception(f"Failed to send verification email to {email}.")
+        return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
 
     # 200
-
-
+    return generic_response
 
 @auth_bp.route("/token/verify/verify_email", methods=["POST"])
 def verify_email_verification_token():
