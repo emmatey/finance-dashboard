@@ -81,18 +81,19 @@ class AccountManager(CommonQueries):
         return True, None
 
     @staticmethod
-    def check_email_valid(email: str):
+    def check_email_valid(email: str) -> str | None:
         """
         Uses email-validator library to check emails are syntactically correct.
         Used in registration and email validation flows.
+        Returns the normalized email if valid, otherwise None.
         """
         try:
             # We already check deliverability later when verifying email addresses which is required
                 # in order to use them for anyting.
             emailInfoObject = validate_email(email, check_deliverability=False)
             return emailInfoObject.normalized
-        except EmailNotValidError as e:
-            raise e
+        except EmailNotValidError:
+            return None
         
     def check_login_credentials_correct(self, username, password):
         """

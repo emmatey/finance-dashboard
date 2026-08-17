@@ -3,7 +3,6 @@ import os
 import resend
 
 from dotenv import load_dotenv
-from email_validator import EmailNotValidError
 from flask import Blueprint, jsonify, render_template_string, request, session
 from itsdangerous import BadData, BadSignature, SignatureExpired
 from pathlib import Path
@@ -89,21 +88,19 @@ def register():
         return jsonify({"success": False, "message": password_message}), 400
     if am.get_user_id_from_username(username=username):
         return jsonify({"success": False, "message": f"Username {username} already in use."}), 409
-    if email == "":
-        email = None
-    if email and am.check_email_in_use(email=email):
-        return jsonify({"success": False, "message": f"Email {email} already in use."}), 409
     if email:
-        try:
-            email_validated = AccountManager.check_email_valid(email=email)
-        except EmailNotValidError:
+        email_validated = AccountManager.check_email_valid(email=email)
+        if not email_validated:
             return jsonify({"success": False, "message": "Email is invalid."}), 422
+        if am.check_email_in_use(email=email_validated):
+            return jsonify({"success": False, "message": f"Email {email_validated} already in use."}), 409
 
     # Add user to db
     am.register(username=username, password=password, email=email_validated)
 
     # Log new user in.
-    am.login(username=username, password=password, session=session)
+    if not am.login(username=username, password=password, session=session):
+        return jsonify({"success": False, "message": "Registered, but automatic login failed. Please log in."}), 500
 
     # Return good state
     return jsonify({"success": True}), 201
@@ -354,9 +351,8 @@ def generate_and_send_email_verify_token():
     email = request_body.get("email")
     if not email or not isinstance(email, str):
         return jsonify({"success": False, "message": "Must provide email: str in request body"}), 400
-    try:
-        email = AccountManager.check_email_valid(email=email)
-    except EmailNotValidError:
+    email = AccountManager.check_email_valid(email=email)
+    if not email:
         return jsonify({"success": False, "message": "Email is invalid."}), 422
 
     generic_response = (

@@ -462,18 +462,18 @@ I'm thinking I should examine the way the screener data is currently captured an
     Updates email verified bool to 1
 
 8/12:
-    I'm at the point where I currently have a working implementation of my pw email reset system and today I want to use similar 
-    infrastructure to establish a system for verifying emails after an account is created or aftewards. The only issue I'm thinking of is 
+    I'm at the point where I currently have a working implementation of my pw email reset system and today I want to use similar
+    infrastructure to establish a system for verifying emails after an account is created or afterwards. The only issue I'm thinking of is 
     what about when someone wants to change an email? Okay never mind they can only change email by the same method, a link from a token in an email.
 
     This means i need a route to request email verification, and a route to update the email status to verified. I also need to add a column to the
-    db that will say rather or not the email is verified and check that before allowing a user to send a reset pw request to it.
+    db that will say whether or not the email is verified and check that before allowing a user to send a reset pw request to it.
 
     Todo:
         - Add field in db to flag email as verified or not - DONE
         - Add check in "forgot_pw" token generate route to check if email is verified, rejecting request if not. - DONE
         - Add a route to generate a token and send an email containing a link with the token to verify.
-        - Add route to recieve and validate the token and update the email and the verified status.
+        - Add route to receive and validate the token and update the email and the verified status.
             - NOTE: the url will be directed to a page on the frontend via react router which will call this route.
     
     Later I will worry about the frontend stuff.
@@ -483,16 +483,17 @@ I'm thinking I should examine the way the screener data is currently captured an
     that the backend is in a completed state to support email authentication, and "forgot pw?" type resetting via emailing tokens to a verified
     address.
 
-    Today I will focus on the frontend regardless of rather or not this prior assumption is true. This is the final feature I'm going to be addding
+    Today I will focus on the frontend regardless of whether or not this prior assumption is true. This is the final feature I'm going to be addding
     prior to attempting to host this thing and show it to others for testing. As I want this to get done before college starts up, and I want to spend
     more time doing freelance work. Make no mistake however, this is still not in a finished state. I need to work on the colors, make whatever
     adjustments that people mention in testing, write tests for some of the important functions like transactions, make the demo database state,
     host the site, and make a writeup for the github. For now however, my goal for today is the following.
 
-        1. Adapt the registration form to optionally allow users to add an email when signing up.
+        1. Adapt the registration form to optionally allow users to add an email when signing up. - DONE
+            Ended up adding a way to check emails are syntactically valid as well and integrated this into registration and email auth flows.
         2. Create a menu that allows user to request pw reset via email.
-        3. Create a menu that allows users to request an email verificaiton email.
+        3. Create a menu that allows users to request an email verification email.
         4. Create a menu, probably that is opened by clicking the user icon, that will hold this "security" sub menu
-            and be a container for later potential account managment options like changing a porfolio photo, or deleting account.
+            and be a container for later potential account management options like changing a portfolio photo, or deleting account.
         5. Create a reset pw area that assumes the user already knows their current credentials.
         
