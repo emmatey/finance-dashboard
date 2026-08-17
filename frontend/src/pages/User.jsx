@@ -1,5 +1,5 @@
 import Header from '@/components/Header.jsx'
-import UserShard from '@/components/user/UserShard'
+import UserProfile from '@/components/user/UserProfile'
 import { useParams } from 'react-router-dom'
 
 
@@ -8,7 +8,7 @@ export default function User() {
     return (
         <>
             <Header />
-            <UserShard username={username}/>
+            <UserProfile username={username}/>
         </>
     )
 }

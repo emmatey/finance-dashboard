@@ -5,7 +5,7 @@ import { formatCurrencyUSD } from "@/scripts/utils"
 import useUserSummary from "@/components/home/shards/UserSummary/useUserSummary"
 import Holdings from "@/components/home/shards/Portfolio/Holdings/Holdings"
 
-export default function UserShard({ username }) {
+export default function UserProfile({ username }) {
     const { loading, data: summary, error } = useUserSummary(username);
 
     return (
