@@ -4,7 +4,7 @@ import resend
 
 from dotenv import load_dotenv
 from email_validator import EmailNotValidError
-from flask import Blueprint, jsonify, render_template_string, request
+from flask import Blueprint, jsonify, render_template_string, request, session
 from itsdangerous import BadData, BadSignature, SignatureExpired
 from pathlib import Path
 from resend.exceptions import ResendError
@@ -89,6 +89,8 @@ def register():
         return jsonify({"success": False, "message": password_message}), 400
     if am.get_user_id_from_username(username=username):
         return jsonify({"success": False, "message": f"Username {username} already in use."}), 409
+    if email == "":
+        email = None
     if email and am.check_email_in_use(email=email):
         return jsonify({"success": False, "message": f"Email {email} already in use."}), 409
     if email:
@@ -97,9 +99,11 @@ def register():
         except EmailNotValidError:
             return jsonify({"success": False, "message": "Email is invalid."}), 422
 
-
     # Add user to db
     am.register(username=username, password=password, email=email_validated)
+
+    # Log new user in.
+    am.login(username=username, password=password, session=session)
 
     # Return good state
     return jsonify({"success": True}), 201
