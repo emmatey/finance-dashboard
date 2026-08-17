@@ -1,3 +1,4 @@
+from email_validator import validate_email, EmailNotValidError
 import logging
 import os
 
@@ -79,6 +80,20 @@ class AccountManager(CommonQueries):
             return False, "Password must contain at least one non-letter character."
         return True, None
 
+    @staticmethod
+    def check_email_valid(email: str):
+        """
+        Uses email-validator library to check emails are syntactically correct.
+        Used in registration and email validation flows.
+        """
+        try:
+            # We already check deliverability later when verifying email addresses which is required
+                # in order to use them for anyting.
+            emailInfoObject = validate_email(email, check_deliverability=False)
+            return emailInfoObject.normalized
+        except EmailNotValidError as e:
+            raise e
+        
     def check_login_credentials_correct(self, username, password):
         """
         Checks a provided username and password are correct.

@@ -494,4 +494,5 @@ I'm thinking I should examine the way the screener data is currently captured an
         3. Create a menu that allows users to request an email verificaiton email.
         4. Create a menu, probably that is opened by clicking the user icon, that will hold this "security" sub menu
             and be a container for later potential account managment options like changing a porfolio photo, or deleting account.
+        5. Create a reset pw area that assumes the user already knows their current credentials.
         

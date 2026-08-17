@@ -6,3 +6,4 @@ itsdangerous
 newsapi-python
 python-dotenv
 yahooquery
+email-validator

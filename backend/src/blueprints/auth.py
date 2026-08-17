@@ -3,6 +3,7 @@ import os
 import resend
 
 from dotenv import load_dotenv
+from email_validator import EmailNotValidError
 from flask import Blueprint, jsonify, render_template_string, request
 from itsdangerous import BadData, BadSignature, SignatureExpired
 from pathlib import Path
@@ -49,8 +50,6 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 @auth_bp.route("/register", methods=["POST"])
 def register():
     """
-    Registers a new user. Assumes email has been verified.
-
     Request body (JSON):
         username (str): Alphanumeric, no spaces, min 1 char.
         password (str): ASCII only, min 5 chars, must contain at least
@@ -65,6 +64,8 @@ def register():
         400: Missing/malformed request body or validation failure.
         409: Username or email already in use.
         415: Request Content-Type was not application/json.
+        422: Email address or username were part of a valid and successful request, but do not adhere to 
+            site requirements of format. Eg email without @ symbol.
     """
     # Checks for request body.
     try:
@@ -78,10 +79,11 @@ def register():
     email = request_body.get("email")
     email = email.strip() if isinstance(email, str) else None
     email = email or None
+    email_validated = None
 
     username_valid, username_message = am.check_username_valid(username)
     if not username_valid:
-        return jsonify({"success": False, "message": username_message}), 400
+        return jsonify({"success": False, "message": username_message}), 422
     password_valid, password_message = am.check_pw_valid(password)
     if not password_valid:
         return jsonify({"success": False, "message": password_message}), 400
@@ -89,9 +91,15 @@ def register():
         return jsonify({"success": False, "message": f"Username {username} already in use."}), 409
     if email and am.check_email_in_use(email=email):
         return jsonify({"success": False, "message": f"Email {email} already in use."}), 409
+    if email:
+        try:
+            email_validated = AccountManager.check_email_valid(email=email)
+        except EmailNotValidError:
+            return jsonify({"success": False, "message": "Email is invalid."}), 422
+
 
     # Add user to db
-    am.register(username=username, password=password, email=email)
+    am.register(username=username, password=password, email=email_validated)
 
     # Return good state
     return jsonify({"success": True}), 201
@@ -342,6 +350,10 @@ def generate_and_send_email_verify_token():
     email = request_body.get("email")
     if not email or not isinstance(email, str):
         return jsonify({"success": False, "message": "Must provide email: str in request body"}), 400
+    try:
+        email = AccountManager.check_email_valid(email=email)
+    except EmailNotValidError:
+        return jsonify({"success": False, "message": "Email is invalid."}), 422
 
     generic_response = (
         jsonify({"success": True, "message": "If that email is associated with a registered user, a validation link has been sent."}),
