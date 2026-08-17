@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
-import Header from '@/components/Header.jsx'
+import Header from '@/components/header/Header.jsx'
 import ResearchShard from '@/components/research/ResearchShard'
 
 export default function Research() {

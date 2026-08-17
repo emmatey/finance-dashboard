@@ -1,4 +1,4 @@
-import Header from '@/components/Header.jsx'
+import Header from '@/components/header/Header.jsx'
 import HomeBody from '@/components/home/HomeBody.jsx'
 import Landing from '@/components/home/Landing.jsx'
 

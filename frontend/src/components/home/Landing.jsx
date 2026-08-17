@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import Header from '@/components/Header.jsx'
+import Header from '@/components/header/Header.jsx'
 import { Button } from '@/components/ui/button'
 
 export default function Landing() {

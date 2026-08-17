@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import Header from '@/components/Header.jsx'
+import Header from '@/components/header/Header.jsx'
 import { Card, CardContent } from '@/components/ui/card'
 import ShardNav from './ShardNav'
 import { SHARD_GROUPS } from './shardGroups'

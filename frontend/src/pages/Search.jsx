@@ -1,4 +1,4 @@
-import Header from '@/components/Header.jsx'
+import Header from '@/components/header/Header.jsx'
 import SearchBody from '@/components/search/SearchBody.jsx'
 import { useSearchParams } from 'react-router-dom'
 
