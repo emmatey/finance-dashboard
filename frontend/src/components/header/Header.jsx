@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext.jsx'
 import { useShardNav } from '@/context/ShardNavContext.jsx'
 import { getRandomAccentColor } from '@/scripts/utils.js'
 import { Button } from '@/components/ui/button'
+import UserAvatar from './UserAvatar'
 
 import SearchBar from '@/components/search/SearchBar.jsx'
 
@@ -54,11 +55,7 @@ export default function Header() {
                 {user
                     ? (
                         <>
-                            <Button variant="outline" aria-label="User" onClick={() => navigate(`/user/${user}`)}>{user}</Button>
-                            {// Circular, first letter of user's name background color chosen by random color function. Opens menu that has options
-                                // settings, and profile. 
-                                // settings opens modal
-                            }
+                            <UserAvatar user={user}/>
                             <Button variant="outline" aria-label="logout" onClick={handleLogout}>Log Out</Button>
                         </>
                     )
