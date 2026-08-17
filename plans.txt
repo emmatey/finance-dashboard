@@ -477,3 +477,21 @@ I'm thinking I should examine the way the screener data is currently captured an
             - NOTE: the url will be directed to a page on the frontend via react router which will call this route.
     
     Later I will worry about the frontend stuff.
+
+8/17:
+    It has been a few days since I've properly been able to work on this project because of my job. Today I'm entering things with the assumption
+    that the backend is in a completed state to support email authentication, and "forgot pw?" type resetting via emailing tokens to a verified
+    address.
+
+    Today I will focus on the frontend regardless of rather or not this prior assumption is true. This is the final feature I'm going to be addding
+    prior to attempting to host this thing and show it to others for testing. As I want this to get done before college starts up, and I want to spend
+    more time doing freelance work. Make no mistake however, this is still not in a finished state. I need to work on the colors, make whatever
+    adjustments that people mention in testing, write tests for some of the important functions like transactions, make the demo database state,
+    host the site, and make a writeup for the github. For now however, my goal for today is the following.
+
+        1. Adapt the registration form to optionally allow users to add an email when signing up.
+        2. Create a menu that allows user to request pw reset via email.
+        3. Create a menu that allows users to request an email verificaiton email.
+        4. Create a menu, probably that is opened by clicking the user icon, that will hold this "security" sub menu
+            and be a container for later potential account managment options like changing a porfolio photo, or deleting account.
+        
