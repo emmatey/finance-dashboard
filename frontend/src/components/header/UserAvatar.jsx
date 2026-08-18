@@ -1,6 +1,6 @@
-import { useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getRandomAccentColor } from "@/scripts/utils";
+import SettingsMenu from "../settings/SettingsMenu";
 import { CircleUserRound, Settings } from "lucide-react";
 import {
     DropdownMenu,
@@ -8,6 +8,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+
 
 export default function UserAvatar(user) {
     const navigate = useNavigate();
@@ -23,26 +26,27 @@ export default function UserAvatar(user) {
 
     }
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Avatar size="lg" className="cursor-pointer">
-                    <AvatarImage src="TODO" />
-                    <AvatarFallback className="font-semibold" style={{ backgroundColor: getRandomAccentColor() }}>{
-                        extractAvatarFallback()}
-                    </AvatarFallback>
-                </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => navigate(`/user/${user.user}`)}>
-                    <CircleUserRound />
-                    Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                    <Settings />
-                    Settings
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Avatar size="lg" className="cursor-pointer">
+                        <AvatarImage src="TODO" />
+                        <AvatarFallback className="font-semibold" style={{ backgroundColor: getRandomAccentColor() }}>{
+                            extractAvatarFallback()}
+                        </AvatarFallback>
+                    </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => navigate(`/user/${user.user}`)}>
+                        <CircleUserRound />
+                        Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setSettingsDialogOpen(true)}>
+                        <Settings />
+                        Settings
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </>
     )
 }
