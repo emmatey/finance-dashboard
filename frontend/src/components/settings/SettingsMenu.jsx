@@ -14,15 +14,15 @@ import {
     TabsList,
     TabsTrigger
 } from "@/components/ui/tabs"
+import { Button } from "../ui/button"
 
 
-export default function SettingsMenu() {
-
+export default function SettingsMenu({open, onOpenChange}) {
     return (
-        <Dialog>
-            <DialogContent>
-                <p>TEST</p>
-            </DialogContent>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent showCloseButton={false}>
+                    <p>TEST</p>
+                </DialogContent>
         </Dialog>
     )
 }

@@ -13,6 +13,7 @@ import { useState } from "react";
 
 
 export default function UserAvatar(user) {
+    const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
     const navigate = useNavigate();
 
     function extractAvatarFallback() {
@@ -41,9 +42,13 @@ export default function UserAvatar(user) {
                         <CircleUserRound />
                         Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setSettingsDialogOpen(true)}>
+                    <DropdownMenuItem onClick={(event) => {
+                        event.preventDefault();
+                        setSettingsDialogOpen(true);
+                    }}>
                         <Settings />
                         Settings
+                        <SettingsMenu open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
