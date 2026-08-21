@@ -48,10 +48,11 @@ export default function UserAvatar(user) {
                     }}>
                         <Settings />
                         Settings
-                        <SettingsMenu open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+            
+            <SettingsMenu open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
         </>
     )
 }

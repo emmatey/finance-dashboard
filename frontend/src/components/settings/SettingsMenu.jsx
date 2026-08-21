@@ -15,14 +15,34 @@ import {
     TabsTrigger
 } from "@/components/ui/tabs"
 import { Button } from "../ui/button"
+import AccountSecurityTab from "./SettingsTabs/AccountSecurityTab"
+import InformationTab from "./SettingsTabs/InformationTab"
 
 
-export default function SettingsMenu({open, onOpenChange}) {
+export default function SettingsMenu({ open, onOpenChange }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent showCloseButton={false}>
-                    <p>TEST</p>
-                </DialogContent>
+            <DialogContent showCloseButton={true}>
+                <DialogHeader>
+                    <DialogTitle>
+                        Settings Menu
+                    </DialogTitle>
+                </DialogHeader>
+                <Tabs defaultValue="accountSecurity" orientation="vertical">
+                    <TabsList>
+                        <TabsTrigger value="accountSecurity">Account Security</TabsTrigger>
+                        <TabsTrigger value="info">Information</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="accountSecurity">
+                        <AccountSecurityTab />
+                    </TabsContent>
+
+                    <TabsContent value="info">
+                        <InformationTab />
+                    </TabsContent>
+                </Tabs>
+            </DialogContent>
         </Dialog>
     )
 }
