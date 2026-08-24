@@ -12,6 +12,7 @@ import {
     Field,
     FieldLabel
 } from "@/components/ui/field"
+import { parseResponse } from "@/scripts/utils";
 
 
 export default function ChangePassword(confirmed, error) {
@@ -21,16 +22,31 @@ export default function ChangePassword(confirmed, error) {
         return 'request';
     }
 
-    function handleClear() {
-
-    }
-
     function handleSubmit(event) {
+        event.preventDefault();
         const pw = checkPwFieldsEqual(event);
         if (pw) {
-            // request
+            submitPwChangePostRequest(username, password, newPassword)
         } else {
             return;
+        }
+    }
+
+    async function submitPwChangePostRequest(username, password, newPassword) {
+        try {
+            const response = await fetch('/api/auth/change_pw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    'username': username,
+                    'password': password,
+                    'new_password': newPassword
+                })
+            })
+            const result = await parseResponse(response);
+        } catch (error) {
+            setErrorStr(error.data);
+            setErrorCode(error.status);
         }
     }
 
@@ -69,7 +85,7 @@ export default function ChangePassword(confirmed, error) {
             {state === 'request' &&
                 <>
                     <CardContent>
-                        <form>
+                        <form onSubmit={(e) => (handleSubmit(e))}>
                             <Field className="mb-5">
                                 <FieldLabel> Current Password </FieldLabel>
                                 <Input id="currentPw" />
@@ -77,13 +93,29 @@ export default function ChangePassword(confirmed, error) {
 
                             <Field>
                                 <FieldLabel htmlFor="newPw1"> New Password </FieldLabel>
-                                <Input id="newPw1" type="password" aria-invalid={pwEqual === false ? true : undefined} onChange={() => setPwEqual(true)} />
+                                <Input
+                                    id="newPw1"
+                                    type="password"
+                                    aria-invalid={pwEqual === false ? true : undefined}
+                                    onChange={() => setPwEqual(true)}
+                                />
                             </Field>
 
                             <Field>
                                 <FieldLabel htmlFor="newPw2"> Confirm New Password</FieldLabel>
-                                <Input id="newPw2" type="password" aria-invalid={pwEqual === false ? true : undefined} onChange={() => setPwEqual(true)} />
+                                <Input
+                                    id="newPw2"
+                                    type="password"
+                                    aria-invalid={pwEqual === false ? true : undefined}
+                                    onChange={() => setPwEqual(true)}
+                                />
                             </Field>
+
+                            <CardFooter>
+                                <Button type="submit" variant="outline">
+                                    Submit
+                                </Button>
+                            </CardFooter>
                         </form>
                     </CardContent>
                 </>
@@ -98,15 +130,6 @@ export default function ChangePassword(confirmed, error) {
                 <>
                 </>
             }
-
-            <CardFooter>
-                <Button variant="outline">
-                    Submit
-                </Button>
-                <Button variant="destructive">
-                    Clear
-                </Button>
-            </CardFooter>
         </Card>
     )
 }
