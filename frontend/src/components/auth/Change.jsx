@@ -15,6 +15,9 @@ function getState(token, sent, errorCode, confirmed) {
 }
 
 export default function Change() {
+    /*
+    Menu for changing password via emailed token "forgot pw"
+     */
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const [sent, setSent] = useState(false);

@@ -15,8 +15,9 @@ import {
     TabsTrigger
 } from "@/components/ui/tabs"
 import { Button } from "../ui/button"
-import AccountSecurityTab from "./SettingsTabs/AccountSecurityTab"
+import VerifyEmail from "./SettingsTabs/VerifyEmail"
 import InformationTab from "./SettingsTabs/InformationTab"
+import ChangePassword from "./SettingsTabs/ChangePassword"
 
 
 export default function SettingsMenu({ open, onOpenChange }) {
@@ -30,12 +31,17 @@ export default function SettingsMenu({ open, onOpenChange }) {
                 </DialogHeader>
                 <Tabs defaultValue="accountSecurity" orientation="vertical">
                     <TabsList>
-                        <TabsTrigger value="accountSecurity">Account Security</TabsTrigger>
+                        <TabsTrigger value="verifyEmail">Verify e-mail</TabsTrigger>
+                        <TabsTrigger value="changePassword">Change Password</TabsTrigger>
                         <TabsTrigger value="info">Information</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="accountSecurity">
-                        <AccountSecurityTab />
+                    <TabsContent value="verifyEmail">
+                        <VerifyEmail />
+                    </TabsContent>
+
+                    <TabsContent value="changePassword">
+                        <ChangePassword />
                     </TabsContent>
 
                     <TabsContent value="info">
