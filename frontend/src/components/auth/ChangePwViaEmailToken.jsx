@@ -14,7 +14,7 @@ function getState(token, sent, errorCode, confirmed) {
     return 'request';
 }
 
-export default function Change() {
+export default function ChangePwViaEmailToken() {
     /*
     Menu for changing password via emailed token "forgot pw"
      */

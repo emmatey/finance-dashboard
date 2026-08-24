@@ -33,7 +33,7 @@ export default function SettingsMenu({ open, onOpenChange }) {
                     <TabsList>
                         <TabsTrigger value="verifyEmail">Verify e-mail</TabsTrigger>
                         <TabsTrigger value="changePassword">Change Password</TabsTrigger>
-                        <TabsTrigger value="info">Information</TabsTrigger>
+                        <TabsTrigger value="info">Project Information</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="verifyEmail">

@@ -5,7 +5,7 @@ import Home from './pages/Home.jsx'
 import Auth from './pages/Auth.jsx'
 import Login from './components/auth/Login.jsx'
 import Register from './components/auth/Register.jsx'
-import Change from './components/auth/Change.jsx'
+import ChangePwViaEmailToken from './components/auth/ChangePwViaEmailToken.jsx'
 import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
@@ -21,7 +21,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="login" replace />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
-        <Route path="change" element={<Change />} />
+        <Route path="change" element={<ChangePwViaEmailToken />} />
       </Route>
       <Route path="/search" element={<Search />} />
       <Route path="/research" element={<Research />} />
