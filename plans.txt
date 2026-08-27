@@ -497,3 +497,13 @@ I'm thinking I should examine the way the screener data is currently captured an
             and be a container for later potential account management options like changing a portfolio photo, or deleting account.
         5. Create a reset pw area that assumes the user already knows their current credentials.
         
+8/27:
+    Working during a lull in a famiy visit in Maine. haven't hardly put in any time to this project in the last couple weeks because
+    of the new job, and this trip, not to menion hosting guests next week. Will be hard but it's okay.
+
+    Today I'm just trying to finish up this change password tab finally. A finished change password tab will have... (change via know pw)
+        - 3 Fields, 1 old pw, 2 new pw.
+        - Error text and outline on the field that is incorrect, either not matching, or incorrect current pw.
+        - Request to change pw route
+        - Error handling
+        - Success redirect within tab. 

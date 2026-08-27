@@ -13,26 +13,30 @@ import {
     FieldLabel
 } from "@/components/ui/field"
 import { parseResponse } from "@/scripts/utils";
+import { useState } from "react";
 
 
-export default function ChangePassword(confirmed, error) {
-    function getState() {
+export default function ChangePassword() {
+    function getState(confirmed, error) {
         if (confirmed) return 'confirmed';
         if (error) return 'error';
         return 'request';
     }
 
-    function handleSubmit(event) {
+    function checkPwFieldsEqual(event) {
         event.preventDefault();
-        const pw = checkPwFieldsEqual(event);
-        if (pw) {
-            submitPwChangePostRequest(username, password, newPassword)
+        const formData = new FormData(event.currentTarget);
+        const pw1 = formData.get("newPw1");
+        const pw2 = formData.get("newPw2");
+        if (pw1 !== pw2) {
+            setPwEqual(false);
+            setFormErrorStr("Username and password provided are not equal.")
         } else {
-            return;
+            return pw1;
         }
     }
 
-    async function submitPwChangePostRequest(username, password, newPassword) {
+    async function submitPwChangeRequest(username, password, newPassword) {
         try {
             const response = await fetch('/api/auth/change_pw', {
                 method: 'POST',
@@ -44,32 +48,33 @@ export default function ChangePassword(confirmed, error) {
                 })
             })
             const result = await parseResponse(response);
+            return result;
         } catch (error) {
             setErrorStr(error.data);
             setErrorCode(error.status);
         }
     }
 
-    function checkPwFieldsEqual(event) {
+    function handleSubmit(event) {
         event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const pw1 = formData.get("newPw1");
-        const pw2 = formData.get("newPw2");
-        if (pw1 !== pw2) {
-            setPwEqual(false);
+        const pw = checkPwFieldsEqual(event);
+        if (pw) {
+            const result = submitPwChangeRequest(username, password, newPassword);
+            console.log(result);
         } else {
-            return pw1;
+            return;
         }
     }
 
-    const [errorStr, setErrorStr] = useState(null);
+    const [errorStr, setErrorStr] = useState("");
     const [errorCode, setErrorCode] = useState(null);
+    const [formErrorStr, setFormErrorStr] = useState("");
     const [pwEqual, setPwEqual] = useState(true);
     const [confirmed, setConfirmed] = useState(false);
     const [newPw, setNewPw] = useState("");
     const [hideNewPw, setHideNewPw] = useState(true);
 
-    const state = getState(confirmed, error);
+    const state = getState(confirmed, errorCode);
 
     return (
         <Card>
@@ -88,27 +93,38 @@ export default function ChangePassword(confirmed, error) {
                         <form onSubmit={(e) => (handleSubmit(e))}>
                             <Field className="mb-5">
                                 <FieldLabel> Current Password </FieldLabel>
-                                <Input id="currentPw" />
+                                <Input
+                                    name="currentPw"
+                                    type="password"
+                                />
                             </Field>
 
                             <Field>
                                 <FieldLabel htmlFor="newPw1"> New Password </FieldLabel>
                                 <Input
-                                    id="newPw1"
+                                    name="newPw1"
                                     type="password"
                                     aria-invalid={pwEqual === false ? true : undefined}
-                                    onChange={() => setPwEqual(true)}
+                                    onChange={() => {
+                                        setPwEqual(true)
+                                        setFormErrorStr("")
+                                    }}
                                 />
+                                <small className="text-destructive">{formErrorStr}</small>
                             </Field>
 
                             <Field>
                                 <FieldLabel htmlFor="newPw2"> Confirm New Password</FieldLabel>
                                 <Input
-                                    id="newPw2"
+                                    name="newPw2"
                                     type="password"
                                     aria-invalid={pwEqual === false ? true : undefined}
-                                    onChange={() => setPwEqual(true)}
+                                    onChange={() => {
+                                        setPwEqual(true)
+                                        setFormErrorStr("")
+                                    }}
                                 />
+                                <small className="text-destructive">{formErrorStr}</small>
                             </Field>
 
                             <CardFooter>
@@ -123,6 +139,8 @@ export default function ChangePassword(confirmed, error) {
 
             {state === 'error' &&
                 <>
+                    <p>{errorCode}</p>
+                    <p>{errorStr}</p>
                 </>
             }
 

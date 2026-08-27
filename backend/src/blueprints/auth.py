@@ -147,7 +147,7 @@ def change_pw_from_known_credentials():
     # Check current username and password are correct.
     user_id = am.check_login_credentials_correct(username=username, password=password)
     if not user_id:
-        return jsonify({"success": False, "message": "Username and password provided are incorrect."}), 401
+        return jsonify({"success": False, "message": "Username and password combination provided are incorrect."}), 401
 
     # Check new password is valid.
     pw_valid, pw_invalid_reason = AccountManager.check_pw_valid(pw=new_password)
