@@ -14,9 +14,18 @@ import {
 } from "@/components/ui/field"
 import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 
 export default function ChangePassword() {
+    const [errorStr, setErrorStr] = useState("");
+    const [errorCode, setErrorCode] = useState(null);
+    const [formErrorStr, setFormErrorStr] = useState("");
+    const [pwEqual, setPwEqual] = useState(true);
+    const [confirmed, setConfirmed] = useState(false);
+    const [successStr, setSuccessStr] = useState("");
+    const { user } = useAuth();
+
     function getState(confirmed, error) {
         if (confirmed) return 'confirmed';
         if (error) return 'error';
@@ -26,13 +35,18 @@ export default function ChangePassword() {
     function checkPwFieldsEqual(event) {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
+        const currentPw = formData.get("currentPw");
         const pw1 = formData.get("newPw1");
         const pw2 = formData.get("newPw2");
         if (pw1 !== pw2) {
             setPwEqual(false);
             setFormErrorStr("Username and password provided are not equal.")
+            return;
         } else {
-            return pw1;
+            return {
+                "currentPw": currentPw,
+                "newPw": pw1
+            };
         }
     }
 
@@ -55,24 +69,18 @@ export default function ChangePassword() {
         }
     }
 
-    function handleSubmit(event) {
+    async function handleSubmit(event) {
         event.preventDefault();
-        const pw = checkPwFieldsEqual(event);
-        if (pw) {
-            const result = submitPwChangeRequest(username, password, newPassword);
+        const {currentPw, newPw} = checkPwFieldsEqual(event);
+        console.log(currentPw)
+        console.log(newPw)
+        if (newPw) {
+            const result = await submitPwChangeRequest(user, currentPw, newPw);
             console.log(result);
         } else {
             return;
         }
     }
-
-    const [errorStr, setErrorStr] = useState("");
-    const [errorCode, setErrorCode] = useState(null);
-    const [formErrorStr, setFormErrorStr] = useState("");
-    const [pwEqual, setPwEqual] = useState(true);
-    const [confirmed, setConfirmed] = useState(false);
-    const [newPw, setNewPw] = useState("");
-    const [hideNewPw, setHideNewPw] = useState(true);
 
     const state = getState(confirmed, errorCode);
 
@@ -146,6 +154,7 @@ export default function ChangePassword() {
 
             {state === 'confirmed' &&
                 <>
+                    <p>{ }</p>
                 </>
             }
         </Card>
