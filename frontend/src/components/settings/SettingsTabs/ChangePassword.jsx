@@ -62,7 +62,8 @@ export default function ChangePassword() {
                 })
             })
             const result = await parseResponse(response);
-            return result;
+            setConfirmed(true);
+            setSuccessStr(result["message"])
         } catch (error) {
             setErrorStr(error.data);
             setErrorCode(error.status);
@@ -71,19 +72,16 @@ export default function ChangePassword() {
 
     async function handleSubmit(event) {
         event.preventDefault();
-        const {currentPw, newPw} = checkPwFieldsEqual(event);
-        console.log(currentPw)
-        console.log(newPw)
+        const { currentPw, newPw } = checkPwFieldsEqual(event);
         if (newPw) {
-            const result = await submitPwChangeRequest(user, currentPw, newPw);
-            console.log(result);
+            submitPwChangeRequest(user, currentPw, newPw);
         } else {
             return;
         }
     }
 
     const state = getState(confirmed, errorCode);
-
+    console.warn(state);
     return (
         <Card>
             <CardHeader>
@@ -146,16 +144,22 @@ export default function ChangePassword() {
             }
 
             {state === 'error' &&
-                <>
+                <CardContent>
                     <p>{errorCode}</p>
                     <p>{errorStr}</p>
-                </>
+                    <Button variant="destructive" onClick={() => {
+                        setErrorStr("");
+                        setErrorCode(null);
+                    }}>
+                        Back
+                    </Button>
+                </CardContent>
             }
 
             {state === 'confirmed' &&
-                <>
-                    <p>{ }</p>
-                </>
+                <CardContent>
+                    <p>{successStr}</p>
+                </CardContent>
             }
         </Card>
     )
