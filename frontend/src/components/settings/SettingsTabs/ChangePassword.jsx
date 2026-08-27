@@ -76,16 +76,17 @@ export default function ChangePassword() {
         event.preventDefault();
         setErrorCode(null);
         setErrorStr("");
+        setFormErrorStr("");
+
         const { currentPw, newPw } = checkPwFieldsEqual(event);
         if (newPw) {
-            submitPwChangeRequest(user, currentPw, newPw);
+            await submitPwChangeRequest(user, currentPw, newPw);
         } else {
             return;
         }
     }
 
     const state = getState(confirmed, errorCode);
-    console.warn(state);
     return (
         <Card>
             <CardHeader>
@@ -146,22 +147,29 @@ export default function ChangePassword() {
             }
 
             {state === 'error' &&
-                <CardContent>
-                    <p>{errorCode}</p>
-                    <p>{errorStr}</p>
+                <>
+                    <CardContent>
+                        <p>{errorCode}</p>
+                        <p>{errorStr}</p>
+                    </CardContent>
+                    <CardFooter>
+
+                    </CardFooter>
                     <Button variant="destructive" onClick={() => {
                         setErrorStr("");
                         setErrorCode(null);
                     }}>
                         Back
                     </Button>
-                </CardContent>
+                </>
             }
 
             {state === 'confirmed' &&
-                <CardContent>
-                    <p>{successStr}</p>
-                </CardContent>
+                <>
+                    <CardContent>
+                        <p>{successStr}</p>
+                    </CardContent>
+                </>
             }
         </Card>
     )
