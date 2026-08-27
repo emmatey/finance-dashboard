@@ -33,15 +33,17 @@ export default function ChangePassword() {
     }
 
     function checkPwFieldsEqual(event) {
-        event.preventDefault();
         const formData = new FormData(event.currentTarget);
         const currentPw = formData.get("currentPw");
         const pw1 = formData.get("newPw1");
         const pw2 = formData.get("newPw2");
         if (pw1 !== pw2) {
             setPwEqual(false);
-            setFormErrorStr("Username and password provided are not equal.")
-            return;
+            setFormErrorStr("Passwords do not match.")
+            return {
+                "currentPw": currentPw,
+                "newPw": null
+            };
         } else {
             return {
                 "currentPw": currentPw,
@@ -72,6 +74,8 @@ export default function ChangePassword() {
 
     async function handleSubmit(event) {
         event.preventDefault();
+        setErrorCode(null);
+        setErrorStr("");
         const { currentPw, newPw } = checkPwFieldsEqual(event);
         if (newPw) {
             submitPwChangeRequest(user, currentPw, newPw);
@@ -95,8 +99,8 @@ export default function ChangePassword() {
 
             {state === 'request' &&
                 <>
-                    <CardContent>
-                        <form onSubmit={(e) => (handleSubmit(e))}>
+                    <form onSubmit={(e) => (handleSubmit(e))}>
+                        <CardContent>
                             <Field className="mb-5">
                                 <FieldLabel> Current Password </FieldLabel>
                                 <Input
@@ -116,7 +120,6 @@ export default function ChangePassword() {
                                         setFormErrorStr("")
                                     }}
                                 />
-                                <small className="text-destructive">{formErrorStr}</small>
                             </Field>
 
                             <Field>
@@ -132,14 +135,13 @@ export default function ChangePassword() {
                                 />
                                 <small className="text-destructive">{formErrorStr}</small>
                             </Field>
-
-                            <CardFooter>
-                                <Button type="submit" variant="outline">
-                                    Submit
-                                </Button>
-                            </CardFooter>
-                        </form>
-                    </CardContent>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" variant="outline">
+                                Submit
+                            </Button>
+                        </CardFooter>
+                    </form>
                 </>
             }
 
