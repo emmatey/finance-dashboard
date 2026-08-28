@@ -9,6 +9,7 @@ from pathlib import Path
 from resend.exceptions import ResendError
 
 from classes.AccountManager import AccountManager
+from classes.TransactionManager import TransactionManager
 from scripts import helpers
 
 FORGOT_PW_EMAIL_TEMPLATE_PATH = (
@@ -101,6 +102,10 @@ def register():
     # Log new user in.
     if not am.login(username=username, password=password, session=session):
         return jsonify({"success": False, "message": "Registered, but automatic login failed. Please log in."}), 500
+
+    tm = TransactionManager()
+    user_id = am.get_user_id_from_username(username=username)
+    tm.record_balance_snapshot(user_id=user_id)
 
     # Return good state
     return jsonify({"success": True}), 201
