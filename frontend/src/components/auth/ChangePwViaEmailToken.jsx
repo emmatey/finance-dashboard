@@ -6,13 +6,12 @@ import { parseResponse } from "@/scripts/utils";
 import { Spinner } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { useSearchParams } from 'react-router-dom';
-import { setLayout } from "recharts/types/state/layoutSlice";
 
 function getState(loading, token, sent, errorCode, confirmed) {
     if (loading) return 'loading';
+    if (errorCode) return 'error';
     if (confirmed) return 'confirmed';
     if (sent) return 'sent';
-    if (errorCode) return 'error';
     if (token) return 'reset';
     return 'request';
 }
@@ -30,11 +29,9 @@ export default function ChangePwViaEmailToken() {
     const [email, setEmail] = useState(null);
     const [pwEqual, setPwEqual] = useState(true);
     const [confirmed, setConfirmed] = useState(false);
-    const [newPw, setNewPw] = useState("");
-    const [hideNewPw, setHideNewPw] = useState(true);
     const [loading, setLoading] = useState(false);
 
-    const state = getState(token, sent, errorCode, confirmed);
+    const state = getState(loading, token, sent, errorCode, confirmed);
 
     async function handleRequestPwReset(event) {
         event.preventDefault();
@@ -75,7 +72,6 @@ export default function ChangePwViaEmailToken() {
             const result = await parseResponse(response);
             setEmail(result.email);
             setUsername(result.username);
-            setNewPw(pw);
             setConfirmed(true);
         } catch (error) {
             setErrorStr(error.data);
@@ -171,13 +167,9 @@ export default function ChangePwViaEmailToken() {
                             <CardTitle>Success!</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-2">
-                            <p className="text-sm">You have changed the password for this account to:</p>
+                            <p className="text-sm">You have successfully changed the password for this account:</p>
                             <p className="text-sm"><strong>Email:</strong> {email}</p>
                             <p className="text-sm"><strong>Username:</strong> {username}</p>
-                            <div className="flex items-center gap-2">
-                                <p className="text-sm"><strong>Password:</strong> {hideNewPw ? "•".repeat(newPw.length) : newPw}</p>
-                                <Button type="button" onClick={() => setHideNewPw(!hideNewPw)}>{hideNewPw ? "Show" : "Hide"}</Button>
-                            </div>
                             <Button onClick={() => window.location.replace("/auth")}>Go Back</Button>
                         </CardContent>
                     </>
