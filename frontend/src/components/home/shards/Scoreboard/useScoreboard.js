@@ -16,7 +16,7 @@ export default function useScoreboard() {
                 const data = await parseResponse(res);
                 setData(data?.data);
             } catch (err) {
-                console.error(err.message, err.data);
+                console.error(err.message);
                 setResponseCode(err.status ?? null);
                 if (err.status === 500) {
                     setError("Could not load scoreboard. Please try again later.");

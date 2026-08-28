@@ -65,7 +65,7 @@ export default function ChangePassword() {
             setConfirmed(true);
             setSuccessStr(result["message"])
         } catch (error) {
-            setErrorStr(error.data);
+            setErrorStr(error.message);
             setErrorCode(error.status);
         } finally {
             setLoading(false);

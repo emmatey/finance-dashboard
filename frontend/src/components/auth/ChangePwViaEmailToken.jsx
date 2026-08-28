@@ -48,7 +48,7 @@ export default function ChangePwViaEmailToken() {
                 await parseResponse(response);
                 setSent(true);
             } catch (error) {
-                setErrorStr(error.data);
+                setErrorStr(error.message);
                 setErrorCode(error.status);
             } finally {
                 setLoading(false);
@@ -74,7 +74,7 @@ export default function ChangePwViaEmailToken() {
             setUsername(result.username);
             setConfirmed(true);
         } catch (error) {
-            setErrorStr(error.data);
+            setErrorStr(error.message);
             setErrorCode(error.status);
         } finally {
             setLoading(false);

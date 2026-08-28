@@ -15,6 +15,7 @@ import {
 import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/context/AuthContext";
 
 
 export default function VerifyEmail() {
@@ -23,10 +24,63 @@ export default function VerifyEmail() {
         It should show the current verified email, and upon verification of a new email,
         drop the prior email from the account.
      */
-    
+    const [loading, setLoading] = useState(false);
+    const [responseCode, setResponseCode] = useState(null);
+    const [responseStr, setResponseStr] = useState("");
+    const [error, setError] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const { email } = useAuth();
+
+    function resetState() {
+        setLoading(false);
+        setResponseCode(null);
+        setResponseStr("");
+        setError(false);
+        setSubmitted(false);
+    }
+
+    async function submitVerifyEmail(email) {
+        try {
+            setLoading(true);
+            const response = await fetch("/api/auth/token/generate/verify_email", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    "email": email
+                })
+            });
+            const result = await parseResponse(response);
+            setResponseCode(result?.status);
+            setResponseStr(result?.message);
+        } catch (error) {
+
+        } finally {
+            setLoading(false);
+        }
+    }
+
+
     return (
         <Card>
-            <p>test</p>
+            {
+                <>
+                    <CardHeader>
+                        <CardTitle>
+
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form>
+                            <Input />
+                        </form>
+                    </CardContent>
+                    <CardFooter>
+                        <Button>
+
+                        </Button>
+                    </CardFooter>
+                </>
+            }
         </Card>
     )
 }
