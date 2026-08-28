@@ -204,10 +204,12 @@ def generate_and_send_forgot_pw_token():
     if not user_id:
         # Deliberately indistinguishable from the success path below, to
         # avoid leaking whether an email is registered.
+        logger.debug("No user i.d. provided for forgot pw token generate request.")
         return generic_response
 
     verified = am.check_email_validated(email=email)
     if not verified:
+        logger.debug(f"Email {email} not verified.")
         return generic_response
 
     try:
