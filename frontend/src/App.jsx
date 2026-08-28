@@ -9,6 +9,7 @@ import ChangePwViaEmailToken from './components/auth/ChangePwViaEmailToken.jsx'
 import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
+import VerifyEmailConfirm from './components/auth/VerifyEmailConfirm.jsx'
 import Test from './components/home/Test.jsx'
 
 
@@ -22,6 +23,7 @@ function AppRoutes() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route path="change" element={<ChangePwViaEmailToken />} />
+        <Route path="verify" element={<VerifyEmailConfirm />} />
       </Route>
       <Route path="/search" element={<Search />} />
       <Route path="/research" element={<Research />} />
