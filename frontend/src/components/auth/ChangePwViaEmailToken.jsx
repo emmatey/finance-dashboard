@@ -3,10 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { parseResponse } from "@/scripts/utils";
+import { Spinner } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { useSearchParams } from 'react-router-dom';
+import { setLayout } from "recharts/types/state/layoutSlice";
 
-function getState(token, sent, errorCode, confirmed) {
+function getState(loading, token, sent, errorCode, confirmed) {
+    if (loading) return 'loading';
     if (confirmed) return 'confirmed';
     if (sent) return 'sent';
     if (errorCode) return 'error';
@@ -29,6 +32,7 @@ export default function ChangePwViaEmailToken() {
     const [confirmed, setConfirmed] = useState(false);
     const [newPw, setNewPw] = useState("");
     const [hideNewPw, setHideNewPw] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     const state = getState(token, sent, errorCode, confirmed);
 
@@ -38,6 +42,7 @@ export default function ChangePwViaEmailToken() {
         const email = formData.get("email");
         if (email) {
             try {
+                setLoading(true);
                 const response = await fetch("/api/auth/token/generate/forgot_pw", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -48,6 +53,8 @@ export default function ChangePwViaEmailToken() {
             } catch (error) {
                 setErrorStr(error.data);
                 setErrorCode(error.status);
+            } finally {
+                setLoading(false);
             };
         } else {
             return;
@@ -56,6 +63,7 @@ export default function ChangePwViaEmailToken() {
 
     async function submitPwChange(token, pw) {
         try {
+            setLoading(true);
             const response = await fetch("/api/auth/token/verify/forgot_pw", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -72,6 +80,8 @@ export default function ChangePwViaEmailToken() {
         } catch (error) {
             setErrorStr(error.data);
             setErrorCode(error.status);
+        } finally {
+            setLoading(false);
         };
     }
 
@@ -99,6 +109,18 @@ export default function ChangePwViaEmailToken() {
     return (
         <div className="flex justify-center px-6 py-16">
             <Card className="w-full max-w-sm">
+                {state === 'loading' &&
+                    <>
+                        <CardHeader>
+                            <CardTitle>
+                                Loading ...
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Spinner />
+                        </CardContent>
+                    </>
+                }
                 {state === 'request' && (
                     <>
                         <CardHeader>
