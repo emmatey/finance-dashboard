@@ -23,6 +23,7 @@ export default function VerifyEmail() {
         It should show the current verified email, and upon verification of a new email,
         drop the prior email from the account.
      */
+    
     return (
         <Card>
             <p>test</p>
