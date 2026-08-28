@@ -15,6 +15,7 @@ import {
 import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { Spinner } from "@/components/ui/spinner";
 
 
 export default function ChangePassword() {
@@ -24,13 +25,8 @@ export default function ChangePassword() {
     const [pwEqual, setPwEqual] = useState(true);
     const [confirmed, setConfirmed] = useState(false);
     const [successStr, setSuccessStr] = useState("");
+    const [loading, setLoading] = useState(false);
     const { user } = useAuth();
-
-    function getState(confirmed, error) {
-        if (confirmed) return 'confirmed';
-        if (error) return 'error';
-        return 'request';
-    }
 
     function checkPwFieldsEqual(event) {
         const formData = new FormData(event.currentTarget);
@@ -41,10 +37,11 @@ export default function ChangePassword() {
             setPwEqual(false);
             setFormErrorStr("Passwords do not match.")
             return {
-                "currentPw": currentPw,
+                "currentPw": null,
                 "newPw": null
             };
         } else {
+            setPwEqual(true);
             return {
                 "currentPw": currentPw,
                 "newPw": pw1
@@ -54,6 +51,7 @@ export default function ChangePassword() {
 
     async function submitPwChangeRequest(username, password, newPassword) {
         try {
+            setLoading(true);
             const response = await fetch('/api/auth/change_pw', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -69,15 +67,13 @@ export default function ChangePassword() {
         } catch (error) {
             setErrorStr(error.data);
             setErrorCode(error.status);
+        } finally {
+            setLoading(false);
         }
     }
 
     async function handleSubmit(event) {
         event.preventDefault();
-        setErrorCode(null);
-        setErrorStr("");
-        setFormErrorStr("");
-
         const { currentPw, newPw } = checkPwFieldsEqual(event);
         if (newPw) {
             await submitPwChangeRequest(user, currentPw, newPw);
@@ -86,26 +82,49 @@ export default function ChangePassword() {
         }
     }
 
-    const state = getState(confirmed, errorCode);
+    function resetState() {
+        setErrorCode(null);
+        setErrorStr("");
+        setFormErrorStr("");
+        setPwEqual(true);
+        setConfirmed(false);
+        setSuccessStr("");
+        setLoading(false);
+    }
+
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>
-                    Change Your Password.
-                </CardTitle>
-                <CardDescription>
-                    If you already have your account credentials, you can use this form to change your password.
-                </CardDescription>
-            </CardHeader>
-
-            {state === 'request' &&
+            {loading &&
                 <>
+                    <CardHeader>
+                        <CardTitle>
+                            Loading...
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Spinner />
+                    </CardContent>
+                </>
+            }
+
+            {!errorCode && !confirmed && !loading &&
+                <>
+                    <CardHeader>
+                        <CardTitle>
+                            Change Your Password.
+                        </CardTitle>
+                        <CardDescription>
+                            If you already have your account credentials, you can use this form to change your password.
+                        </CardDescription>
+                    </CardHeader>
                     <form onSubmit={(e) => (handleSubmit(e))}>
                         <CardContent>
                             <Field className="mb-5">
-                                <FieldLabel> Current Password </FieldLabel>
+                                <FieldLabel htmlFor="currentPw"> Current Password </FieldLabel>
                                 <Input
+                                    required
                                     name="currentPw"
+                                    id="currentPw"
                                     type="password"
                                 />
                             </Field>
@@ -113,9 +132,11 @@ export default function ChangePassword() {
                             <Field>
                                 <FieldLabel htmlFor="newPw1"> New Password </FieldLabel>
                                 <Input
+                                    required
                                     name="newPw1"
+                                    id="newPw1"
                                     type="password"
-                                    aria-invalid={pwEqual === false ? true : undefined}
+                                    aria-invalid={!pwEqual}
                                     onChange={() => {
                                         setPwEqual(true)
                                         setFormErrorStr("")
@@ -126,9 +147,11 @@ export default function ChangePassword() {
                             <Field>
                                 <FieldLabel htmlFor="newPw2"> Confirm New Password</FieldLabel>
                                 <Input
+                                    required
                                     name="newPw2"
+                                    id="newPw2"
                                     type="password"
-                                    aria-invalid={pwEqual === false ? true : undefined}
+                                    aria-invalid={!pwEqual}
                                     onChange={() => {
                                         setPwEqual(true)
                                         setFormErrorStr("")
@@ -146,29 +169,43 @@ export default function ChangePassword() {
                 </>
             }
 
-            {state === 'error' &&
+            {errorCode && !confirmed &&
                 <>
+                    <CardHeader>
+                        <CardTitle>
+                            Oops! There was a problem.
+                        </CardTitle>
+                    </CardHeader>
                     <CardContent>
-                        <p>{errorCode}</p>
+                        <p className="mb-3">Error Code: {errorCode}</p>
                         <p>{errorStr}</p>
                     </CardContent>
                     <CardFooter>
-
+                        <Button variant="destructive" onClick={resetState}>
+                            Back
+                        </Button>
                     </CardFooter>
-                    <Button variant="destructive" onClick={() => {
-                        setErrorStr("");
-                        setErrorCode(null);
-                    }}>
-                        Back
-                    </Button>
                 </>
             }
 
-            {state === 'confirmed' &&
+            {confirmed && !errorCode &&
                 <>
+                    <CardHeader>
+                        <CardTitle>
+                            Success!
+                        </CardTitle>
+                    </CardHeader>
                     <CardContent>
                         <p>{successStr}</p>
                     </CardContent>
+                    <CardFooter>
+                        <Button
+                            className="bg-gain text-primary-foreground border border-transparent hover:border-border hover:bg-gain/80"
+                            onClick={resetState}
+                        >
+                            Done
+                        </Button>
+                    </CardFooter>
                 </>
             }
         </Card>
