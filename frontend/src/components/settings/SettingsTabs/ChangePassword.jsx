@@ -109,34 +109,36 @@ export default function ChangePassword() {
 
             {!errorCode && !confirmed && !loading &&
                 <>
-                    <CardHeader>
-                        <CardTitle>
-                            Change Your Password.
-                        </CardTitle>
-                        <CardDescription>
+                    <CardHeader className="space-y-2 border-b bg-muted/20">
+                        <CardTitle className="text-xl">Change your password</CardTitle>
+                        <CardDescription className="max-w-2xl leading-relaxed">
                             If you already have your account credentials, you can use this form to change your password.
                         </CardDescription>
                     </CardHeader>
                     <form onSubmit={(e) => (handleSubmit(e))}>
-                        <CardContent>
-                            <Field className="mb-5">
-                                <FieldLabel htmlFor="currentPw"> Current Password </FieldLabel>
+                        <CardContent className="space-y-6 pt-6">
+                            <Field className="space-y-2">
+                                <FieldLabel htmlFor="currentPw">Current password</FieldLabel>
                                 <Input
                                     required
                                     name="currentPw"
                                     id="currentPw"
                                     type="password"
+                                    placeholder="Enter your current password"
+                                    className="h-11"
                                 />
                             </Field>
 
-                            <Field>
-                                <FieldLabel htmlFor="newPw1"> New Password </FieldLabel>
+                            <Field className="space-y-2">
+                                <FieldLabel htmlFor="newPw1">New password</FieldLabel>
                                 <Input
                                     required
                                     name="newPw1"
                                     id="newPw1"
                                     type="password"
+                                    placeholder="Enter a new password"
                                     aria-invalid={!pwEqual}
+                                    className="h-11"
                                     onChange={() => {
                                         setPwEqual(true)
                                         setFormErrorStr("")
@@ -144,25 +146,31 @@ export default function ChangePassword() {
                                 />
                             </Field>
 
-                            <Field>
-                                <FieldLabel htmlFor="newPw2"> Confirm New Password</FieldLabel>
+                            <Field className="space-y-2">
+                                <FieldLabel htmlFor="newPw2">Confirm new password</FieldLabel>
                                 <Input
                                     required
                                     name="newPw2"
                                     id="newPw2"
                                     type="password"
+                                    placeholder="Re-enter your new password"
                                     aria-invalid={!pwEqual}
+                                    className="h-11"
                                     onChange={() => {
                                         setPwEqual(true)
                                         setFormErrorStr("")
                                     }}
                                 />
-                                <small className="text-destructive">{formErrorStr}</small>
+                                {formErrorStr && (
+                                    <small className="text-sm font-medium text-destructive" role="alert">
+                                        {formErrorStr}
+                                    </small>
+                                )}
                             </Field>
                         </CardContent>
-                        <CardFooter>
-                            <Button type="submit" variant="outline">
-                                Submit
+                        <CardFooter className="justify-end border-t bg-muted/10 pt-4">
+                            <Button type="submit" className="min-w-28">
+                                Update password
                             </Button>
                         </CardFooter>
                     </form>
@@ -171,18 +179,16 @@ export default function ChangePassword() {
 
             {errorCode && !confirmed &&
                 <>
-                    <CardHeader>
-                        <CardTitle>
-                            Oops! There was a problem.
-                        </CardTitle>
+                    <CardHeader className="border-b bg-destructive/5">
+                        <CardTitle className="text-xl text-destructive">Unable to update password</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p className="mb-3">Error Code: {errorCode}</p>
-                        <p>{errorStr}</p>
+                    <CardContent className="space-y-2 pt-6">
+                        <p className="text-sm font-medium">Error code: {errorCode}</p>
+                        <p className="text-sm text-muted-foreground">{errorStr}</p>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="justify-end border-t pt-4">
                         <Button variant="destructive" onClick={resetState}>
-                            Back
+                            Try again
                         </Button>
                     </CardFooter>
                 </>
@@ -190,15 +196,13 @@ export default function ChangePassword() {
 
             {confirmed && !errorCode &&
                 <>
-                    <CardHeader>
-                        <CardTitle>
-                            Success!
-                        </CardTitle>
+                    <CardHeader className="border-b bg-gain/5">
+                        <CardTitle className="text-xl text-gain">Password updated</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p>{successStr}</p>
+                    <CardContent className="pt-6">
+                        <p className="text-sm leading-relaxed text-muted-foreground">{successStr}</p>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="justify-end border-t pt-4">
                         <Button
                             className="bg-gain text-primary-foreground border border-transparent hover:border-border hover:bg-gain/80"
                             onClick={resetState}
