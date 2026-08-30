@@ -30,6 +30,7 @@ export default function VerifyEmail() {
     const [error, setError] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const { email, verified } = useAuth();
+    const [newEmail, setNewEmail] = useState();
 
     function resetState() {
         setLoading(false);
@@ -39,7 +40,10 @@ export default function VerifyEmail() {
         setSubmitted(false);
     }
 
-    async function submitVerifyEmail(email) {
+    async function submitVerifyEmail(event) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const email = formData.get("email");
         try {
             setLoading(true);
             const response = await fetch("/api/auth/token/generate/verify_email", {
@@ -58,6 +62,7 @@ export default function VerifyEmail() {
             setError(true);
         } finally {
             setLoading(false);
+            setSubmitted(true);
         }
     }
 
@@ -71,30 +76,33 @@ export default function VerifyEmail() {
                     Verify your email, or change the email associated with your account.
                 </CardDescription>
             </CardHeader>
-            {!loading && !submitted &&
+            {!loading && !submitted && !error &&
                 <>
-                    <CardContent>
-                        {email &&
-                            <p>
-                                Your email {email} is currently {!verified && <strong>NOT</strong>} verified.
-                            </p>
-                        }
-                        <form onSubmit={submitVerifyEmail}>
+                    <form onSubmit={submitVerifyEmail}>
+                        <CardContent>
+                            {email &&
+                                <p>
+                                    Your email {email} is currently {!verified && <strong>NOT</strong>} verified.
+                                </p>
+                            }
+
                             <Input
                                 id="email"
                                 name="email"
                                 type="email"
                                 defaultValue={email}
                                 placeholder={email}
+                                required
                             />
-                        </form>
-                        {!email && <small>There isn't an email associated with this account currently.</small>}
-                    </CardContent>
-                    <CardFooter>
-                        <Button type="submit">
-                            Submit
-                        </Button>
-                    </CardFooter>
+
+                            {!email && <small>There isn't an email associated with this account currently.</small>}
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit">
+                                Submit
+                            </Button>
+                        </CardFooter>
+                    </form>
                 </>
             }
 
@@ -113,14 +121,33 @@ export default function VerifyEmail() {
             }
 
             {
-                !loading && submitted &&
+                !loading && !error && submitted && 
                 <>
                     <CardContent>
-                        Success!
+                        An email has been sent to {}
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={() => (resetState)}>
+                        <Button onClick={resetState}>
                             Done
+                        </Button>
+                    </CardFooter>
+                </>
+            }
+
+            {
+                !loading && error &&
+                <>
+                    <CardContent>
+                        <h2>
+                            {responseCode}
+                        </h2>
+                        <p>
+                            {responseStr}
+                        </p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={resetState}>
+                            Back
                         </Button>
                     </CardFooter>
                 </>
