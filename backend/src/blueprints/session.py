@@ -60,10 +60,12 @@ def me():
     cc = CommonQueries()
     username = cc.get_username_from_user_id(user_id=user_id)
     email = cc.get_email_from_user_id(user_id=user_id)
+    validated = cc.check_email_validated(email=email)
     return jsonify({
         "success": True,
         "username": username,
-        "email": email }), 200
+        "email": email,
+        "validated": validated }), 200
 
 @session_bp.route("/logout", methods=["POST"])
 def logout():
