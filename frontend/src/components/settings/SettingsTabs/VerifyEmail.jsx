@@ -29,7 +29,7 @@ export default function VerifyEmail() {
     const [responseStr, setResponseStr] = useState("");
     const [error, setError] = useState(false);
     const [submitted, setSubmitted] = useState(false);
-    const { email } = useAuth();
+    const { email, verified } = useAuth();
 
     function resetState() {
         setLoading(false);
@@ -53,30 +53,74 @@ export default function VerifyEmail() {
             setResponseCode(result?.status);
             setResponseStr(result?.message);
         } catch (error) {
-
+            setResponseCode(error?.status);
+            setResponseStr(error?.message);
+            setError(true);
         } finally {
             setLoading(false);
         }
     }
 
-
     return (
         <Card>
-            {
+            <CardHeader>
+                <CardTitle>
+                    Verify or Update Your email.
+                </CardTitle>
+                <CardDescription>
+                    Verify your email, or change the email associated with your account.
+                </CardDescription>
+            </CardHeader>
+            {!loading && !submitted &&
                 <>
-                    <CardHeader>
-                        <CardTitle>
-
-                        </CardTitle>
-                    </CardHeader>
                     <CardContent>
-                        <form>
-                            <Input />
+                        {email &&
+                            <p>
+                                Your email {email} is currently {!verified && <strong>NOT</strong>} verified.
+                            </p>
+                        }
+                        <form onSubmit={submitVerifyEmail}>
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                defaultValue={email}
+                                placeholder={email}
+                            />
                         </form>
+                        {!email && <small>There isn't an email associated with this account currently.</small>}
                     </CardContent>
                     <CardFooter>
-                        <Button>
+                        <Button type="submit">
+                            Submit
+                        </Button>
+                    </CardFooter>
+                </>
+            }
 
+            {
+                loading && !submitted &&
+                <>
+                    <CardContent>
+                        <Spinner />
+                    </CardContent>
+                    <CardFooter>
+                        <Button variant="destructive" onClick={resetState}>
+                            Cancel
+                        </Button>
+                    </CardFooter>
+                </>
+            }
+
+            {
+                !loading && submitted &&
+                <>
+                    <CardContent>
+                        Success!
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={() => (resetState)}>
+                            Done
                         </Button>
                     </CardFooter>
                 </>
