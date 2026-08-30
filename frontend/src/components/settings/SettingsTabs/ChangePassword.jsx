@@ -3,15 +3,11 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-    Field,
-    FieldLabel
-} from "@/components/ui/field"
+import { Label } from "@/components/ui/label"
 import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -93,125 +89,127 @@ export default function ChangePassword() {
     }
 
     return (
-        <Card>
-            {loading &&
+        <Card className="w-full max-w-md border border-border/80 bg-card/95 shadow-lg shadow-primary/5 backdrop-blur-sm">
+            {loading && (
                 <>
-                    <CardHeader>
-                        <CardTitle>
-                            Loading...
-                        </CardTitle>
+                    <CardHeader className="space-y-2 pb-4">
+                        <CardTitle className="text-2xl font-semibold tracking-tight">Updating password</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex justify-center py-8">
                         <Spinner />
                     </CardContent>
                 </>
-            }
+            )}
 
-            {!errorCode && !confirmed && !loading &&
+            {!errorCode && !confirmed && !loading && (
                 <>
-                    <CardHeader className="space-y-2 border-b bg-muted/20">
-                        <CardTitle className="text-xl">Change your password</CardTitle>
-                        <CardDescription className="max-w-2xl leading-relaxed">
-                            If you already have your account credentials, you can use this form to change your password.
+                    <CardHeader className="space-y-2 pb-4">
+                        <CardTitle className="text-2xl font-semibold tracking-tight">Change password</CardTitle>
+                        <CardDescription className="text-sm text-muted-foreground">
+                            Choose a new password for your account.
                         </CardDescription>
                     </CardHeader>
-                    <form onSubmit={(e) => (handleSubmit(e))}>
-                        <CardContent className="space-y-6 pt-6">
-                            <Field className="space-y-2">
-                                <FieldLabel htmlFor="currentPw">Current password</FieldLabel>
+                    <CardContent>
+                        <form onSubmit={(e) => handleSubmit(e)} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="currentPw" className="text-sm font-medium">Current password</Label>
                                 <Input
                                     required
                                     name="currentPw"
                                     id="currentPw"
                                     type="password"
                                     placeholder="Enter your current password"
-                                    className="h-11"
+                                    className="h-11 rounded-md border-border bg-background/80"
                                 />
-                            </Field>
+                            </div>
 
-                            <Field className="space-y-2">
-                                <FieldLabel htmlFor="newPw1">New password</FieldLabel>
+                            <div className="space-y-2">
+                                <Label htmlFor="newPw1" className="text-sm font-medium">New password</Label>
                                 <Input
                                     required
                                     name="newPw1"
                                     id="newPw1"
                                     type="password"
-                                    placeholder="Enter a new password"
-                                    aria-invalid={!pwEqual}
-                                    className="h-11"
+                                    placeholder="Create a new password"
+                                    aria-invalid={pwEqual === false ? true : undefined}
+                                    className="h-11 rounded-md border-border bg-background/80"
                                     onChange={() => {
-                                        setPwEqual(true)
-                                        setFormErrorStr("")
+                                        setPwEqual(true);
+                                        setFormErrorStr("");
                                     }}
                                 />
-                            </Field>
+                            </div>
 
-                            <Field className="space-y-2">
-                                <FieldLabel htmlFor="newPw2">Confirm new password</FieldLabel>
+                            <div className="space-y-2">
+                                <Label htmlFor="newPw2" className="text-sm font-medium">Confirm new password</Label>
                                 <Input
                                     required
                                     name="newPw2"
                                     id="newPw2"
                                     type="password"
                                     placeholder="Re-enter your new password"
-                                    aria-invalid={!pwEqual}
-                                    className="h-11"
+                                    aria-invalid={pwEqual === false ? true : undefined}
+                                    className="h-11 rounded-md border-border bg-background/80"
                                     onChange={() => {
-                                        setPwEqual(true)
-                                        setFormErrorStr("")
+                                        setPwEqual(true);
+                                        setFormErrorStr("");
                                     }}
                                 />
                                 {formErrorStr && (
-                                    <small className="text-sm font-medium text-destructive" role="alert">
+                                    <p className="text-xs text-destructive" role="alert">
                                         {formErrorStr}
-                                    </small>
+                                    </p>
                                 )}
-                            </Field>
-                        </CardContent>
-                        <CardFooter className="justify-end border-t bg-muted/10 pt-4">
-                            <Button type="submit" className="min-w-28">
+                            </div>
+
+                            <Button type="submit" className="w-full h-11">
                                 Update password
                             </Button>
-                        </CardFooter>
-                    </form>
-                </>
-            }
-
-            {errorCode && !confirmed &&
-                <>
-                    <CardHeader className="border-b bg-destructive/5">
-                        <CardTitle className="text-xl text-destructive">Unable to update password</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 pt-6">
-                        <p className="text-sm font-medium">Error code: {errorCode}</p>
-                        <p className="text-sm text-muted-foreground">{errorStr}</p>
+                        </form>
                     </CardContent>
-                    <CardFooter className="justify-end border-t pt-4">
-                        <Button variant="destructive" onClick={resetState}>
+                </>
+            )}
+
+            {errorCode && !confirmed && (
+                <>
+                    <CardHeader className="space-y-2 pb-4">
+                        <CardTitle className="text-2xl font-semibold tracking-tight text-destructive">
+                            Unable to update password
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 p-3 bg-destructive/10 rounded-md border border-destructive/30">
+                            <p className="text-sm font-medium text-destructive">Status code: {errorCode}</p>
+                            <p className="text-sm text-destructive">{errorStr}</p>
+                        </div>
+                        <Button onClick={resetState} variant="outline" className="w-full h-11">
                             Try again
                         </Button>
-                    </CardFooter>
-                </>
-            }
-
-            {confirmed && !errorCode &&
-                <>
-                    <CardHeader className="border-b bg-gain/5">
-                        <CardTitle className="text-xl text-gain">Password updated</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <p className="text-sm leading-relaxed text-muted-foreground">{successStr}</p>
                     </CardContent>
-                    <CardFooter className="justify-end border-t pt-4">
+                </>
+            )}
+
+            {confirmed && !errorCode && (
+                <>
+                    <CardHeader className="space-y-2 pb-4">
+                        <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400 w-fit">
+                            Success
+                        </div>
+                        <CardTitle className="text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
+                            Password updated
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <p className="text-sm text-muted-foreground">{successStr}</p>
                         <Button
-                            className="bg-gain text-primary-foreground border border-transparent hover:border-border hover:bg-gain/80"
+                            className="w-full h-11 bg-emerald-600 text-white hover:bg-emerald-700"
                             onClick={resetState}
                         >
                             Done
                         </Button>
-                    </CardFooter>
+                    </CardContent>
                 </>
-            }
+            )}
         </Card>
     )
 }
