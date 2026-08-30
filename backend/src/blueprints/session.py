@@ -56,16 +56,17 @@ def login():
 def me():
     user_id = session.get("user_id")
     if not user_id:
-        return jsonify({"success": True, "username": None}), 200
+        return jsonify({"success": True, "username": None, "email": None, "verified": False}), 200
     cc = CommonQueries()
     username = cc.get_username_from_user_id(user_id=user_id)
     email = cc.get_email_from_user_id(user_id=user_id)
-    validated = cc.check_email_validated(email=email)
+    verified = cc.check_email_validated(email=email)
     return jsonify({
         "success": True,
         "username": username,
         "email": email,
-        "validated": validated }), 200
+        "verified": verified,
+        "validated": verified }), 200
 
 @session_bp.route("/logout", methods=["POST"])
 def logout():

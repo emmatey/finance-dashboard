@@ -17,3 +17,13 @@ def test_user_summary(client):
     response = client.get("/user/summary?username=emma")
     print(response)
     assert response.status_code == 200
+
+
+def test_session_me_exposes_verified_flag(client):
+    response = client.get("/api/session/me")
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert payload["success"] is True
+    assert "verified" in payload
+    assert payload["verified"] is False
