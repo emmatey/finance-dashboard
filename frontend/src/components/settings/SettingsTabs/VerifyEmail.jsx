@@ -8,10 +8,6 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-    Field,
-    FieldLabel
-} from "@/components/ui/field"
 import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -30,7 +26,7 @@ export default function VerifyEmail() {
     const [error, setError] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const { email, verified } = useAuth();
-    const [newEmail, setNewEmail] = useState();
+    const [newEmail, setNewEmail] = useState("");
 
     function resetState() {
         setLoading(false);
@@ -38,19 +34,21 @@ export default function VerifyEmail() {
         setResponseStr("");
         setError(false);
         setSubmitted(false);
+        setNewEmail("");
     }
 
     async function submitVerifyEmail(event) {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
-        const email = formData.get("email");
+        const submittedEmail = formData.get("email");
+        setNewEmail(submittedEmail);
         try {
             setLoading(true);
             const response = await fetch("/api/auth/token/generate/verify_email", {
                 method: "POST",
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    "email": email
+                    "email": submittedEmail
                 })
             });
             const result = await parseResponse(response);
@@ -108,23 +106,16 @@ export default function VerifyEmail() {
 
             {
                 loading && !submitted &&
-                <>
-                    <CardContent>
-                        <Spinner />
-                    </CardContent>
-                    <CardFooter>
-                        <Button variant="destructive" onClick={resetState}>
-                            Cancel
-                        </Button>
-                    </CardFooter>
-                </>
+                <CardContent>
+                    <Spinner />
+                </CardContent>
             }
 
             {
-                !loading && !error && submitted && 
+                !loading && !error && submitted &&
                 <>
                     <CardContent>
-                        An email has been sent to {}
+                        An email has been sent to {newEmail}
                     </CardContent>
                     <CardFooter>
                         <Button onClick={resetState}>
