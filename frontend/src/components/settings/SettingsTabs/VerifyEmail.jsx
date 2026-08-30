@@ -8,6 +8,7 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { parseResponse } from "@/scripts/utils";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -65,84 +66,117 @@ export default function VerifyEmail() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>
-                    Verify or Update Your email.
-                </CardTitle>
-                <CardDescription>
-                    Verify your email, or change the email associated with your account.
-                </CardDescription>
-            </CardHeader>
-            {!loading && !submitted && !error &&
+        <Card className="w-full max-w-md border border-border/80 bg-card/95 shadow-lg shadow-primary/5 backdrop-blur-sm">
+            {loading && (
                 <>
+                    <CardHeader className="space-y-2 pb-4">
+                        <CardTitle className="text-2xl font-semibold tracking-tight">Sending verification</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center py-8">
+                        <Spinner />
+                    </CardContent>
+                </>
+            )}
+
+            {!loading && !submitted && !error && (
+                <>
+                    <CardHeader className="space-y-2 pb-4">
+                        <CardTitle className="text-2xl font-semibold tracking-tight">Verify your email</CardTitle>
+                        <CardDescription className="text-sm text-muted-foreground">
+                            Verify your email, or change the email associated with your account.
+                        </CardDescription>
+                    </CardHeader>
                     <form onSubmit={submitVerifyEmail}>
-                        <CardContent>
-                            {email &&
-                                <p>
-                                    Your email {email} is currently {!verified && <strong>NOT</strong>} verified.
+                        <CardContent className="space-y-4">
+                            {email ? (
+                                <div className="flex items-center gap-2">
+                                    <p className="text-sm text-muted-foreground">
+                                        Your email <span className="font-medium text-foreground">{email}</span> is currently
+                                    </p>
+                                    {verified ? (
+                                        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
+                                            Verified
+                                        </span>
+                                    ) : (
+                                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium uppercase tracking-[0.12em] text-amber-600 dark:text-amber-400">
+                                            Not verified
+                                        </span>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    There isn't an email associated with this account currently.
                                 </p>
-                            }
+                            )}
 
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                defaultValue={email}
-                                placeholder={email}
-                                required
-                            />
-
-                            {!email && <small>There isn't an email associated with this account currently.</small>}
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    defaultValue={email}
+                                    placeholder={email || "you@example.com"}
+                                    required
+                                    className="h-11 rounded-md border-border bg-background/80"
+                                />
+                            </div>
                         </CardContent>
                         <CardFooter>
-                            <Button type="submit">
+                            <Button type="submit" className="w-full h-11">
                                 Submit
                             </Button>
                         </CardFooter>
                     </form>
                 </>
-            }
+            )}
 
-            {
-                loading && !submitted &&
-                <CardContent>
-                    <Spinner />
-                </CardContent>
-            }
-
-            {
-                !loading && !error && submitted &&
+            {!loading && !error && submitted && (
                 <>
+                    <CardHeader className="space-y-2 pb-4">
+                        <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400 w-fit">
+                            Sent
+                        </div>
+                        <CardTitle className="text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
+                            Check your inbox
+                        </CardTitle>
+                    </CardHeader>
                     <CardContent>
-                        An email has been sent to {newEmail}
+                        <p className="text-sm text-muted-foreground">
+                            An email has been sent to <span className="font-medium text-foreground">{newEmail}</span>.
+                        </p>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={resetState}>
+                        <Button
+                            className="w-full h-11 bg-emerald-600 text-white hover:bg-emerald-700"
+                            onClick={resetState}
+                        >
                             Done
                         </Button>
                     </CardFooter>
                 </>
-            }
+            )}
 
-            {
-                !loading && error &&
+            {!loading && error && (
                 <>
-                    <CardContent>
-                        <h2>
-                            {responseCode}
-                        </h2>
-                        <p>
-                            {responseStr}
-                        </p>
+                    <CardHeader className="space-y-2 pb-4">
+                        <CardTitle className="text-2xl font-semibold tracking-tight text-destructive">
+                            Unable to send verification
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2 p-3 bg-destructive/10 rounded-md border border-destructive/30">
+                            <p className="text-sm font-medium text-destructive">Status code: {responseCode}</p>
+                            <p className="text-sm text-destructive">{responseStr}</p>
+                        </div>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={resetState}>
+                        <Button onClick={resetState} variant="outline" className="w-full h-11">
                             Back
                         </Button>
                     </CardFooter>
                 </>
-            }
+            )}
         </Card>
     )
 }
