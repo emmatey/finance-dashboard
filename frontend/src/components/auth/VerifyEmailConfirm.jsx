@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
 import {
     Card,
     CardAction,
@@ -20,11 +21,20 @@ export default function VerifyEmailConfirm() {
     // Look for 'token' in query param
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
-    const [lodaing, setLoading] = useState();
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState();
     const [responseCode, setResponseCode] = useState();
     const [responseStr ,setResponseStr] = useState();
     const [success, setSuccess] = useState();
-    const [error, setErrror] = useState();
+    const [error, setError] = useState();
+
+    function resetState(){
+        setLoading(false);
+        setResponseCode(null);
+        setResponseStr(null);
+        setSuccess(false);
+        setError(false);
+    }
 
     async function handleVerifyToken(event) {
         try {
@@ -36,7 +46,7 @@ export default function VerifyEmailConfirm() {
                     "token": token
                 })
             });
-            const result = await parseRessetResponseStrponse(response);
+            const result = await response.json();
             setResponseCode(result?.status);
             setResponseStr(result?.message);
         } catch (error) {
@@ -48,6 +58,15 @@ export default function VerifyEmailConfirm() {
             setSuccess(true);
         }
     }
+
+    useEffect(() => {
+        if (token) {
+            handleVerifyToken();
+        } else {
+            navigate('/');
+        }
+        return resetState;
+    }, [token, handleVerifyToken]);
 
     return (
         <>
