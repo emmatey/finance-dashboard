@@ -2,25 +2,32 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const AuthContext = createContext(null)
 
+async function meRequest() {
+    try {
+        const response = await fetch("/api/session/me", {
+            method: "GET"
+        });
+        const res = await parseResponse(response);
+        return res
+    } catch (error) {
+        return error
+    }
+}
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(undefined)  // undefined = still loading, null = not logged in
     const [email, setEmail] = useState(undefined)
     const [verified, setVerified] = useState(undefined)
 
-    useEffect(() => {
-        fetch('/api/session/me')
-            .then(res => res.json())
-            .then((data) => {
-                setUser(data?.username ?? null)
-                setEmail(data?.email ?? null)
-                setVerified(Boolean(data?.verified ?? data?.validated ?? false))
-            })
-            .catch((error) => {
-                console.error(error)
-                setUser(null)
-                setEmail(null)
-                setVerified(false)
-            })
+    async function refreshUser(res) {
+        setUser(res?.username);
+        setEmail(res?.email);
+        setVerified(res?.verified);
+    }
+
+    useEffect(async () => {
+        const res = await meRequest();
+
     }, [])
 
     const logout = () => {

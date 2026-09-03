@@ -65,8 +65,7 @@ def me():
         "success": True,
         "username": username,
         "email": email,
-        "verified": verified,
-        "validated": verified }), 200
+        "verified": verified}), 200
 
 @session_bp.route("/logout", methods=["POST"])
 def logout():
