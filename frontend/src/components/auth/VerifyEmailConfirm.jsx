@@ -1,3 +1,4 @@
+import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { useNavigate } from "react-router-dom";
@@ -9,6 +10,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
+import { parseResponse } from "@/scripts/utils";
 
 async function verifyToken(token) {
     try {
@@ -19,7 +21,7 @@ async function verifyToken(token) {
                 "token": token
             })
         });
-        const result = await response.json();
+        const result = await parseResponse(response);
         return result;
 
     } catch (error) {
@@ -35,6 +37,7 @@ export default function VerifyEmailConfirm() {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
     const navigate = useNavigate();
+    const { refreshUser } = useAuth();
 
     const [loading, setLoading] = useState();
     const [responseCode, setResponseCode] = useState();
@@ -52,20 +55,21 @@ export default function VerifyEmailConfirm() {
 
     useEffect(() => {
         async function handleVerifyToken(token) {
-            const res = verifyToken(token);
+            const res = await verifyToken(token);
             if (res instanceof Error) {
                 setError(true);
             } else {
                 setSuccess(true);
+                refreshUser();
             };
             setResponseCode(res.status);
             setResponseStr(res.message);
+            setLoading(false);
         };
 
         if (token) {
             setLoading(true);
             handleVerifyToken(token);
-            setLoading(false);
         } else {
             navigate('/');
         }

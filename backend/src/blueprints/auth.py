@@ -377,13 +377,12 @@ def generate_and_send_email_verify_token():
         return jsonify({"success": False, "message": "Unable to process request at this time."}), 500
     resend.api_key = resend_api_key
 
-    # Check if email in use
-    in_use = am.check_email_in_use(email=email)
-    if not in_use:
+    # Only send verification mail for the authenticated user's email.
+    user_id = am.get_user_id_from_email(email=email)
+    if not user_id or user_id != session.get("user_id"):
         return generic_response
 
     # Lookup username from email for later use in both email templates.
-    user_id = am.get_user_id_from_email(email=email)
     username = am.get_username_from_user_id(user_id)
 
     # Send the "already verified" email if the account is validated already.
