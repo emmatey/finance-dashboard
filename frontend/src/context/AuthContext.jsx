@@ -15,19 +15,25 @@ async function meRequest() {
 }
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(undefined)  // undefined = still loading, null = not logged in
+    const [user, setUser] = useState(undefined)
     const [email, setEmail] = useState(undefined)
     const [verified, setVerified] = useState(undefined)
 
-    async function refreshUser(res) {
-        setUser(res?.username);
-        setEmail(res?.email);
-        setVerified(res?.verified);
+    async function refreshUser() {
+        const res = await meRequest();
+        if (res instanceof Error) {
+            setUser(null)
+            setEmail(null)
+            setVerified(false)
+            return
+        }
+        setUser(res?.username ?? null)
+        setEmail(res?.email ?? null)
+        setVerified(Boolean(res?.verified))
     }
 
-    useEffect(async () => {
-        const res = await meRequest();
-
+    useEffect(() => {
+        refreshUser();
     }, [])
 
     const logout = () => {
@@ -40,7 +46,7 @@ export function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, email, verified, setUser, setEmail, setVerified, logout }}>
+        <AuthContext.Provider value={{ user, email, verified, setUser, setEmail, setVerified, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     )
