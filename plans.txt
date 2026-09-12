@@ -507,3 +507,14 @@ I'm thinking I should examine the way the screener data is currently captured an
         - Request to change pw route
         - Error handling
         - Success redirect within tab. 
+
+9/11:
+    I've been super busy in my life these last couple months so I haven't made much progress but one thing is clear. This project needs to come to an end. 
+    I'm going to stop fleshing out the email validation system and leave the basic verify email step in place and forego changing email for now.
+    The top priorates for finishing before school starts are..
+        - Polish HTML and copywriting, add colors.
+        - Review transaction flow and write tests.
+        - Create a demo state DB for the server to tap into when spinning up. 
+        - Figure out how to host this, probably using the domains that resend says they can supply for free + some free hosting service.
+
+    There can be no more deviation from this, there are no more features coming. 
