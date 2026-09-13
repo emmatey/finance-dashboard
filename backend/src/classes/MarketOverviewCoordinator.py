@@ -59,34 +59,55 @@ class MarketOverviewCoordinator(CommonQueries):
         tickers = list(symbols.values())
         placeholders = ", ".join("?" for _ in tickers)
         age_sql = f"""
-        SELECT UNIXEPOCH(MIN(fm.last_updated)) AS last_updated
+        SELECT UNIXEPOCH(fm.last_updated) AS last_updated
         FROM financial_metrics fm
         JOIN symbols s ON s.id = fm.symbol_id
         WHERE s.ticker IN ({placeholders})
         """
         rows = self.select_query(age_sql, tuple(tickers))
-        last_updated = 0
-        if rows and isinstance(rows, list) and len(rows) >= 1:
-            last_updated = rows[0].get("last_updated") or 0
+        logger.warning(rows)
+        logger.warning(symbols.values())
+        def _requires_update(rows: list[dict], symbols: dict) -> bool:
+            if len(rows) < len(symbols.values()):
+                # Ask for reinitialization in the case where a partial set of the regional ETFs exist.
+                logger.debug("Missing regional eft(s) from DB! Set found not equal to REGION_OVERVIEW_DISPLAY_NAME_TO_TICKER_MAP! Asking for reinitialization!")
+                return True
 
-        age = time.time() - last_updated
-        if age < TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value:
-            logger.debug(
-                f"Regional ETFs up to date! age = {age}. Update frequency = {TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value}"
+            last_updated = None
+            if rows and isinstance(rows, list) and len(rows) >= 1:
+                last_updated = rows[0].get("last_updated") or 0
+                for row in rows:
+                    row_timestamp = row.get("last_updated", None)
+                    if not row_timestamp:
+                        break
+                    if row_timestamp < last_updated:
+                        last_updated = row_timestamp
+            if not last_updated:
+                last_updated = 0
+
+            age_of_oldest_ticker = time.time() - last_updated
+            if age_of_oldest_ticker < TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value:
+                logger.debug(
+                    f"Regional ETFs up to date! age_of_oldest_ticker = {age_of_oldest_ticker}. Update frequency = {TableLifetimes.REGION_ETFS_UPDATE_FREQUENCY.value}"
+                )
+                return False
+            else:
+                return True
+
+        requires_update = _requires_update(rows, symbols)
+
+        if requires_update:
+            modules = yqs_instance.yq_ticker_fetch_modules(
+                symbols=tickers,
+                modules=["price", "defaultKeyStatistics", "summaryDetail", "financialData"],
             )
-            return None
 
-        logger.info(f"Initializing regional ETF data for {len(symbols)} regions")
+            dbio_instance.upsert_symbols(modules)
+            metrics = yqs_instance.extract_financial_metrics(modules)
+            dbio_instance.set_financial_metrics(metrics)
 
-        modules = yqs_instance.yq_ticker_fetch_modules(
-            symbols=tickers,
-            modules=["price", "defaultKeyStatistics", "summaryDetail", "financialData"],
-        )
-
-        dbio_instance.upsert_symbols(modules)
-        metrics = yqs_instance.extract_financial_metrics(modules)
-        dbio_instance.set_financial_metrics(metrics)
-
-        logger.info(
-            f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}"
-        )
+            logger.info(
+                f"Successfully initialized regional ETF data for {', '.join(symbols.keys())}"
+            )
+        else:
+            return
