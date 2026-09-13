@@ -79,7 +79,7 @@ class MarketOverviewCoordinator(CommonQueries):
                 for row in rows:
                     row_timestamp = row.get("last_updated", None)
                     if not row_timestamp:
-                        break
+                        return True
                     if row_timestamp < last_updated:
                         last_updated = row_timestamp
             if not last_updated:
