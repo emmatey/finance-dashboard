@@ -65,8 +65,6 @@ class MarketOverviewCoordinator(CommonQueries):
         WHERE s.ticker IN ({placeholders})
         """
         rows = self.select_query(age_sql, tuple(tickers))
-        logger.warning(rows)
-        logger.warning(symbols.values())
         def _requires_update(rows: list[dict], symbols: dict) -> bool:
             if len(rows) < len(symbols.values()):
                 # Ask for reinitialization in the case where a partial set of the regional ETFs exist.
