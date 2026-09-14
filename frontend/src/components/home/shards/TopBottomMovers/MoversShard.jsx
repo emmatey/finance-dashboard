@@ -9,7 +9,6 @@ import { useShardNav } from "@/context/ShardNavContext.jsx";
 import { useMemo } from "react";
 
 
-
 export default function MoversShard() {
     const { loading, data, error } = useHoldings();
     const { setActiveGroupId } = useShardNav();
