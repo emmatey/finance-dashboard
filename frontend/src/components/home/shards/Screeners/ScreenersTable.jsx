@@ -43,7 +43,7 @@ export default function ScreenersTable({ data }) {
                     <TableRow
                         key={row.ticker}
                         className="cursor-pointer"
-                        onClick={() => window.open(`/research?ticker=${encodeURIComponent(row.ticker)}`, '_blank', 'noopener,noreferrer')}
+                        onClick={() => window.open(`/research?ticker=${encodeURIComponent(row.ticker)}`, '_blank', 'noopener, noreferrer')}
                     >
                         <TableCell>{row.ticker}</TableCell>
                         <TableCell>{row.company_name}</TableCell>

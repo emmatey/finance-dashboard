@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { parseResponse } from '@/scripts/utils';
 
 const AuthContext = createContext(null)
 

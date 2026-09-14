@@ -10,14 +10,12 @@ import Research from './pages/Research.jsx'
 import Search from './pages/Search.jsx'
 import User from './pages/User.jsx'
 import VerifyEmailConfirm from './components/auth/VerifyEmailConfirm.jsx'
-import Test from './components/home/Test.jsx'
 
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/test" element={<Test />} />
       <Route path="/auth" element={<Auth />}>
         <Route index element={<Navigate to="login" replace />} />
         <Route path="login" element={<Login />} />
