@@ -563,3 +563,8 @@ I'm thinking I should examine the way the screener data is currently captured an
         100% of the initial money will be invested
 
     I'm not sure how I will handle dividends, but I know the system will account for stock splits for me.
+
+    Time to stop for today. I've created the demo db script with historical data. Next session I will find a way to integrate it with the 
+    system so that depending on the state of an enviroment vairable the system will either connect to the demo DB or the Persistent db.
+
+    
