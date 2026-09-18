@@ -518,3 +518,29 @@ I'm thinking I should examine the way the screener data is currently captured an
         - Figure out how to host this, probably using the domains that resend says they can supply for free + some free hosting service.
 
     There can be no more deviation from this, there are no more features coming. 
+
+9/18:
+    I have the day off work, and today I'm working from the Greenwood library. My goal is to create an SQL script that will populate the demo database
+    and will contain a group of users with pre-set portfolios of stocks based on some common investment strategies and a handful of points in
+    the balance snapshots graph which will fill it out based roughly on what their real account value would be in the past if this same strategy was 
+    adhered to. I don't think the users will have to be all that complex. But I'll try and think of some profiles now.
+
+    My main issue will be deciding what to buy. If I have a profile of an investor who buys volatile growth or biotech stocks how can I know,
+    in hindsight, which stocks they would have bought and not bought and when they would have sold? It's much easier with investment strategies
+    that are more static. So I may opt to only include these types of investments.
+
+        1. Three Fund portfolio
+            - Three ETFs, US stocks, US bonds, ex-US stocks.
+        2. Income investing.
+            - invests with mature companies who aren't growing much but provide dividends.
+        3. Cryptocurrencies
+            - Buys the big coins.
+        4. Mid cap stocks 
+            - Invests in Russell 2000 to try and capture undervalued and growing companies in the US market
+        5. BRICS investor 
+            - Bets on dedollarization, invests in China, India, Brazil, and Russia ETFs.
+        6. Risk averse
+            - Only buys bonds and CDs.
+        7. Goldbug
+            - Only buys commodities, especially gold.
+        
