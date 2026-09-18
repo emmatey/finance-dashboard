@@ -529,18 +529,37 @@ I'm thinking I should examine the way the screener data is currently captured an
     in hindsight, which stocks they would have bought and not bought and when they would have sold? It's much easier with investment strategies
     that are more static. So I may opt to only include these types of investments.
 
+        0. Baseline "voo and chill"
+            100% voo
         1. Three Fund portfolio
             - Three ETFs, US stocks, US bonds, ex-US stocks.
+            VTI 50 / VXUS 30 / BND 20
         2. Income investing.
             - invests with mature companies who aren't growing much but provide dividends.
+            SCHD 20 / KO 20 / PG 20 / VZ 20 / O 20
         3. Cryptocurrencies
             - Buys the big coins.
-        4. Mid cap stocks 
+            BTC 100
+        4. Small cap stocks 
             - Invests in Russell 2000 to try and capture undervalued and growing companies in the US market
+            IWM 100
         5. BRICS investor 
             - Bets on dedollarization, invests in China, India, Brazil, and Russia ETFs.
+            MCHI 40 / INDA 30 / EWZ 30
         6. Risk averse
             - Only buys bonds and CDs.
+            SGOV 50 / SHY 50
         7. Goldbug
             - Only buys commodities, especially gold.
+            GLD 60 / SLV 20 / CPER 20
+        8. International investor
+            - All non us stocks, but unlike BRICS includes "the west" i.e eu aus.
+            IEUR 40 / EWJ 20 / EWA 20 / EWC 20
         
+    Rules
+        All users start with 100,000 dollars. 
+        All buys start on april 1st 2021 after the first major bitcoin spike so the coin invester doesnt have a big unfair advantage.
+        All profiles must have between 1 and 5 holdings
+        100% of the initial money will be invested
+
+    I'm not sure how I will handle dividends, but I know the system will account for stock splits for me.
