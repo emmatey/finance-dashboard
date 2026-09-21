@@ -70,13 +70,12 @@ demo_mode_str = os.getenv("DEMO_MODE")
 if not isinstance(demo_mode_str, str):
     try:
         demo_mode_str = str(demo_mode_str)
+        if demo_mode_str.lower() == "true":
+                demo_mode_str = True
+        else:
+                demo_mode_str = False
     except:
         logger.error("Unable to convert 'demo mode' env var to string. Check it exists in your .env file.")
-else:
-    if demo_mode_str.lower() == "true":
-        demo_mode_str = True
-    else:
-        demo_mode_str = False
 
 if demo_mode_str is True:
     app.config["DATABASE"] = "demo_finance.db"
