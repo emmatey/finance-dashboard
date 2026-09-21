@@ -4,6 +4,7 @@ import sys
 import time
 
 # External Libraries
+from dotenv import load_dotenv
 from flask import Flask, g, jsonify, request
 from flask_session import Session
 from werkzeug.exceptions import HTTPException
@@ -61,8 +62,26 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
+# Load enviroment vairables 
+load_dotenv()
+
 # Configure name of database for production.
-app.config["DATABASE"] = "finance.db"
+demo_mode_str = os.getenv("DEMO_MODE")
+if not isinstance(demo_mode_str, str):
+    try:
+        demo_mode_str = str(demo_mode_str)
+    except:
+        logger.error("Unable to convert 'demo mode' env var to string. Check it exists in your .env file.")
+else:
+    if demo_mode_str.lower() == "true":
+        demo_mode_str = True
+    else:
+        demo_mode_str = False
+
+if demo_mode_str is True:
+    app.config["DATABASE"] = "demo_finance.db"
+else:
+    app.config["DATABASE"] = "finance.db"
 
 # Register resource blueprints
 app.register_blueprint(auth_bp)
