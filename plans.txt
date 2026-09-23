@@ -567,4 +567,10 @@ I'm thinking I should examine the way the screener data is currently captured an
     Time to stop for today. I've created the demo db script with historical data. Next session I will find a way to integrate it with the 
     system so that depending on the state of an enviroment vairable the system will either connect to the demo DB or the Persistent db.
 
-    
+9/22:
+    Demo mode has been implemented on the backend!
+    Now I just need a way to tell the frontend if we're in demo mode.
+    I guess the natural method of IPC is another route.
+    I want this route to check for demo mode, and if demo mode is enabled, I want there to be a button on the login screen that
+    logs the user into the demo account which has data seeded from the seed.sql script.
+    I'll do this next session though.
