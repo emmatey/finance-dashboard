@@ -1,22 +1,24 @@
 import logging
+import os
 import sqlite3
 import time
 
+from dotenv import load_dotenv
 from flask import g, current_app
 from functools import wraps
 from pathlib import Path
-
 from scripts.logging_utils import fmt_data
 
 
 logger = logging.getLogger(__name__)
 
-
 class DbManager:
     """
     Base data access for managing SQLite connections and query execution.
     """
-
+    def __init__(self):
+        self.seed_db_with_demo_data()
+        
     @staticmethod
     def time_method(func):
         @wraps(func)
@@ -104,6 +106,94 @@ class DbManager:
 
         else:
             return g.db
+
+    def check_demo_mode(self):
+        """
+        Checks the .env file for "demo_mode" state.
+        """
+        load_dotenv()
+        demo_mode = False
+        demo_mode_str = os.getenv("DEMO_MODE")
+
+        try:
+            demo_mode_str = str(demo_mode_str)
+            if demo_mode_str.lower() == "true":
+                    demo_mode = True
+            else:
+                    demo_mode = False
+        except:
+            logger.error("Unable to convert 'demo mode' env var to string. Check it exists in your .env file.")
+
+        return demo_mode
+
+    def set_demo_data_seeded(self, demo_mode: bool):
+        """
+        Sets the "demo_data_seeded" event in "global_events" table.
+        Used to prevent executing the script again to insert the same data.
+        """
+        if isinstance(demo_mode, bool) == False:
+            raise TypeError("demo_mode arg, must be bool.")
+
+        demo_mode_state = None
+        if demo_mode is True:
+            demo_mode_state = 1
+        else:
+            demo_mode_state = 0
+
+        self.modify_query(f"""
+            UPDATE global_events
+            SET demo_data_seeded {demo_mode_state}
+            WHERE id = 1
+            """)
+
+    def check_demo_data_seeded(self):
+        """
+        Checks if 'demo data' has already been added to the db.
+        This should only happen when demo_mode env var is True.
+        """
+        seeded = self.select_query("""
+            SELECT demo_data_seeded
+            FROM global_events
+            WHERE id = 1
+        """)
+        if seeded:
+            return True
+        else:
+            return False
+        
+    def seed_db_with_demo_data(self):
+        """
+        Inserts demo data, updates global events table.
+        """
+        # I should probably make this "execute script" action a function, this is number two! Lets wait until I do it once more :P
+        def _seed_with_data():
+            root = DbManager.get_root()
+            schema_path = root / "src" / "seed.sql"
+
+            con = self.get_db()
+            cur = con.cursor()
+            try:
+                with open(schema_path, "r") as f:
+                    con.executescript(f.read())
+            except Exception:
+                con.rollback()
+                logger.exception(f"Demo data seeding failed.")
+                raise
+            finally:
+                cur.close()
+            ###############################################
+            # Im gonna close the connection and get another one from g via the modify query method to make fixing this later easier.
+        
+        demo_mode = self.check_demo_mode()
+        if not demo_mode:
+            return
+
+        demo_data_seeded = self.check_demo_data_seeded()
+        if demo_data_seeded:
+            logger.debug("Demo data already seeded...")
+
+        _seed_with_data()
+        self.set_demo_data_seeded(True)
 
     @time_method
     def select_query(self, query: str, placeholders: tuple = ()) -> list[dict]:

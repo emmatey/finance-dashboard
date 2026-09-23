@@ -30,6 +30,7 @@ CREATE TABLE 'fresh_report' (
 
 CREATE TABLE 'global_events' (
     id INTEGER PRIMARY KEY,
+    demo_data_seeded INTEGER NOT NULL DEFAULT 0 CHECK (demo_mode IN (0, 1)),
     last_price_update DATETIME,
     last_snapshot_update DATETIME,
     last_custom_screeners_update DATETIME,
