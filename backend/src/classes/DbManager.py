@@ -142,7 +142,7 @@ class DbManager:
 
         self.modify_query(f"""
             UPDATE global_events
-            SET demo_data_seeded {demo_mode_state}
+            SET demo_data_seeded = {demo_mode_state}
             WHERE id = 1
             """)
 
