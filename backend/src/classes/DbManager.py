@@ -16,9 +16,6 @@ class DbManager:
     """
     Base data access for managing SQLite connections and query execution.
     """
-    def __init__(self):
-        self.seed_db_with_demo_data()
-
     @staticmethod
     def time_method(func):
         @wraps(func)
@@ -142,9 +139,9 @@ class DbManager:
 
         self.modify_query(f"""
             UPDATE global_events
-            SET demo_data_seeded = {demo_mode_state}
+            SET demo_data_seeded = ?
             WHERE id = 1
-            """)
+            """, (demo_mode_state, ))
 
     def check_demo_data_seeded(self):
         """
