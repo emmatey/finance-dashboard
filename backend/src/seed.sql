@@ -31,7 +31,9 @@ INSERT OR IGNORE INTO symbols (ticker, company_name, quote_type, last_price) VAL
 INSERT OR IGNORE INTO stock_splits (symbol_id, split_date, split_ratio) VALUES ((SELECT id FROM symbols WHERE ticker = 'O'), '2021-11-15', 1.032);
 INSERT OR IGNORE INTO stock_splits (symbol_id, split_date, split_ratio) VALUES ((SELECT id FROM symbols WHERE ticker = 'SCHD'), '2024-10-11', 3.0);
 
--- Users (all start with $100,000, end up with $0 cash - 100% invested)
+-- Users. 'demo' is a real, functional login account.
+-- The rest are demo-only and cannot log in (hash is filler, not real).
+INSERT INTO users (username, hash, cash) VALUES ('demo', 'scrypt:32768:8:1$PI0pDGKhZr394oW0$0c8cfdfbe95b6e7da7d05c0b2273ea6d7fb5e75e325b95290b58fbbdc02c1892aa489cba805fea7dab0cf7d49dcac64a749aef4092ea60bb7ec2b31ae08d106f', 0.00);
 INSERT INTO users (username, hash, cash) VALUES ('demo_voo_and_chill', 'demo-account-no-login', 0.00);
 INSERT INTO users (username, hash, cash) VALUES ('demo_three_fund', 'demo-account-no-login', 0.00);
 INSERT INTO users (username, hash, cash) VALUES ('demo_income', 'demo-account-no-login', 0.00);
@@ -43,6 +45,7 @@ INSERT INTO users (username, hash, cash) VALUES ('demo_goldbug', 'demo-account-n
 INSERT INTO users (username, hash, cash) VALUES ('demo_international', 'demo-account-no-login', 0.00);
 
 -- Day-0 buy transactions (2021-04-01)
+INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after, transaction_datetime) VALUES ((SELECT id FROM users WHERE username = 'demo'), (SELECT id FROM symbols WHERE ticker = 'VOO'), 'buy', 292.55489400, 341.816193, 0.000000, '2021-04-01 09:30:00');
 INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after, transaction_datetime) VALUES ((SELECT id FROM users WHERE username = 'demo_voo_and_chill'), (SELECT id FROM symbols WHERE ticker = 'VOO'), 'buy', 292.55489400, 341.816193, 0.000000, '2021-04-01 09:30:00');
 INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after, transaction_datetime) VALUES ((SELECT id FROM users WHERE username = 'demo_three_fund'), (SELECT id FROM symbols WHERE ticker = 'VTI'), 'buy', 257.05269102, 194.512650, 50000.000000, '2021-04-01 09:30:00');
 INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price, cash_after, transaction_datetime) VALUES ((SELECT id FROM users WHERE username = 'demo_three_fund'), (SELECT id FROM symbols WHERE ticker = 'VXUS'), 'buy', 556.49263700, 53.909069, 20000.000000, '2021-04-01 09:30:00');
@@ -69,6 +72,18 @@ INSERT INTO transactions (user_id, symbol_id, transaction_type, qty, unit_price,
 
 -- Balance snapshots, 12 per user, ~6 months apart (2021-04-01 .. 2026-09-18)
 -- grand_total is a GENERATED column - do not insert it.
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2021-04-01 16:00:00', 100000.00, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2021-10-01 16:00:00', 109133.85, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2022-04-01 16:00:00', 114638.97, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2022-10-01 16:00:00', 91171.34, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2023-04-01 16:00:00', 105369.63, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2023-10-01 16:00:00', 110882.98, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2024-04-01 16:00:00', 136549.97, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2024-10-01 16:00:00', 149680.15, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2025-04-01 16:00:00', 148679.38, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2025-10-01 16:00:00', 178204.96, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2026-04-01 16:00:00', 175694.18, 0.00);
+INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo'), '2026-09-18 16:00:00', 205309.18, 0.00);
 INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo_voo_and_chill'), '2021-04-01 16:00:00', 100000.00, 0.00);
 INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo_voo_and_chill'), '2021-10-01 16:00:00', 109133.85, 0.00);
 INSERT INTO balance_snapshots (user_id, snap_datetime, portfolio_value, cash_balance) VALUES ((SELECT id FROM users WHERE username = 'demo_voo_and_chill'), '2022-04-01 16:00:00', 114638.97, 0.00);
