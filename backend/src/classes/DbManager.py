@@ -18,7 +18,7 @@ class DbManager:
     """
     def __init__(self):
         self.seed_db_with_demo_data()
-        
+
     @staticmethod
     def time_method(func):
         @wraps(func)
@@ -151,11 +151,13 @@ class DbManager:
         Checks if 'demo data' has already been added to the db.
         This should only happen when demo_mode env var is True.
         """
-        seeded = self.select_query("""
+        rows = self.select_query("""
             SELECT demo_data_seeded
             FROM global_events
             WHERE id = 1
         """)
+        seeded = rows[0].get("demo_data_seeded", False)
+
         if seeded:
             return True
         else:
@@ -191,6 +193,7 @@ class DbManager:
         demo_data_seeded = self.check_demo_data_seeded()
         if demo_data_seeded:
             logger.debug("Demo data already seeded...")
+            return
 
         _seed_with_data()
         self.set_demo_data_seeded(True)
