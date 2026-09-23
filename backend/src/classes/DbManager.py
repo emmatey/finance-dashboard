@@ -121,6 +121,7 @@ class DbManager:
         except:
             logger.error("Unable to convert 'demo mode' env var to string. Check it exists in your .env file.")
 
+        logger.debug(f"DEMO_MODE env var read as: {demo_mode_str}")
         return demo_mode
 
     def set_demo_data_seeded(self, demo_mode: bool):
@@ -153,7 +154,7 @@ class DbManager:
             FROM global_events
             WHERE id = 1
         """)
-        seeded = rows[0].get("demo_data_seeded", False)
+        seeded = rows[0].get("demo_data_seeded")
 
         if seeded:
             return True
@@ -174,6 +175,7 @@ class DbManager:
             try:
                 with open(schema_path, "r") as f:
                     con.executescript(f.read())
+                    con.commit()
             except Exception:
                 con.rollback()
                 logger.exception(f"Demo data seeding failed.")
