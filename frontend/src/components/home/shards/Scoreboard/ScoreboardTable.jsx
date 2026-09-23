@@ -21,7 +21,7 @@ export default function ScoreboardTable({ data }) {
     //     rank: int
     // }]
     return (
-        <ScrollArea className="h-80">
+        <ScrollArea className="min-h-0 flex-1">
             <Table>
                 <TableHeader>
                     <TableRow>
