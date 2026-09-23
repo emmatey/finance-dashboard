@@ -3,7 +3,6 @@ import os
 import sys
 import time
 
-from classes.DbManager import DbManager
 from flask import Flask, g, jsonify, request
 from flask_session import Session
 from werkzeug.exceptions import HTTPException
@@ -117,7 +116,6 @@ def teardown(exception):
     if exception:
         logger.error(exception)
 
-# Trigger Demo Seeding at Startup
 @app.route("/")
 def home():
     filler_page = """
