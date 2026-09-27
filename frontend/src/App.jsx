@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { DemoProvider } from './context/DemoContext.jsx'
 
 import Home from './pages/Home.jsx'
 import Auth from './pages/Auth.jsx'
@@ -33,9 +34,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <DemoProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </DemoProvider>
     </AuthProvider>
   )
 }
