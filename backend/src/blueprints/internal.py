@@ -1,7 +1,9 @@
 import logging
 
-from flask import Blueprint, jsonify
+from classes.DbManager import DbManager
 from classes.Daemon import Daemon
+from flask import Blueprint, jsonify
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,6 @@ def run_daemon():
         200
         500
     """
-
     dae = Daemon()
 
     try:
@@ -32,5 +33,26 @@ def run_daemon():
         logger.exception(e)
         return jsonify({
             "success": False,
-            "message": "Daemon failed, see finance.log for detials."
+            "message": "Daemon failed, see finance.log for details."
         }), 500
+
+@internal_bp.route("/demo", methods=["GET"])
+def check_demo_mode():
+    """
+    Checks the environment variables to see if the app is in 'demo mode'. 
+    This will change some things about what the frontend looks like.
+
+    Returns:
+        200 - {"success": True, "demo_mode": bool}
+        500 - Backend exception thrown
+    """
+    try:
+        demo_mode = DbManager.check_demo_mode()
+    except Exception:
+        logger.exception("Failed to check demo mode")
+        return jsonify({
+            "success": False,
+            "message": "Failed to check demo mode. See finance.log for details..."
+        }), 500
+
+    return jsonify({"success": True, "demo_mode": demo_mode}), 200

@@ -104,7 +104,8 @@ class DbManager:
         else:
             return g.db
 
-    def check_demo_mode(self):
+    @staticmethod
+    def check_demo_mode() -> bool:
         """
         Checks the .env file for "demo_mode" state.
         """
@@ -112,15 +113,16 @@ class DbManager:
         demo_mode = False
         demo_mode_str = os.getenv("DEMO_MODE")
 
-        try:
-            demo_mode_str = str(demo_mode_str)
-            if demo_mode_str.lower() == "true":
-                    demo_mode = True
-            else:
-                    demo_mode = False
-        except:
+        demo_mode_str = str(demo_mode_str)
+        if demo_mode_str.lower() == "true":
+                demo_mode = True
+        elif demo_mode_str == 'None':
+            # os.getenv returns str or None. Running str() method on None object returns string "None".
             logger.error("Unable to convert 'demo mode' env var to string. Check it exists in your .env file.")
-
+            return False
+        else:
+                demo_mode = False
+       
         logger.debug(f"DEMO_MODE env var read as: {demo_mode_str}")
         return demo_mode
 
