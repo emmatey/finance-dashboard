@@ -1,5 +1,7 @@
 # API reference
 
+This document reflects the current backend contract as implemented by the Flask blueprints in the app.
+
 Response conventions
 - Error: { "success": false, "message": str }
 - Object: { "success": true, ... }
@@ -9,6 +11,7 @@ Response conventions
 AUTH
   register
     POST /api/auth/register
+    status: 201 Created
     body: { username: str, password: str, email?: str }
     response: { success: true }
 
@@ -45,7 +48,7 @@ SESSION
 
   me
     GET /api/session/me
-    response: { success: true, username: str | null, email: str | null, validated: bool }
+    response: { success: true, username: str | null, email: str | null, verified: bool }
 
   logout
     POST /api/session/logout
@@ -131,19 +134,19 @@ RESEARCH
   local
     GET /api/research/local?ticker=...
     response: { success: true, ...table data... }
-    note: table keys like symbols, company_profile, historical_prices, financial_metrics, etc.; stale tables may be null.
+    note: table keys include symbols, company_profile, historical_prices, financial_metrics, news, insider_trades, stock_splits, etc.; stale values may be null.
 
   online
     GET /api/research/online?ticker=...
     response: {
       success: true,
-      symbols: [{ ... }],
       stock_splits: [{ ... }],
       historical_prices: [{ ... }],
       financial_metrics: [{ ... }],
       news: [{ ... }],
       company_profile: [{ ... }],
-      insider_trades: [{ ... }]
+      insider_trades: [{ ... }],
+      ...other tables may also be returned by the coordinator
     }
 
   summary
@@ -293,7 +296,7 @@ TRADE
 
   POST /api/trade
   body: { ticker: str, qty: float, transaction_type: "buy" | "sell" }
-  response: { success: true, ...tx details... }
+  response: { success: true, ...transaction details... }
 
 SEARCH
   GET /api/search?q=...
@@ -317,3 +320,7 @@ INTERNAL
   daemon
     POST /internal/daemon
     response: { success: true }
+
+  demo
+    GET /internal/demo
+    response: { success: true, demo_mode: bool }
